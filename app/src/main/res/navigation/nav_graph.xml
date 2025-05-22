@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/loginFragment">
+
+    <fragment
+        android:id="@+id/nav_settings"
+        android:name="info.proteo.cupcake.ui.settings.SettingsFragment"
+        android:label="@string/menu_settings"
+        tools:layout="@layout/fragment_settings">
+        <action
+            android:id="@+id/action_settings_to_login"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_settings_to_profile_management"
+            app:destination="@id/profileManagementFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/profileManagementFragment"
+        android:name="info.proteo.cupcake.ui.settings.ProfileManagementFragment"
+        android:label="Profile Management"
+        tools:layout="@layout/fragment_profile_management">
+        <action
+            android:id="@+id/action_profile_management_to_settings"
+            app:destination="@id/nav_settings" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_main"
+        android:name="info.proteo.cupcake.ui.main.MainFragment"
+        android:label="Main menu"
+        tools:layout="@layout/fragment_main">
+        <action
+            android:id="@+id/action_main_to_settings"
+            app:destination="@id/nav_settings" />
+    </fragment>
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="info.proteo.cupcake.ui.login.LoginFragment"
+        android:label="Login"
+        tools:layout="@layout/fragment_login">
+        <action
+            android:id="@+id/action_loginFragment_to_mainFragment"
+            app:destination="@id/nav_main"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_stored_reagent"
+        android:name="info.proteo.cupcake.ui.reagent.StoredReagentFragment"
+        android:label="Stored Reagent"
+        tools:layout="@layout/fragment_stored_reagent">
+        <action
+            android:id="@+id/action_storedReagentFragment_to_storedReagentDetailFragment"
+            app:destination="@id/storedReagentDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/storedReagentDetailFragment"
+        android:name="info.proteo.cupcake.ui.reagent.StoredReagentDetailFragment"
+        android:label="Reagent Details"
+        tools:layout="@layout/fragment_stored_reagent_detail">
+        <argument
+            android:name="REAGENT_ID"
+            app:argType="integer" />
+    </fragment>
+
+</navigation>

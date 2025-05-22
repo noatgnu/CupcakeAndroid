@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="16dp"
+    android:background="?attr/selectableItemBackground">
+
+    <ImageView
+        android:id="@+id/image_view_reagent"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:contentDescription="Reagent image"
+        android:scaleType="centerCrop"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/text_view_expiry" />
+
+    <TextView
+        android:id="@+id/text_view_reagent_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/image_view_reagent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Sodium Chloride" />
+
+    <TextView
+        android:id="@+id/text_view_quantity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginStart="16dp"
+        android:textSize="14sp"
+        app:layout_constraintStart_toEndOf="@+id/image_view_reagent"
+        app:layout_constraintTop_toBottomOf="@id/text_view_reagent_name"
+        tools:text="500 g" />
+
+    <TextView
+        android:id="@+id/text_view_expiry"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginStart="16dp"
+        android:textSize="14sp"
+        app:layout_constraintStart_toEndOf="@+id/image_view_reagent"
+        app:layout_constraintTop_toBottomOf="@id/text_view_quantity"
+        tools:text="Expires: 12 Dec 2025" />
+
+    <TextView
+        android:id="@+id/text_view_notes"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="14sp"
+        android:textStyle="italic"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/text_view_expiry"
+        tools:text="Reagent notes go here" />
+
+    <TextView
+        android:id="@+id/text_view_added_by"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/text_view_notes"
+        tools:text="Added by: username" />
+</androidx.constraintlayout.widget.ConstraintLayout>

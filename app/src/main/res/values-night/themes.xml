@@ -1,0 +1,35 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Dark application theme -->
+    <style name="Theme.Cupcake" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/primary_dark_theme</item>
+        <item name="colorPrimaryVariant">@color/dark</item>
+        <item name="colorOnPrimary">@color/dark</item>
+        <!-- Secondary brand color -->
+        <item name="colorSecondary">@color/accent</item>
+        <item name="colorSecondaryVariant">@color/accent</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <!-- Status bar color -->
+        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+        <!-- Text colors -->
+        <item name="android:textColorPrimary">@color/light</item>
+        <item name="android:textColorSecondary">@color/secondary</item>
+        <item name="toolbarStyle">@style/Widget.App.Toolbar.DarkTheme</item>
+        <item name="colorNoResults">@color/accent</item>
+        <item name="colorEmptyState">@color/light</item>
+        <item name="colorError">@color/design_default_color_error</item>
+    </style>
+
+    <style name="Widget.App.Toolbar.DarkTheme" parent="Widget.MaterialComponents.Toolbar.Primary">
+        <item name="titleTextColor">@color/dark</item>
+        <item name="subtitleTextColor">@color/dark</item>
+        <item name="colorControlNormal">@color/dark</item>
+    </style>
+
+    <style name="Theme.Cupcake.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+    <style name="Theme.Cupcake.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+    <style name="Theme.Cupcake.NoActionBar" parent="Theme.Cupcake">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+</resources>

@@ -1,0 +1,53 @@
+<resources>
+    <string name="app_name">Cupcake</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="menu_transform">Transform</string>
+    <string name="menu_reflow">Reflow</string>
+    <string name="menu_slideshow">Slideshow</string>
+    <string name="menu_settings">Settings</string>
+
+    <string name="lorem_ipsum_title">Lorem Ipsum"</string>
+    <string name="lorem_ipsum">Lorem Ipsum is simply placeholder text of the printing and
+        typesetting industry. Lorem Ipsum has been the industry\'s standard placeholder text ever
+        since the 1500s, when an unknown printer took a galley of type and scrambled it to make a
+        type specimen book"
+    </string>
+    <string name="fab_content_description">Represents a view to invoke an action</string>
+    <string name="image_view_item_transform_content_description">Represents an image view in the
+        item
+    </string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="logo_description">Application Logo</string>
+    <string name="login_title">Login</string>
+    <string name="hostname_hint">Hostname</string>
+    <string name="username_hint">Username</string>
+    <string name="password_hint">Password</string>
+    <string name="login_button">Login</string>
+    <string name="login_error">Login failed. Please check your credentials.</string>
+    <string name="login_success">Login successful!</string>
+    <string name="username_required">Username is required</string>
+    <string name="password_required">Password is required</string>
+    <string name="hostname_required">Hostname is required</string>
+    <string name="logout_button">Logout</string>
+    <string name="menu_main">Main menu</string>
+    <string name="settings_title">Settings</string>
+    <string name="category_icon">Category icon\n</string>
+    <string name="profile_management">Profile Management</string>
+    <string name="active_profile_indicator">Activated profile</string>
+    <string name="storage">Storage</string>
+    <string name="storage_object_icon">Storage object icon</string>
+    <string name="breadcrumb_path_delimiter"><![CDATA[>]]></string>
+    <string name="view_reagents">View Reagents (%1$d)</string>
+    <string name="no_items_found">No items found</string>
+    <string name="error_loading_data">Error loading data</string>
+    <string name="no_reagents_found">No reagents found</string>
+    <string name="could_not_generate_barcode_with_this_format">Could not generate barcode with this format</string>
+    <string name="scan_barcode">Scan Barcode</string>
+</resources>
