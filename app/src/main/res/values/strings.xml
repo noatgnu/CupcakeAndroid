@@ -58,4 +58,15 @@
     <string name="last_updated">Last Updated</string>
     <string name="description">Description</string>
     <string name="expires">Expires</string>
+    <string name="recent_messages">Recent Messages</string>
+    <string name="view_all">View All</string>
+    <string name="no_messages_yet">No messages yet</string>
+    <string name="messages">Messages</string>
+    <string name="error_loading_messages">Error loading messages</string>
+    <string name="retry">Retry</string>
+    <string name="send">Send</string>
+    <string name="type_a_message">Type a message...</string>
+    <string name="bold_text">Bold text</string>
+    <string name="italic_text">Italic text</string>
+    <string name="underline_text">Underline text</string>
 </resources>

@@ -7,6 +7,10 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import info.proteo.cupcake.data.local.dao.message.MessageAttachmentDao
+import info.proteo.cupcake.data.local.dao.message.MessageDao
+import info.proteo.cupcake.data.local.dao.message.MessageRecipientDao
+import info.proteo.cupcake.data.local.dao.message.MessageThreadDao
 import info.proteo.cupcake.data.local.dao.reagent.ReagentDao
 import info.proteo.cupcake.data.local.dao.reagent.StoredReagentDao
 import info.proteo.cupcake.data.local.dao.storage.StorageObjectDao
@@ -21,6 +25,12 @@ import info.proteo.cupcake.data.remote.service.AuthServiceImpl
 import info.proteo.cupcake.data.remote.service.LabGroupApiService
 import info.proteo.cupcake.data.remote.service.LabGroupService
 import info.proteo.cupcake.data.remote.service.LabGroupServiceImpl
+import info.proteo.cupcake.data.remote.service.MessageApiService
+import info.proteo.cupcake.data.remote.service.MessageService
+import info.proteo.cupcake.data.remote.service.MessageServiceImpl
+import info.proteo.cupcake.data.remote.service.MessageThreadApiService
+import info.proteo.cupcake.data.remote.service.MessageThreadService
+import info.proteo.cupcake.data.remote.service.MessageThreadServiceImpl
 import info.proteo.cupcake.data.remote.service.StorageObjectApiService
 import info.proteo.cupcake.data.remote.service.StorageObjectService
 import info.proteo.cupcake.data.remote.service.StorageObjectServiceImpl
@@ -30,6 +40,10 @@ import info.proteo.cupcake.data.remote.service.StoredReagentServiceImpl
 import info.proteo.cupcake.data.remote.service.UserApiService
 import info.proteo.cupcake.data.remote.service.UserService
 import info.proteo.cupcake.data.remote.service.UserServiceImpl
+import info.proteo.cupcake.data.repository.MessageRepository
+import info.proteo.cupcake.data.repository.MessageRepositoryImpl
+import info.proteo.cupcake.data.repository.MessageThreadRepository
+import info.proteo.cupcake.data.repository.MessageThreadRepositoryImpl
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
@@ -233,6 +247,82 @@ object NetworkModule {
             storageObjectDao,
             userDao
         )
+    }
+
+    @Provides
+    @Singleton
+    fun provideMessageApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): MessageApiService {
+        val converter = MoshiConverterFactory.create(moshi)
+            .asLenient()
+
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(converter)
+            .build()
+            .create(MessageApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideMessageThreadApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): MessageThreadApiService {
+        val converter = MoshiConverterFactory.create(moshi)
+            .asLenient()
+
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(converter)
+            .build()
+            .create(MessageThreadApiService::class.java)
+    }
+
+
+
+    @Provides
+    @Singleton
+    fun provideMessageService(
+        apiService: MessageApiService,
+        messageDao: MessageDao,
+        userDao: UserDao,
+        attachmentDao: MessageAttachmentDao,
+        recipientDao: MessageRecipientDao,
+        userService: UserService,
+    ): MessageService {
+        return MessageServiceImpl(
+            apiService,
+            messageDao,
+            userDao,
+            attachmentDao,
+            recipientDao,
+            userService,
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideMessageThreadService(messageThreadServiceImpl: MessageThreadServiceImpl): MessageThreadService {
+        return messageThreadServiceImpl
+    }
+
+    @Provides
+    @Singleton
+    fun provideMessageRepository(messageRepositoryImpl: MessageRepositoryImpl): MessageRepository {
+        return messageRepositoryImpl
+    }
+
+    @Provides
+    @Singleton
+    fun provideMessageThreadRepository(messageThreadRepositoryImpl: MessageThreadRepositoryImpl): MessageThreadRepository {
+        return messageThreadRepositoryImpl
     }
 }
 

@@ -7,7 +7,6 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-
     <color name="primary">#2E2D62</color>
     <color name="secondary">#A4A4A4</color>
     <color name="success">#003632</color>
@@ -17,6 +16,8 @@
     <color name="light">#F8F9FA</color>
     <color name="dark">#212529</color>
     <color name="accent">#9ACAD5</color>
+    <color name="editor_background_light">#FFFFFF</color>
+    <color name="editor_background_dark">#212529</color>
 
     <!-- Dark theme colors -->
     <color name="primary_dark_theme">#24B4C6</color>

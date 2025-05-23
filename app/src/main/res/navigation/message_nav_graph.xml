@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/message_nav_graph"
+    app:startDestination="@id/messageFragment">
+
+    <fragment
+        android:id="@+id/messageFragment"
+        android:name="info.proteo.cupcake.ui.message.MessageFragment"
+        android:label="Messages"
+        tools:layout="@layout/fragment_message">
+        <action
+            android:id="@+id/action_messageFragment_to_threadDetailFragment"
+            app:destination="@id/threadDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/threadDetailFragment"
+        android:name="info.proteo.cupcake.ui.message.ThreadDetailFragment"
+        android:label="Thread Detail"
+        tools:layout="@layout/fragment_thread_detail">
+        <argument
+            android:name="threadId"
+            app:argType="integer" />
+    </fragment>
+</navigation>

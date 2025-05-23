@@ -13,7 +13,9 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import dagger.hilt.android.AndroidEntryPoint
+import info.proteo.cupcake.data.repository.MessageThreadRepository
 import info.proteo.cupcake.databinding.ActivityMainBinding
+import javax.inject.Inject
 
 
 @AndroidEntryPoint
@@ -21,6 +23,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var appBarConfiguration: AppBarConfiguration
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

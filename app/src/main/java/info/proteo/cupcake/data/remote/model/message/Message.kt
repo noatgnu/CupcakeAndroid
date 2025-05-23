@@ -32,7 +32,6 @@ data class MessageAttachment(
     @Json(name = "file_size") val fileSize: Int?,
     @Json(name = "content_type") val contentType: String?,
     @Json(name = "created_at") val createdAt: String?,
-    @Json(name = "download_url") val downloadUrl: String?
 )
 
 data class MessageRecipient(

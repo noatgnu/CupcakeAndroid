@@ -38,6 +38,12 @@
         <action
             android:id="@+id/action_main_to_settings"
             app:destination="@id/nav_settings" />
+        <action
+            android:id="@+id/action_mainFragment_to_messageActivity"
+            app:destination="@id/messageActivity" />
+        <action
+            android:id="@+id/action_mainFragment_to_threadDetailFragment"
+            app:destination="@id/threadDetailFragment" />
     </fragment>
     <fragment
         android:id="@+id/loginFragment"
@@ -70,5 +76,19 @@
             android:name="REAGENT_ID"
             app:argType="integer" />
     </fragment>
+    <fragment
+        android:id="@+id/threadDetailFragment"
+        android:name="info.proteo.cupcake.ui.message.ThreadDetailFragment"
+        android:label="Thread Detail"
+        tools:layout="@layout/fragment_thread_detail">
+        <argument
+            android:name="threadId"
+            app:argType="integer" />
+    </fragment>
+
+    <activity
+        android:id="@+id/messageActivity"
+        android:name="info.proteo.cupcake.ui.message.MessageActivity"
+        android:label="Message Threads"/>
 
 </navigation>

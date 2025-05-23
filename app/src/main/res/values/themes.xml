@@ -19,6 +19,7 @@
         <item name="colorNoResults">@color/accent</item>
         <item name="colorEmptyState">@color/secondary</item>
         <item name="colorError">@color/design_default_color_error</item>
+
     </style>
 
     <style name="Widget.App.Toolbar" parent="Widget.MaterialComponents.Toolbar.Primary">

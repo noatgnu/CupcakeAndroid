@@ -1,5 +1,6 @@
 package info.proteo.cupcake.data.repository
 
+import android.util.Log
 import info.proteo.cupcake.data.local.dao.user.UserDao
 import info.proteo.cupcake.data.local.dao.user.UserPreferencesDao
 import info.proteo.cupcake.data.local.entity.user.UserEntity
@@ -80,10 +81,11 @@ class UserRepository @Inject constructor(
 
     suspend fun getUserFromActivePreference(): User? {
         val activePreference = getActiveUserPreference() ?: return null
-        val userId = activePreference.userId.toIntOrNull() ?: return null
+        Log.d("UserRepository", "Active UserPreference: $activePreference")
+        val userId = activePreference.userId
 
         // Try to get from local cache first
-        val localUser = userDao.getById(userId)
+        val localUser = userDao.getByUsername(userId)
         if (localUser != null) {
             return User(
                 id = localUser.id,
@@ -96,9 +98,10 @@ class UserRepository @Inject constructor(
                 managedLabGroups = emptyList()
             )
         }
-
+        Log.d("UserRepository", "User not found in local cache, fetching from network")
         // If not in cache, fetch from network
-        return getUserById(userId).getOrNull()
+        val user = getCurrentUser().getOrNull()
+        return user
     }
 
 

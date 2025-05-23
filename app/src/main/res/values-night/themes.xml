@@ -18,6 +18,7 @@
         <item name="colorNoResults">@color/accent</item>
         <item name="colorEmptyState">@color/light</item>
         <item name="colorError">@color/design_default_color_error</item>
+
     </style>
 
     <style name="Widget.App.Toolbar.DarkTheme" parent="Widget.MaterialComponents.Toolbar.Primary">

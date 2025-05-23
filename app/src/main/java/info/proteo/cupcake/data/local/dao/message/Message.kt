@@ -11,6 +11,7 @@ import info.proteo.cupcake.data.local.entity.message.MessageEntity
 import info.proteo.cupcake.data.local.entity.message.MessageRecipientEntity
 import info.proteo.cupcake.data.local.entity.message.MessageThreadEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.count
 
 
 @Dao
@@ -55,7 +56,7 @@ interface MessageRecipientDao {
     suspend fun delete(recipient: MessageRecipientEntity)
 
     @Query("SELECT * FROM message_recipient WHERE id = :id")
-    suspend fun getById(id: Int): MessageRecipientEntity?
+    fun getById(id: Int): MessageRecipientEntity?
 
     @Query("SELECT * FROM message_recipient WHERE message_id = :messageId")
     fun getByMessage(messageId: Int): Flow<List<MessageRecipientEntity>>
@@ -68,6 +69,36 @@ interface MessageRecipientDao {
 
     @Query("DELETE FROM message_recipient")
     suspend fun deleteAll()
+
+    @Query("UPDATE message_recipient SET is_read = 1, read_at = :timestamp WHERE message_id = :messageId AND user_id = :userId")
+    suspend fun markAsRead(messageId: Int, userId: Int, timestamp: String): Int
+
+    @Query("UPDATE message_recipient SET is_read = 0, read_at = NULL WHERE message_id = :messageId AND user_id = :userId")
+    suspend fun markAsUnread(messageId: Int, userId: Int): Int
+
+    @Query("UPDATE message_recipient SET is_read = 1, read_at = :timestamp WHERE message_id IN (SELECT id FROM message WHERE thread_id = :threadId) AND user_id = :userId")
+    suspend fun markThreadAsRead(threadId: Int, userId: Int, timestamp: String): Int
+
+    @Query("SELECT COUNT(*) FROM message_recipient WHERE message_id = :messageId AND is_read = 1")
+    suspend fun countReadRecipients(messageId: Int): Int
+
+    @Query("SELECT EXISTS(SELECT 1 FROM message_recipient WHERE message_id = :messageId AND user_id = :userId AND is_read = 1)")
+    suspend fun isReadByUser(messageId: Int, userId: Int): Boolean
+
+    @Query("SELECT * FROM message_recipient WHERE message_id = :messageId")
+    suspend fun getByMessageSync(messageId: Int): List<MessageRecipientEntity>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM message_recipient WHERE message_id = :messageId AND is_read = 1)")
+    suspend fun isMessageRead(messageId: Int): Boolean
+
+    @Query("SELECT COUNT(*) FROM message WHERE thread_id = :threadId AND id IN (SELECT message_id FROM message_recipient WHERE is_read = 0 AND user_id = :userId)")
+    suspend fun countUnreadByThreadForUser(threadId: Int, userId: Int): Int
+
+    suspend fun deleteByMessageId(messageId: Int) {
+        delete(getById(messageId) ?: return)
+    }
+
+
 }
 
 @Dao
@@ -83,6 +114,10 @@ interface MessageDao {
 
     @Delete
     suspend fun delete(message: MessageEntity)
+
+    suspend fun deleteById(id: Int) {
+        delete(getById(id) ?: return)
+    }
 
     @Query("SELECT * FROM message WHERE id = :id")
     suspend fun getById(id: Int): MessageEntity?
@@ -101,6 +136,27 @@ interface MessageDao {
 
     @Query("DELETE FROM message")
     suspend fun deleteAll()
+
+    suspend fun countByThread(threadId: Int): Int {
+        return getByThread(threadId).count()
+    }
+
+    suspend fun countAll(): Int {
+        return getAllMessages().count()
+    }
+
+    @Query("SELECT * FROM message ORDER BY created_at DESC")
+    fun getAllMessages(): Flow<List<MessageEntity>>
+
+    @Query("SELECT * FROM message WHERE thread_id = :threadId LIMIT :limit OFFSET :offset")
+    fun getByThreadPaginated(threadId: Int, offset: Int, limit: Int): Flow<List<MessageEntity>>
+
+    @Query("SELECT * FROM message LIMIT :limit OFFSET :offset")
+    fun getAllMessagesPaginated(offset: Int, limit: Int): Flow<List<MessageEntity>>
+
+    @Query("SELECT COUNT(*) FROM message WHERE thread_id = :threadId")
+    fun countByThreadId(threadId: Int): Int
+
 }
 
 @Dao
@@ -134,4 +190,7 @@ interface MessageThreadDao {
 
     @Query("DELETE FROM message_thread")
     suspend fun deleteAll()
+
+    @Query("SELECT COUNT(*) FROM message_thread")
+    fun countAll(): Flow<Int>
 }
