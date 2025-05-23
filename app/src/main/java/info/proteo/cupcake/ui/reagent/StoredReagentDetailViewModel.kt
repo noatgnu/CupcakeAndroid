@@ -1,11 +1,13 @@
 package info.proteo.cupcake.ui.reagent
 
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import info.proteo.cupcake.data.remote.model.reagent.StoredReagent
 import info.proteo.cupcake.data.remote.service.BarcodeGenerator
+import info.proteo.cupcake.data.remote.service.StorageObjectService
 import info.proteo.cupcake.data.repository.StoredReagentRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,7 +17,8 @@ import javax.inject.Inject
 @HiltViewModel
 class StoredReagentDetailViewModel @Inject constructor(
     private val reagentRepository: StoredReagentRepository,
-    private val barcodeGenerator: BarcodeGenerator
+    private val barcodeGenerator: BarcodeGenerator,
+    private val storageObjectService: StorageObjectService
 ) : ViewModel() {
 
     private val _storedReagent = MutableStateFlow<StoredReagent?>(null)
@@ -29,6 +32,9 @@ class StoredReagentDetailViewModel @Inject constructor(
 
     private val _selectedBarcodeFormat = MutableStateFlow("CODE128")
     val selectedBarcodeFormat: StateFlow<String> = _selectedBarcodeFormat
+
+    private val _locationPath = MutableStateFlow<String?>(null)
+    val locationPath: StateFlow<String?> = _locationPath
 
     private val formatPriorityOrder = listOf(
         "CODE128", "EAN13", "UPC", "CODE39", "ITF14", "QR_CODE"
@@ -51,6 +57,21 @@ class StoredReagentDetailViewModel @Inject constructor(
             } catch (e: Exception) {
                 _isLoading.value = false
             }
+        }
+    }
+
+    fun loadLocationPath(locationId: Int) {
+        Log.d("StoredReagentDetailViewModel", "Loading location path for ID: $locationId")
+        viewModelScope.launch {
+            Log.d("StoredReagentDetailViewModel", "Starting API call for location ID: $locationId")
+            storageObjectService.getPathToRoot(locationId)
+                .onSuccess { path ->
+                    Log.d("StoredReagentDetailViewModel", "Location path success: $path")
+                    _locationPath.value = path.joinToString(" / ") { it.name }
+                }
+                .onFailure { error ->
+                    Log.e("StoredReagentDetailViewModel", "Failed to get path: ${error.message}", error)
+                }
         }
     }
 

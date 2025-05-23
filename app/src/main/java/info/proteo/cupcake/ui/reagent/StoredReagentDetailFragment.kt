@@ -1,7 +1,9 @@
 package info.proteo.cupcake.ui.reagent
 
-import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.util.Base64
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -117,16 +119,54 @@ class StoredReagentDetailFragment : Fragment() {
                 }
             }
         }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.locationPath.collectLatest { path ->
+                Log.d("StoredReagentDetailFragment", "Location path: $path")
+                if (!path.isNullOrEmpty()) {
+                    binding.textViewLocation.text = path
+                }
+            }
+        }
     }
 
     private fun displayReagentInfo(reagent: StoredReagent) {
         binding.textViewReagentName.text = reagent.reagent.name
-        binding.textViewQuantity.text = "${reagent.quantity} ${reagent.reagent.unit}"
-        binding.textViewCurrentQuantity.text = "${reagent.currentQuantity} ${reagent.reagent.unit}"
+        binding.textViewQuantity.text = buildString {
+            append(reagent.quantity)
+            append(" ")
+            append(reagent.reagent.unit)
+        }
+        binding.textViewCurrentQuantity.text = buildString {
+            append(reagent.currentQuantity)
+            append(" ")
+            append(reagent.reagent.unit)
+        }
         binding.textViewDescription.text = "${reagent.notes}"
         binding.textViewOwner.text = reagent.user.username
         binding.textViewLastUpdated.text = reagent.updatedAt
         binding.textViewExpiryDate.text = reagent.expirationDate ?: "N/A"
+
+
+
+        reagent.pngBase64?.let { base64Image ->
+            try {
+                val base64Content = if (base64Image.startsWith("data:image/png;base64,")) {
+                    base64Image.substring("data:image/png;base64,".length)
+                } else {
+                    base64Image
+                }
+
+                val imageBytes = Base64.decode(base64Content, Base64.DEFAULT)
+                val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                binding.imageViewReagentDetail.setImageBitmap(bitmap)
+                binding.imageViewReagentDetail.visibility = View.VISIBLE
+            } catch (e: Exception) {
+                binding.imageViewReagentDetail.visibility = View.GONE
+            }
+        } ?: run {
+            binding.imageViewReagentDetail.visibility = View.GONE
+        }
 
         if (reagent.barcode !== null) {
             binding.progressBarBarcode.visibility = View.VISIBLE
@@ -137,6 +177,13 @@ class StoredReagentDetailFragment : Fragment() {
             binding.progressBarBarcode.visibility = View.GONE
             binding.imageViewBarcode.visibility = View.GONE
             binding.textViewBarcodeError.visibility = View.VISIBLE
+        }
+
+        reagent.storageObject.let { location ->
+            binding.textViewLocation.text = location.objectName
+            location.id.let { locationId ->
+                viewModel.loadLocationPath(locationId)
+            }
         }
 
     }

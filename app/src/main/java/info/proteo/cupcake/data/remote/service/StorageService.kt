@@ -5,6 +5,7 @@ import info.proteo.cupcake.data.local.entity.storage.StorageObjectEntity
 import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
 import info.proteo.cupcake.data.remote.model.storage.StorageObject
 import info.proteo.cupcake.data.remote.model.storage.StorageObjectBasic
+import info.proteo.cupcake.data.remote.model.storage.StoragePathItem
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -88,7 +89,7 @@ interface StorageObjectApiService {
     ): StorageObject
 
     @GET("api/storage_object/{id}/get_path_to_root/")
-    suspend fun getPathToRoot(@Path("id") id: Int): List<StorageObjectBasic>
+    suspend fun getPathToRoot(@Path("id") id: Int): List<StoragePathItem>
 }
 
 interface StorageObjectService {
@@ -101,7 +102,7 @@ interface StorageObjectService {
     suspend fun getChildStorageObjects(parentId: Int?, offset: Int = 0, limit: Int = 20, excludeObjects: List<Int>? = null, labGroupId: Int? = null): Result<LimitOffsetResponse<StorageObject>>
     suspend fun addAccessGroup(storageObjectId: Int, labGroupId: Int): Result<StorageObject>
     suspend fun removeAccessGroup(storageObjectId: Int, labGroupId: Int): Result<StorageObject>
-    suspend fun getPathToRoot(id: Int): Result<List<StorageObjectBasic>>
+    suspend fun getPathToRoot(id: Int): Result<List<StoragePathItem>>
     suspend fun getRootStorageObjects(offset: Int = 0, limit: Int = 20, excludeObjects: List<Int>? = null, labGroupId: Int? = null): Result<LimitOffsetResponse<StorageObject>>
 }
 
@@ -268,7 +269,7 @@ class StorageObjectServiceImpl @Inject constructor(
         }
     }
 
-    override suspend fun getPathToRoot(id: Int): Result<List<StorageObjectBasic>> {
+    override suspend fun getPathToRoot(id: Int): Result<List<StoragePathItem>> {
         return try {
             val response = apiService.getPathToRoot(id)
             Result.success(response)

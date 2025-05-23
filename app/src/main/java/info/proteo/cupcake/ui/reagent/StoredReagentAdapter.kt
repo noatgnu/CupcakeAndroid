@@ -17,6 +17,13 @@ import java.util.Locale
 class StoredReagentAdapter(
     private val onItemClick: (StoredReagent) -> Unit
 ) : ListAdapter<StoredReagent, StoredReagentAdapter.ViewHolder>(StoredReagentDiffCallback()) {
+    private var locationPaths: Map<Int, String> = mutableMapOf<Int, String>()
+
+    fun updateLocationPaths(paths: Map<Int, String>) {
+        locationPaths = paths
+        notifyDataSetChanged()
+    }
+
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         Log.d("StoredReagentAdapter", "Creating view holder")
@@ -46,20 +53,50 @@ class StoredReagentAdapter(
 
         fun bind(storedReagent: StoredReagent) {
             binding.textViewReagentName.text = storedReagent.reagent.name
-            binding.textViewQuantity.text = "${storedReagent.currentQuantity ?: 0} ${storedReagent.reagent.unit}"
+            binding.textViewQuantity.text = buildString {
+                append(storedReagent.currentQuantity)
+                append(" ")
+                append(storedReagent.reagent.unit)
+            }
+
+            storedReagent.storageObject.let { location ->
+                val locationId = location.id
+                if (locationId != null) {
+                    val locationPath = locationPaths[locationId] ?: location.objectName
+                    binding.textViewLocation.text = buildString {
+                        append("Location: ")
+                        append(locationPath)
+                    }
+                    binding.textViewLocation.visibility = View.VISIBLE
+                } else {
+                    binding.textViewLocation.text = buildString {
+                        append("Location: ")
+                        append(location.objectName)
+                    }
+                    binding.textViewLocation.visibility = View.VISIBLE
+                }
+            }
 
             storedReagent.expirationDate?.let { expDate ->
                 val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-                binding.textViewExpiry.text = "Expires: ${dateFormat.format(expDate)}"
+                binding.textViewExpiry.text = buildString {
+                    append("Expires: ")
+                    append(dateFormat.format(expDate))
+                }
             }
 
             if (!storedReagent.notes.isNullOrBlank()) {
                 binding.textViewNotes.text = storedReagent.notes
             } else {
-                binding.textViewNotes.text = "No notes"
+                binding.textViewNotes.text = buildString {
+                    append("No notes")
+                }
             }
 
-            binding.textViewAddedBy.text = "Added by: ${storedReagent.user.username}"
+            binding.textViewAddedBy.text = buildString {
+                append("Added by: ")
+                append(storedReagent.user.username)
+            }
 
             storedReagent.pngBase64?.let { base64Image ->
                 try {

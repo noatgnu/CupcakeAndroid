@@ -25,7 +25,7 @@ sealed class StoredReagentUiState {
 @HiltViewModel
 class StoredReagentViewModel @Inject constructor(
     private val storedReagentService: StoredReagentService,
-    private val storageService: StorageObjectService
+    private val storageService: StorageObjectService,
 ) : ViewModel() {
 
     private val _reagentsState = MutableStateFlow<StoredReagentUiState>(StoredReagentUiState.Loading)
@@ -46,6 +46,8 @@ class StoredReagentViewModel @Inject constructor(
     private val _currentBarcodeState = MutableStateFlow<String?>(null)
     val currentBarcodeState: StateFlow<String?> = _currentBarcodeState.asStateFlow()
 
+    private val _locationPaths = MutableStateFlow<Map<Int, String>>(emptyMap())
+    val locationPaths: StateFlow<Map<Int, String>> = _locationPaths.asStateFlow()
 
 
     private var currentBarcode: String? = null
@@ -86,6 +88,17 @@ class StoredReagentViewModel @Inject constructor(
         }
     }
 
+    fun fetchLocationPath(locationId: Int) {
+        viewModelScope.launch {
+            storageService.getPathToRoot(locationId).onSuccess { pathItems ->
+                val currentPaths = _locationPaths.value.toMutableMap()
+                val pathString = pathItems.joinToString(" / ") { it.name }
+                currentPaths[locationId] = pathString
+                _locationPaths.value = currentPaths
+            }
+        }
+    }
+
     fun searchByBarcode(barcode: String, storageObjectId: Int? = null) {
         viewModelScope.launch {
             _reagentsState.value = StoredReagentUiState.Loading
@@ -108,6 +121,11 @@ class StoredReagentViewModel @Inject constructor(
                 result.onSuccess { response ->
                     Log.d("StoredReagentViewModel", "Search completed with ${response.results.size} results")
                     if (response.results.isNotEmpty()) {
+                        response.results.forEach { reagent ->
+                            reagent.storageObject.id.let { locationId ->
+                                fetchLocationPath(locationId)
+                            }
+                        }
                         _reagentsState.value = StoredReagentUiState.Success(response.results)
                         Log.d("StoredReagentViewModel", "Setting state to Success with ${response.results.size} items")
                     } else {
@@ -163,7 +181,13 @@ class StoredReagentViewModel @Inject constructor(
 
                 result.onSuccess { response ->
                     val reagents = response.results
-
+                    if (reagents.isNotEmpty()) {
+                        reagents.forEach { reagent ->
+                            reagent.storageObject.id.let { locationId ->
+                                fetchLocationPath(locationId)
+                            }
+                        }
+                    }
                     if (offset == 0) {
                         if (reagents.isEmpty()) {
                             _reagentsState.value = StoredReagentUiState.Empty

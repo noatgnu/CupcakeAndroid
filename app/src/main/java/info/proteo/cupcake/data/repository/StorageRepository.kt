@@ -3,6 +3,7 @@ package info.proteo.cupcake.data.repository
 import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
 import info.proteo.cupcake.data.remote.model.storage.StorageObject
 import info.proteo.cupcake.data.remote.model.storage.StorageObjectBasic
+import info.proteo.cupcake.data.remote.model.storage.StoragePathItem
 import info.proteo.cupcake.data.remote.service.StorageObjectService
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -53,7 +54,7 @@ class StorageRepository @Inject constructor(
         return storageObjectService.removeAccessGroup(storageObjectId, labGroupId)
     }
 
-    suspend fun getPathToRoot(id: Int): Result<List<StorageObjectBasic>> {
+    suspend fun getPathToRoot(id: Int): Result<List<StoragePathItem>> {
         return storageObjectService.getPathToRoot(id)
     }
 

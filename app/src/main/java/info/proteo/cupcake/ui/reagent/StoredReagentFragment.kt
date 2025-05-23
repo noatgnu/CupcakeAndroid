@@ -63,11 +63,8 @@ class StoredReagentFragment : Fragment() {
                 }
             }
         }
-        Log.d("StoredReagentFragment", "onViewCreated called")
         setupRecyclerView()
-        Log.d("StoredReagentFragment", "About to call setupObservers")
         setupObservers()
-        Log.d("StoredReagentFragment", "setupObservers completed")
         setupSwipeRefresh()
 
         arguments?.let { args ->
@@ -235,6 +232,14 @@ class StoredReagentFragment : Fragment() {
                     if (!barcode.isNullOrEmpty()) {
                         binding.barcodeText.text = "Searching: $barcode"
                     }
+                }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.locationPaths.collect { paths ->
+                    storedReagentAdapter.updateLocationPaths(paths)
                 }
             }
         }

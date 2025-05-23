@@ -11,7 +11,7 @@
         android:id="@+id/image_view_reagent"
         android:layout_width="56dp"
         android:layout_height="56dp"
-        android:contentDescription="Reagent image"
+        android:contentDescription="@string/reagent_image"
         android:scaleType="centerCrop"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -41,7 +41,7 @@
         tools:text="500 g" />
 
     <TextView
-        android:id="@+id/text_view_expiry"
+        android:id="@+id/text_view_location"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
@@ -49,6 +49,17 @@
         android:textSize="14sp"
         app:layout_constraintStart_toEndOf="@+id/image_view_reagent"
         app:layout_constraintTop_toBottomOf="@id/text_view_quantity"
+        tools:text="500 g" />
+
+    <TextView
+        android:id="@+id/text_view_expiry"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginStart="16dp"
+        android:textSize="14sp"
+        app:layout_constraintStart_toEndOf="@+id/image_view_reagent"
+        app:layout_constraintTop_toBottomOf="@id/text_view_location"
         tools:text="Expires: 12 Dec 2025" />
 
     <TextView

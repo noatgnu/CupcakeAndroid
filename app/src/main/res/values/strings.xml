@@ -50,4 +50,12 @@
     <string name="no_reagents_found">No reagents found</string>
     <string name="could_not_generate_barcode_with_this_format">Could not generate barcode with this format</string>
     <string name="scan_barcode">Scan Barcode</string>
+    <string name="reagent_image">Reagent image</string>
+    <string name="current_quantity">Current Quantity</string>
+    <string name="initial_quantity">Initial Quantity</string>
+    <string name="location">Location</string>
+    <string name="owner">Owner</string>
+    <string name="last_updated">Last Updated</string>
+    <string name="description">Description</string>
+    <string name="expires">Expires</string>
 </resources>
