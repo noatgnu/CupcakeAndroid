@@ -59,13 +59,13 @@ jobs:
           keyPassword: ${{ secrets.KEY_PASSWORD }}
           
       - name: Upload APK Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: signed-apk
           path: ${{ steps.sign_apk.outputs.signedReleaseFile }}
           
       - name: Upload Bundle Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: signed-bundle
           path: ${{ steps.sign_bundle.outputs.signedReleaseFile }}
