@@ -21,7 +21,12 @@ jobs:
           
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
-        
+
+      - name: Install build tools
+        run: |
+          ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install "build-tools;29.0.3"
+      
+
       - name: Cache Gradle packages
         uses: actions/cache@v3
         with:
