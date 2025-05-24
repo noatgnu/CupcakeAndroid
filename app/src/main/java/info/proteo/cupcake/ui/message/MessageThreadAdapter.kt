@@ -39,7 +39,6 @@ class MessageThreadAdapter(
             binding.textViewThreadTitle.text = thread.title
 
             if (thread.latestMessage != null) {
-                // Convert HTML content to displayable text
                 binding.textViewLastMessage.text = fromHtml(thread.latestMessage.content.toString())
                 binding.textViewLastMessage.visibility = View.VISIBLE
 

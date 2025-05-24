@@ -99,7 +99,7 @@ interface MessageThreadApiService {
     suspend fun getMessageThread(@Path("id") threadId: Int): MessageThreadDetail
 
     @POST("api/message_threads/")
-    suspend fun createMessageThread(@Body threadData: Map<String, Any>): MessageThread
+    suspend fun createMessageThread(@Body threadData: CreateThreadRequest): MessageThread
 
     @POST("api/message_threads/{id}/add_participant/")
     suspend fun addParticipant(
@@ -471,6 +471,13 @@ class MessageServiceImpl @Inject constructor(
     }
 }
 
+data class CreateThreadRequest(
+    val title: String,
+    val participants: List<Int>,
+    val labGroupId: Int? = null,
+    val isSystemThread: Boolean = false
+)
+
 interface MessageThreadService {
     suspend fun getMessageThreads(
         offset: Int,
@@ -549,13 +556,10 @@ class MessageThreadServiceImpl @Inject constructor(
         isSystemThread: Boolean
     ): Result<MessageThread> = withContext(Dispatchers.IO) {
         try {
-            val threadData = mutableMapOf<String, Any>()
-            threadData["title"] = title
-            threadData["participants"] = participants
-            if (labGroupId != null) threadData["lab_group_id"] = labGroupId
-            threadData["is_system_thread"] = isSystemThread
 
-            val response = messageThreadApiService.createMessageThread(threadData)
+            val request = CreateThreadRequest(title, participants, labGroupId, isSystemThread)
+
+            val response = messageThreadApiService.createMessageThread(request)
 
             cacheThreadWithRelations(response)
 

@@ -41,7 +41,7 @@
     <TextView
         android:id="@+id/textViewLastMessage"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="40dp"
         android:layout_marginTop="4dp"
         android:ellipsize="end"
         android:maxLines="2"

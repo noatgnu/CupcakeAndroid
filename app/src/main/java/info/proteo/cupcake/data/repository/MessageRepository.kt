@@ -21,8 +21,8 @@ interface MessageRepository {
     suspend fun createMessage(
         threadId: Int,
         content: String,
-        messageType: String? = null,
-        priority: String? = null,
+        messageType: String? = "user_message",
+        priority: String? = "normal",
         attachments: List<File>? = null
     ): Result<Message>
 

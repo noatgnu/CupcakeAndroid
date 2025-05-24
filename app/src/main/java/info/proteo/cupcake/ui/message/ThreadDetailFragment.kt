@@ -6,6 +6,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -51,6 +53,7 @@ class ThreadDetailFragment : Fragment() {
         setupMessageAdapter()
         setupObservers()
         setupClickListeners()
+        setupStaffOptions()
 
         viewModel.loadThreadDetails(threadId)
     }
@@ -58,7 +61,7 @@ class ThreadDetailFragment : Fragment() {
     private fun setupRichTextEditor() {
         // Create a new RichEditor instance
         richTextEditor = RichEditor(requireContext())
-        richTextEditor.setEditorHeight(120)
+        richTextEditor.setEditorHeight(40)
         richTextEditor.setEditorFontSize(16)
         richTextEditor.setPadding(10, 10, 10, 10)
         richTextEditor.setPlaceholder("Type your message here...")
@@ -168,6 +171,48 @@ class ThreadDetailFragment : Fragment() {
 
         // Make sure we didn't remove all content
         return if (cleaned.trim().isEmpty()) "" else cleaned.trim()
+    }
+
+    private fun setupStaffOptions() {
+        // Observe staff status
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.isStaffUser.collect { isStaff ->
+                binding.staffMessageOptions.visibility = if (isStaff) View.VISIBLE else View.GONE
+            }
+        }
+
+
+        val messageTypeLabels = arrayOf("User Message", "System Notification", "Alert", "Announcement")
+        val messageTypeValues = arrayOf("user_message", "system_notification", "alert", "announcement")
+
+        ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, messageTypeLabels).also {
+            it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            binding.spinnerMessageType.adapter = it
+        }
+
+        binding.spinnerMessageType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
+                viewModel.setMessageType(messageTypeValues[pos])
+            }
+            override fun onNothingSelected(parent: AdapterView<*>) {}
+        }
+
+
+        val priorityLabels = arrayOf("Low", "Normal", "High", "Urgent")
+        val priorityValues = arrayOf("low", "normal", "high", "urgent")
+
+        ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, priorityLabels).also {
+            it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            binding.spinnerPriority.adapter = it
+            binding.spinnerPriority.setSelection(1)
+        }
+
+        binding.spinnerPriority.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
+                viewModel.setMessagePriority(priorityValues[pos])
+            }
+            override fun onNothingSelected(parent: AdapterView<*>) {}
+        }
     }
 
     override fun onDestroyView() {

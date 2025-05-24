@@ -25,6 +25,11 @@ class MessageViewModel @Inject constructor(
     private val _hasError = MutableStateFlow(false)
     val hasError: StateFlow<Boolean> = _hasError.asStateFlow()
 
+    private val _refreshNeeded = MutableStateFlow(false)
+    val refreshNeeded: StateFlow<Boolean> = _refreshNeeded
+
+
+
     private var currentPage = 0
     private val pageSize = 20
     private var isLastPage = false
@@ -38,6 +43,10 @@ class MessageViewModel @Inject constructor(
         isLastPage = false
         _messageThreads.value = emptyList()
         loadMoreThreads()
+    }
+
+    fun setRefreshNeeded(needed: Boolean) {
+        _refreshNeeded.value = needed
     }
 
     fun loadMoreThreads() {

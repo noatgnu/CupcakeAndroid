@@ -13,9 +13,7 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import dagger.hilt.android.AndroidEntryPoint
-import info.proteo.cupcake.data.repository.MessageThreadRepository
 import info.proteo.cupcake.databinding.ActivityMainBinding
-import javax.inject.Inject
 
 
 @AndroidEntryPoint
@@ -46,11 +44,16 @@ class MainActivity : AppCompatActivity() {
         setupActionBarWithNavController(navController, appBarConfiguration)
         binding.navView?.setupWithNavController(navController)
 
-        // Add navigation item selected listener
         binding.navView?.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.nav_storage -> {
                     val intent = Intent(this, StorageActivity::class.java)
+                    startActivity(intent)
+                    binding.drawerLayout?.closeDrawers()
+                    true
+                }
+                R.id.nav_messages -> {
+                    val intent = Intent(this, MessageActivity::class.java)
                     startActivity(intent)
                     binding.drawerLayout?.closeDrawers()
                     true

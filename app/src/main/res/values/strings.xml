@@ -69,4 +69,5 @@
     <string name="bold_text">Bold text</string>
     <string name="italic_text">Italic text</string>
     <string name="underline_text">Underline text</string>
+    <string name="create_new_message">Create new message</string>
 </resources>

@@ -8,6 +8,7 @@ import info.proteo.cupcake.data.remote.model.message.MessageThreadDetail
 import info.proteo.cupcake.data.remote.model.message.ThreadMessage
 import info.proteo.cupcake.data.repository.MessageRepository
 import info.proteo.cupcake.data.repository.MessageThreadRepository
+import info.proteo.cupcake.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,7 +18,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ThreadDetailViewModel @Inject constructor(
     private val messageRepository: MessageRepository,
-    private val messageThreadRepository: MessageThreadRepository
+    private val messageThreadRepository: MessageThreadRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _threadDetails = MutableStateFlow<MessageThreadDetail?>(null)
@@ -31,6 +33,35 @@ class ThreadDetailViewModel @Inject constructor(
 
     private val _sendingMessage = MutableStateFlow(false)
     val sendingMessage: StateFlow<Boolean> = _sendingMessage.asStateFlow()
+
+    private val _isStaffUser = MutableStateFlow(false)
+    val isStaffUser: StateFlow<Boolean> = _isStaffUser.asStateFlow()
+
+    private val _messageType = MutableStateFlow("user_message")
+    val messageType: StateFlow<String> = _messageType.asStateFlow()
+
+    private val _messagePriority = MutableStateFlow("normal")
+    val messagePriority: StateFlow<String> = _messagePriority.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            userRepository.getUserFromActivePreference()?.let {
+                _isStaffUser.value = it.isStaff
+            }
+        }
+    }
+
+    fun setMessageType(type: String) {
+        if (_isStaffUser.value) {
+            _messageType.value = type
+        }
+    }
+
+    fun setMessagePriority(priority: String) {
+        if (_isStaffUser.value) {
+            _messagePriority.value = priority
+        }
+    }
 
     fun loadThreadDetails(threadId: Int) {
         viewModelScope.launch {
@@ -61,12 +92,12 @@ class ThreadDetailViewModel @Inject constructor(
             _sendingMessage.value = true
 
             try {
-                val result = messageRepository.createMessage(threadId, htmlContent)
+                val result = messageRepository.createMessage(threadId, htmlContent, _messageType.value,
+                    _messagePriority.value)
                 _sendingMessage.value = false
 
                 result.fold(
                     onSuccess = { message ->
-                        // Convert Message to ThreadMessage before adding
                         _threadDetails.value?.let { currentThread ->
                             val updatedMessages = currentThread.messages.toMutableList().apply {
                                 add(message.toThreadMessage())
@@ -75,7 +106,9 @@ class ThreadDetailViewModel @Inject constructor(
                         }
                     },
                     onFailure = { exception ->
-                        _error.value = exception.message ?: "Failed to send message"
+                        _sendingMessage.value = false
+                        _error.value = exception.message ?: "An unexpected error occurred while sending message"
+
                     }
                 )
             } catch (e: Exception) {
