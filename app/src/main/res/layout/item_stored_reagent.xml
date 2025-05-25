@@ -8,6 +8,15 @@
     android:background="?attr/selectableItemBackground">
 
     <ImageView
+        android:id="@+id/imageViewShareable"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginStart="8dp"
+        android:visibility="gone"
+        android:src="@drawable/ic_outline_folder_shared_24"
+        android:contentDescription="@string/shareable_status" />
+
+    <ImageView
         android:id="@+id/image_view_reagent"
         android:layout_width="56dp"
         android:layout_height="56dp"

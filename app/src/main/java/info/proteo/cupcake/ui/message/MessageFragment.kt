@@ -144,8 +144,12 @@ class MessageFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        view?.postDelayed({
-            viewModel.loadFirstPage()
-        }, 300)
+        if (viewModel.messageThreads.value.isNotEmpty()) {
+            view?.postDelayed({
+                viewModel.loadFirstPage()
+            }, 300)
+        }
     }
+
+
 }

@@ -1,18 +1,23 @@
 package info.proteo.cupcake.ui.reagent
 
 import android.graphics.BitmapFactory
+import android.graphics.PorterDuff
 import android.util.Base64
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import info.proteo.cupcake.R
 import info.proteo.cupcake.data.remote.model.reagent.StoredReagent
 import info.proteo.cupcake.databinding.ItemStoredReagentBinding
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Locale
+import java.util.TimeZone
 
 class StoredReagentAdapter(
     private val onItemClick: (StoredReagent) -> Unit
@@ -52,6 +57,15 @@ class StoredReagentAdapter(
         }
 
         fun bind(storedReagent: StoredReagent) {
+            if (storedReagent.shareable) {
+                binding.imageViewShareable.visibility = View.VISIBLE
+                binding.imageViewShareable.setColorFilter(
+                    ContextCompat.getColor(itemView.context, R.color.success),
+                    PorterDuff.Mode.SRC_IN
+                )
+            } else {
+                binding.imageViewShareable.visibility = View.GONE
+            }
             binding.textViewReagentName.text = storedReagent.reagent.name
             binding.textViewQuantity.text = buildString {
                 append(storedReagent.currentQuantity)
@@ -78,10 +92,10 @@ class StoredReagentAdapter(
             }
 
             storedReagent.expirationDate?.let { expDate ->
-                val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+
                 binding.textViewExpiry.text = buildString {
                     append("Expires: ")
-                    append(dateFormat.format(expDate))
+                    append(formatDate(expDate))
                 }
             }
 
@@ -116,6 +130,29 @@ class StoredReagentAdapter(
             } ?: run {
                 binding.imageViewReagent.visibility = View.GONE
             }
+        }
+    }
+
+    private fun formatDate(expiryDateStr: String?): String {
+        if (expiryDateStr.isNullOrEmpty()) return "No expiry date"
+
+        try {
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val expiryDate = dateFormat.parse(expiryDateStr) ?: return expiryDateStr
+            val currentDate = Calendar.getInstance().time
+
+            val diffMs = expiryDate.time - currentDate.time
+            val diffDays = diffMs / (24 * 60 * 60 * 1000)
+
+            return when {
+                diffDays < 0 -> "Expired ${-diffDays} days ago"
+                diffDays == 0L -> "Expires today"
+                diffDays == 1L -> "Expires tomorrow"
+                diffDays < 30 -> "Expires in $diffDays days"
+                else -> "$expiryDateStr (${diffDays} days left)"
+            }
+        } catch (e: Exception) {
+            return expiryDateStr
         }
     }
 

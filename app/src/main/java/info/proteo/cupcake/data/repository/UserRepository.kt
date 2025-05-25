@@ -6,9 +6,13 @@ import info.proteo.cupcake.data.local.dao.user.UserPreferencesDao
 import info.proteo.cupcake.data.local.entity.user.UserEntity
 import info.proteo.cupcake.data.local.entity.user.UserPreferencesEntity
 import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
+import info.proteo.cupcake.data.remote.model.reagent.StoredReagentPermission
 import info.proteo.cupcake.data.remote.model.user.User
 import info.proteo.cupcake.data.remote.model.user.UserBasic
+import info.proteo.cupcake.data.remote.service.StoredReagentPermissionRequest
 import info.proteo.cupcake.data.remote.service.UserService
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class UserRepository @Inject constructor(
@@ -102,6 +106,29 @@ class UserRepository @Inject constructor(
         // If not in cache, fetch from network
         val user = getCurrentUser().getOrNull()
         return user
+    }
+
+    fun checkStoredReagentPermission(request: StoredReagentPermissionRequest): Flow<List<StoredReagentPermission>> = flow {
+        try {
+            val permissions = userService.checkStoredReagentPermission(request)
+            emit(permissions)
+        } catch (e: Exception) {
+            emit(emptyList())
+        }
+    }
+
+    suspend fun checkStoredReagentPermissionDirectly(reagentId: Int): Result<StoredReagentPermission?> {
+        return try {
+            val request = StoredReagentPermissionRequest(listOf(reagentId))
+            val permissions = userService.checkStoredReagentPermission(request)
+            if (permissions.isNotEmpty()) {
+                Result.success(permissions.first())
+            } else {
+                Result.success(null)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
 

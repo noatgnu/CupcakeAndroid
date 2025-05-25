@@ -85,7 +85,38 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp">
 
-                        <!-- Quantity -->
+                        <TableRow android:layout_marginBottom="8dp">
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/shareable"
+                                android:textAppearance="?attr/textAppearanceBody2"
+                                android:textStyle="bold" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="2"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
+
+                                <ImageView
+                                    android:id="@+id/imageViewShareable"
+                                    android:layout_width="16dp"
+                                    android:layout_height="16dp"
+                                    android:layout_marginEnd="4dp"
+                                    android:src="@drawable/ic_outline_folder_shared_24"
+                                    android:contentDescription="@string/shareable_status" />
+
+                                <TextView
+                                    android:id="@+id/textViewShareable"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="?attr/textAppearanceBody2" />
+                            </LinearLayout>
+                        </TableRow>
+
                         <TableRow android:layout_marginBottom="8dp">
                             <TextView
                                 android:layout_width="0dp"
@@ -218,9 +249,9 @@
                         </TableRow>
                     </TableLayout>
                 </LinearLayout>
+
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Barcode card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -294,6 +325,51 @@
                     </FrameLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:text="Activity History"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                android:id="@+id/swipeRefreshLayoutActions"
+                android:layout_width="match_parent"
+                android:layout_height="300dp"
+                android:layout_marginTop="8dp">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerViewActions"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:clipToPadding="false"
+                        android:paddingBottom="16dp" />
+
+                    <TextView
+                        android:id="@+id/emptyActionsView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:padding="24dp"
+                        android:text="No activity history available"
+                        android:visibility="gone" />
+
+                    <ProgressBar
+                        android:id="@+id/progressBarLoadingMoreActions"
+                        style="?android:attr/progressBarStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal|bottom"
+                        android:visibility="gone" />
+                </FrameLayout>
+            </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.core.widget.NestedScrollView>

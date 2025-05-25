@@ -38,6 +38,8 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.compareTo
 import kotlin.text.replace
+import androidx.core.view.get
+import androidx.core.view.size
 
 @AndroidEntryPoint
 class StorageFragment : Fragment() {
@@ -76,6 +78,10 @@ class StorageFragment : Fragment() {
         requireActivity().addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.menu_barcode_scan, menu)
+                for (i in 0 until menu.size) {
+                    val menuItem = menu[i]
+                    menuItem.icon?.setTint(ContextCompat.getColor(requireContext(), R.color.white))
+                }
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
@@ -93,7 +99,7 @@ class StorageFragment : Fragment() {
     private fun openBarcodeScanner() {
         val intent = Intent(requireContext(), StoredReagentActivity::class.java).apply {
             putExtra(StoredReagentActivity.EXTRA_STORAGE_OBJECT_ID, currentStorageObjectId)
-            putExtra(StoredReagentActivity.EXTRA_OPEN_SCANNER, true) // Add a flag to indicate scanner should be opened
+            putExtra(StoredReagentActivity.EXTRA_OPEN_SCANNER, true)
         }
         startActivity(intent)
     }

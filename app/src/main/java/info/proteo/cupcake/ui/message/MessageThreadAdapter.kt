@@ -79,7 +79,6 @@ class MessageThreadAdapter(
                 val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
                 val date = format.parse(timestamp) ?: return timestamp
 
-                // Get difference in milliseconds
                 val diffMs = Date().time - date.time
 
                 return when {

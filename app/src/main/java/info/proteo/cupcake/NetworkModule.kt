@@ -11,6 +11,7 @@ import info.proteo.cupcake.data.local.dao.message.MessageAttachmentDao
 import info.proteo.cupcake.data.local.dao.message.MessageDao
 import info.proteo.cupcake.data.local.dao.message.MessageRecipientDao
 import info.proteo.cupcake.data.local.dao.message.MessageThreadDao
+import info.proteo.cupcake.data.local.dao.reagent.ReagentActionDao
 import info.proteo.cupcake.data.local.dao.reagent.ReagentDao
 import info.proteo.cupcake.data.local.dao.reagent.StoredReagentDao
 import info.proteo.cupcake.data.local.dao.storage.StorageObjectDao
@@ -31,6 +32,9 @@ import info.proteo.cupcake.data.remote.service.MessageServiceImpl
 import info.proteo.cupcake.data.remote.service.MessageThreadApiService
 import info.proteo.cupcake.data.remote.service.MessageThreadService
 import info.proteo.cupcake.data.remote.service.MessageThreadServiceImpl
+import info.proteo.cupcake.data.remote.service.ReagentActionApiService
+import info.proteo.cupcake.data.remote.service.ReagentActionService
+import info.proteo.cupcake.data.remote.service.ReagentActionServiceImpl
 import info.proteo.cupcake.data.remote.service.StorageObjectApiService
 import info.proteo.cupcake.data.remote.service.StorageObjectService
 import info.proteo.cupcake.data.remote.service.StorageObjectServiceImpl
@@ -44,6 +48,7 @@ import info.proteo.cupcake.data.repository.MessageRepository
 import info.proteo.cupcake.data.repository.MessageRepositoryImpl
 import info.proteo.cupcake.data.repository.MessageThreadRepository
 import info.proteo.cupcake.data.repository.MessageThreadRepositoryImpl
+import info.proteo.cupcake.data.repository.ReagentActionRepository
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
@@ -323,6 +328,38 @@ object NetworkModule {
     @Singleton
     fun provideMessageThreadRepository(messageThreadRepositoryImpl: MessageThreadRepositoryImpl): MessageThreadRepository {
         return messageThreadRepositoryImpl
+    }
+
+    @Provides
+    @Singleton
+    fun provideReagentActionApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): ReagentActionApiService {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
+            .build()
+            .create(ReagentActionApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideReagentActionService(
+        apiService: ReagentActionApiService,
+        reagentActionDao: ReagentActionDao
+    ): ReagentActionService {
+        return ReagentActionServiceImpl(apiService, reagentActionDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideReagentActionRepository(
+        reagentActionService: ReagentActionService
+    ): ReagentActionRepository {
+        return ReagentActionRepository(reagentActionService)
     }
 }
 

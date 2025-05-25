@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.MenuItem
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.ui.AppBarConfiguration
@@ -25,6 +26,9 @@ class StorageActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "Storage"
+        binding.toolbar.navigationIcon?.setTint(
+            ContextCompat.getColor(this, R.color.white)
+        )
 
         initializeStorage()
     }

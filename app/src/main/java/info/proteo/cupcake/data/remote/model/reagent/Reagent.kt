@@ -2,7 +2,14 @@ package info.proteo.cupcake.data.remote.model.reagent
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
+import info.proteo.cupcake.data.remote.model.DataPermission
 import info.proteo.cupcake.data.remote.model.user.UserBasic
+
+@JsonClass(generateAdapter = true)
+data class StoredReagentPermission(
+    val permission: DataPermission,
+    @Json(name = "stored_reagent") val storedReagent: Int,
+)
 
 @JsonClass(generateAdapter = true)
 data class Reagent(
@@ -31,6 +38,7 @@ data class ReagentSubscriptionInfo(
     @Json(name = "created_at") val createdAt: String
 )
 
+@JsonClass(generateAdapter = true)
 data class ReagentAction(
     val id: Int,
     val reagent: Int,

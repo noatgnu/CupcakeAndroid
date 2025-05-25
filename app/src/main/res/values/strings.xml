@@ -70,4 +70,9 @@
     <string name="italic_text">Italic text</string>
     <string name="underline_text">Underline text</string>
     <string name="create_new_message">Create new message</string>
+    <string name="edit_photo">Edit Photo</string>
+    <string name="edit_reagent">Edit Reagent</string>
+    <string name="add">Add</string>
+    <string name="reserve">Reserve</string>
+    <string name="shareable_status">Shareable status</string>
 </resources>

@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.compareTo
 
 @Singleton
 class StoredReagentRepository @Inject constructor(
@@ -69,5 +70,13 @@ class StoredReagentRepository @Inject constructor(
         notifyExpiry: Boolean
     ): Result<Map<String, Any>> {
         return storedReagentService.unsubscribe(id, notifyLowStock, notifyExpiry)
+    }
+
+    suspend fun saveStoredReagent(storedReagent: StoredReagent): Result<StoredReagent> {
+        return if (storedReagent.id > 0) {
+            updateStoredReagent(storedReagent.id, storedReagent)
+        } else {
+            createStoredReagent(storedReagent)
+        }
     }
 }

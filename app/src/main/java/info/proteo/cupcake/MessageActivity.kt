@@ -43,6 +43,12 @@ class MessageActivity : AppCompatActivity() {
     }
 
     override fun onSupportNavigateUp(): Boolean {
-        return navController.navigateUp() || super.onSupportNavigateUp()
+        val currentDestination = navController.currentDestination?.id
+        return if (currentDestination == R.id.messageFragment) {
+            finish()
+            true
+        } else {
+            navController.navigateUp() || super.onSupportNavigateUp()
+        }
     }
 }
