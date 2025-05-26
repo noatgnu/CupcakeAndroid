@@ -14,7 +14,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 data class StoredReagentPermissionRequest(
-    @Json(name = "stored_reagent") val storedReagentIds: List<Int>
+    @Json(name = "stored_reagents") val storedReagentIds: List<Int>
 )
 
 interface UserApiService {

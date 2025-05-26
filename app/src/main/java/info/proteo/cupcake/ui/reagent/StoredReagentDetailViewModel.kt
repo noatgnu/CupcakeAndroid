@@ -93,17 +93,36 @@ class StoredReagentDetailViewModel @Inject constructor(
     }
 
     private fun loadPermissions(reagentId: Int) {
+        Log.d("StoredReagentDetailViewModel", "Starting permission loading for reagent ID: $reagentId")
         viewModelScope.launch {
-            userRepository.checkStoredReagentPermissionDirectly(reagentId).onSuccess { permission ->
-                permission?.let {
-                    _canEdit.value = it.permission.edit
-                    _canView.value = it.permission.view
-                    _canDelete.value = it.permission.delete
-                } ?: run {
+            try {
+                val result = userRepository.checkStoredReagentPermissionDirectly(reagentId)
+
+                result.onSuccess { permission ->
+                    permission?.let {
+                        Log.d("StoredReagentDetailViewModel", "Permission loaded successfully: $it")
+                        Log.d("StoredReagentDetailViewModel", "Setting canEdit=${it.permission.edit}, canView=${it.permission.view}, canDelete=${it.permission.delete}")
+                        _canEdit.value = it.permission.edit
+                        _canView.value = it.permission.view
+                        _canDelete.value = it.permission.delete
+                    } ?: run {
+                        Log.w("StoredReagentDetailViewModel", "Permission object was null, using defaults")
+                        _canEdit.value = false
+                        _canView.value = true
+                        _canDelete.value = false
+                    }
+                }.onFailure { error ->
+                    Log.e("StoredReagentDetailViewModel", "Failed to load permissions: ${error.message}", error)
+                    Log.e("StoredReagentDetailViewModel", "Error stack trace:", error)
                     _canEdit.value = false
                     _canView.value = true
                     _canDelete.value = false
                 }
+            } catch (e: Exception) {
+                Log.e("StoredReagentDetailViewModel", "Unexpected error in loadPermissions: ${e.message}", e)
+                _canEdit.value = false
+                _canView.value = true
+                _canDelete.value = false
             }
         }
     }
