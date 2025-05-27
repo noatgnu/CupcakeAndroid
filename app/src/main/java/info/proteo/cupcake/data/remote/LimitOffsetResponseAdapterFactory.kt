@@ -37,8 +37,10 @@ class LimitOffsetResponseAdapterFactory : JsonAdapter.Factory {
 
             return object : JsonAdapter<LimitOffsetResponse<Any>>() {
                 override fun fromJson(reader: JsonReader): LimitOffsetResponse<Any>? {
+
                     try {
                         reader.beginObject()
+
                         var count = 0
                         var next: String? = null
                         var previous: String? = null

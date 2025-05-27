@@ -140,8 +140,8 @@ class StoredReagentDetailFragment : Fragment() {
             override fun onPrepareMenu(menu: Menu) {
                 menu.findItem(R.id.action_edit_photo)?.isVisible = viewModel.canEdit.value
                 menu.findItem(R.id.action_edit_reagent)?.isVisible = viewModel.canEdit.value
-                menu.findItem(R.id.action_add_reagent)?.isVisible = viewModel.canEdit.value
-                menu.findItem(R.id.action_reserve_reagent)?.isVisible = viewModel.canEdit.value
+                menu.findItem(R.id.action_add_reagent)?.isVisible = viewModel.canUse.value
+                menu.findItem(R.id.action_reserve_reagent)?.isVisible = viewModel.canUse.value
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
@@ -165,7 +165,7 @@ class StoredReagentDetailFragment : Fragment() {
                     else -> false
                 }
             }
-        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
+        }, viewLifecycleOwner)
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {

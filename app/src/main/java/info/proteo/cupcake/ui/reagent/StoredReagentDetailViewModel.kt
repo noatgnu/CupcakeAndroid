@@ -69,6 +69,9 @@ class StoredReagentDetailViewModel @Inject constructor(
     private val _canDelete = MutableStateFlow(false)
     val canDelete: StateFlow<Boolean> = _canDelete
 
+    private val _canUse = MutableStateFlow(false)
+    val canUse: StateFlow<Boolean> = _canUse
+
     private val formatPriorityOrder = listOf(
         "CODE128", "EAN13", "UPC", "CODE39", "ITF14", "QR_CODE"
     )
@@ -100,16 +103,16 @@ class StoredReagentDetailViewModel @Inject constructor(
 
                 result.onSuccess { permission ->
                     permission?.let {
-                        Log.d("StoredReagentDetailViewModel", "Permission loaded successfully: $it")
-                        Log.d("StoredReagentDetailViewModel", "Setting canEdit=${it.permission.edit}, canView=${it.permission.view}, canDelete=${it.permission.delete}")
                         _canEdit.value = it.permission.edit
                         _canView.value = it.permission.view
                         _canDelete.value = it.permission.delete
+                        _canUse.value = it.permission.use
                     } ?: run {
                         Log.w("StoredReagentDetailViewModel", "Permission object was null, using defaults")
                         _canEdit.value = false
                         _canView.value = true
                         _canDelete.value = false
+                        _canUse.value = false
                     }
                 }.onFailure { error ->
                     Log.e("StoredReagentDetailViewModel", "Failed to load permissions: ${error.message}", error)
@@ -117,23 +120,22 @@ class StoredReagentDetailViewModel @Inject constructor(
                     _canEdit.value = false
                     _canView.value = true
                     _canDelete.value = false
+                    _canUse.value = false
                 }
             } catch (e: Exception) {
                 Log.e("StoredReagentDetailViewModel", "Unexpected error in loadPermissions: ${e.message}", e)
                 _canEdit.value = false
                 _canView.value = true
                 _canDelete.value = false
+                _canUse.value = false
             }
         }
     }
 
     fun loadLocationPath(locationId: Int) {
-        Log.d("StoredReagentDetailViewModel", "Loading location path for ID: $locationId")
         viewModelScope.launch {
-            Log.d("StoredReagentDetailViewModel", "Starting API call for location ID: $locationId")
             storageObjectService.getPathToRoot(locationId)
                 .onSuccess { path ->
-                    Log.d("StoredReagentDetailViewModel", "Location path success: $path")
                     _locationPath.value = path.joinToString(" / ") { it.name }
                 }
                 .onFailure { error ->
@@ -145,7 +147,6 @@ class StoredReagentDetailViewModel @Inject constructor(
     fun generateBarcode(content: String) {
         currentBarcodeContent = content
 
-        // Try formats in priority order until one works
         viewModelScope.launch {
             for (format in formatPriorityOrder) {
                 try {
@@ -156,7 +157,6 @@ class StoredReagentDetailViewModel @Inject constructor(
                         break
                     }
                 } catch (e: Exception) {
-                    // Try next format
                     continue
                 }
             }
