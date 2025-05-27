@@ -5,13 +5,18 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+
 import info.proteo.cupcake.data.remote.model.reagent.ReagentAction
 import info.proteo.cupcake.data.remote.model.reagent.StoredReagent
 import info.proteo.cupcake.data.remote.model.reagent.StoredReagentPermission
 import info.proteo.cupcake.data.remote.service.BarcodeGenerator
 import info.proteo.cupcake.data.remote.service.StorageObjectService
 import info.proteo.cupcake.data.remote.service.StoredReagentPermissionRequest
+import info.proteo.cupcake.data.remote.model.annotation.Annotation
+import info.proteo.cupcake.data.remote.service.AnnotationFolderDetails
+import info.proteo.cupcake.data.remote.service.DownloadTokenResponse
 import info.proteo.cupcake.data.repository.ReagentActionRepository
+import info.proteo.cupcake.data.repository.ReagentDocumentRepository
 import info.proteo.cupcake.data.repository.StoredReagentRepository
 import info.proteo.cupcake.data.repository.UserRepository
 import kotlinx.coroutines.flow.Flow
@@ -28,7 +33,8 @@ class StoredReagentDetailViewModel @Inject constructor(
     private val barcodeGenerator: BarcodeGenerator,
     private val storageObjectService: StorageObjectService,
     private val reagentActionRepository: ReagentActionRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val reagentDocumentRepository: ReagentDocumentRepository
 ) : ViewModel() {
 
     private val _reagentActions = MutableStateFlow<List<ReagentAction>>(emptyList())
@@ -72,6 +78,29 @@ class StoredReagentDetailViewModel @Inject constructor(
     private val _canUse = MutableStateFlow(false)
     val canUse: StateFlow<Boolean> = _canUse
 
+    private val _barcodeScanResult = MutableStateFlow<String?>(null)
+    val barcodeScanResult: StateFlow<String?> = _barcodeScanResult
+
+    private val _documents = MutableStateFlow<List<Annotation>>(emptyList())
+    val documents: StateFlow<List<Annotation>> = _documents
+
+    private val _documentFolders = MutableStateFlow<List<AnnotationFolderDetails>>(emptyList())
+    val documentFolders: StateFlow<List<AnnotationFolderDetails>> = _documentFolders
+
+    private val _isLoadingDocuments = MutableStateFlow(false)
+    val isLoadingDocuments: StateFlow<Boolean> = _isLoadingDocuments
+
+    private val _selectedFolder = MutableStateFlow<String?>(null)
+    val selectedFolder: StateFlow<String?> = _selectedFolder
+
+
+
+    private val _isBarcodeUpdating = MutableStateFlow(false)
+    val isBarcodeUpdating: StateFlow<Boolean> = _isBarcodeUpdating
+
+    private val _barcodeUpdateStatus = MutableStateFlow<Result<String>?>(null)
+    val barcodeUpdateStatus: StateFlow<Result<String>?> = _barcodeUpdateStatus
+
     private val formatPriorityOrder = listOf(
         "CODE128", "EAN13", "UPC", "CODE39", "ITF14", "QR_CODE"
     )
@@ -91,6 +120,44 @@ class StoredReagentDetailViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    fun loadDocumentFolders(reagentId: Int) {
+        viewModelScope.launch {
+            reagentDocumentRepository.getReagentDocumentFolders(reagentId).collect { result ->
+                result.onSuccess { folders ->
+                    Log.d("StoredReagentDetailViewModel", "Loaded document folders: ${folders.size} for reagent ID: $reagentId")
+                    _documentFolders.value = folders
+                    if (folders.isNotEmpty() && _selectedFolder.value == null) {
+                        _selectedFolder.value = folders.firstOrNull()?.name
+                        loadDocuments(reagentId, _selectedFolder.value)
+                    }
+                }.onFailure { error ->
+                    Log.e("StoredReagentDetailViewModel", "Error loading document folders: ${error.message}", error)
+                }
+            }
+        }
+    }
+
+    fun loadDocuments(reagentId: Int, folderName: String? = null) {
+        viewModelScope.launch {
+            _isLoadingDocuments.value = true
+            _selectedFolder.value = folderName
+
+            reagentDocumentRepository.getReagentDocuments(
+                reagentId = reagentId,
+                folderName = folderName,
+                limit = 50,
+                offset = 0
+            ).collect { result ->
+                result.onSuccess { response ->
+                    _documents.value = response.results
+                }.onFailure { error ->
+                    Log.e("StoredReagentDetailViewModel", "Error loading documents: ${error.message}", error)
+                }
+                _isLoadingDocuments.value = false
             }
         }
     }
@@ -142,6 +209,50 @@ class StoredReagentDetailViewModel @Inject constructor(
                     Log.e("StoredReagentDetailViewModel", "Failed to get path: ${error.message}", error)
                 }
         }
+    }
+
+    fun getDocumentDownloadToken(annotationId: Int): Flow<Result<DownloadTokenResponse>> = flow {
+        emit(reagentDocumentRepository.getDocumentDownloadToken(annotationId).first())
+    }
+
+    fun setBarcodeResult(barcode: String?) {
+        _barcodeScanResult.value = barcode
+        if (barcode != null) {
+            processBarcodeResult()
+        }
+    }
+
+    fun processBarcodeResult() {
+        val barcode = _barcodeScanResult.value ?: return
+        Log.d("StoredReagentViewModel", "Processing barcode: $barcode")
+
+        viewModelScope.launch {
+            _isBarcodeUpdating.value = true
+            storedReagent.value?.let { reagent ->
+                val updatedReagent = reagent.copy(barcode = barcode)
+                Log.d("StoredReagentViewModel", "Updating reagent with barcode: $barcode")
+                saveStoredReagent(updatedReagent).collect { result ->
+                    result.onSuccess {
+                        generateBarcode(barcode)
+                        _barcodeUpdateStatus.value = Result.success("Barcode updated successfully")
+                        Log.d("StoredReagentViewModel", "Barcode updated successfully")
+                    }.onFailure { exception ->
+                        _barcodeUpdateStatus.value = Result.failure(exception)
+                        Log.e("StoredReagentViewModel", "Barcode update failed", exception)
+                    }
+                    _isBarcodeUpdating.value = false
+                    _barcodeScanResult.value = null
+                }
+            } ?: run {
+                _barcodeUpdateStatus.value = Result.failure(IllegalStateException("No reagent loaded"))
+                _isBarcodeUpdating.value = false
+                _barcodeScanResult.value = null
+            }
+        }
+    }
+
+    fun clearBarcodeUpdateStatus() {
+        _barcodeUpdateStatus.value = null
     }
 
     fun generateBarcode(content: String) {

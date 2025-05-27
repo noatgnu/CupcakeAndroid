@@ -7,6 +7,8 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import info.proteo.cupcake.data.local.dao.annotation.AnnotationDao
+import info.proteo.cupcake.data.local.dao.annotation.AnnotationFolderDao
 import info.proteo.cupcake.data.local.dao.message.MessageAttachmentDao
 import info.proteo.cupcake.data.local.dao.message.MessageDao
 import info.proteo.cupcake.data.local.dao.message.MessageRecipientDao
@@ -35,6 +37,9 @@ import info.proteo.cupcake.data.remote.service.MessageThreadServiceImpl
 import info.proteo.cupcake.data.remote.service.ReagentActionApiService
 import info.proteo.cupcake.data.remote.service.ReagentActionService
 import info.proteo.cupcake.data.remote.service.ReagentActionServiceImpl
+import info.proteo.cupcake.data.remote.service.ReagentDocumentApiService
+import info.proteo.cupcake.data.remote.service.ReagentDocumentService
+import info.proteo.cupcake.data.remote.service.ReagentDocumentServiceImpl
 import info.proteo.cupcake.data.remote.service.StorageObjectApiService
 import info.proteo.cupcake.data.remote.service.StorageObjectService
 import info.proteo.cupcake.data.remote.service.StorageObjectServiceImpl
@@ -49,6 +54,7 @@ import info.proteo.cupcake.data.repository.MessageRepositoryImpl
 import info.proteo.cupcake.data.repository.MessageThreadRepository
 import info.proteo.cupcake.data.repository.MessageThreadRepositoryImpl
 import info.proteo.cupcake.data.repository.ReagentActionRepository
+import info.proteo.cupcake.data.repository.ReagentDocumentRepository
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
@@ -360,6 +366,43 @@ object NetworkModule {
         reagentActionService: ReagentActionService
     ): ReagentActionRepository {
         return ReagentActionRepository(reagentActionService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideReagentDocumentApiService(
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        @Named("baseUrl") baseUrl: String,
+        moshi: Moshi
+    ): ReagentDocumentApiService {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
+            .create(ReagentDocumentApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideReagentDocumentService(
+        reagentDocumentApiService: ReagentDocumentApiService,
+        annotationDao: AnnotationDao,
+        annotationFolderDao: AnnotationFolderDao
+    ): ReagentDocumentService {
+        return ReagentDocumentServiceImpl(
+            reagentDocumentApiService = reagentDocumentApiService,
+            annotationDao = annotationDao,
+            annotationFolderDao = annotationFolderDao
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideReagentDocumentRepository(
+        reagentDocumentService: ReagentDocumentService
+    ): ReagentDocumentRepository {
+        return ReagentDocumentRepository(reagentDocumentService)
     }
 }
 

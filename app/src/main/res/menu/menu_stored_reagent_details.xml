@@ -23,4 +23,10 @@
         android:id="@+id/action_reserve_reagent"
         android:title="@string/reserve"
         app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_update_barcode"
+        android:title="Update Barcode"
+        android:icon="@drawable/ic_barcode_scan"
+        app:showAsAction="never" />
 </menu>

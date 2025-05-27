@@ -30,17 +30,17 @@ data class AnnotationEntity(
 @Entity(tableName = "annotation_folder_path")
 data class AnnotationFolderPathEntity(
     @PrimaryKey val id: Int,
-    val folder_name: String
+    @ColumnInfo(name = "folder_name") val folderName: String
 )
 
 @Entity(tableName = "annotation_folder")
 data class AnnotationFolderEntity(
     @PrimaryKey val id: Int,
-    val folder_name: String,
-    val created_at: String?,
-    val updated_at: String?,
-    val parent_folder: Int?,
+    @ColumnInfo(name = "folder_name") val folderName: String,
+    @ColumnInfo(name = "created_at") val createdAt: String?,
+    @ColumnInfo(name = "updated_at") val updatedAt: String?,
+    @ColumnInfo(name = "parent_folder") val parentFolder: Int?,
     val session: Int?,
     val instrument: Int?,
-    val stored_reagent: Int?
+    @ColumnInfo(name = "stored_reagent") val storedReagent: Int?
 )

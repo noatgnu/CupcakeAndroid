@@ -2,9 +2,11 @@ package info.proteo.cupcake.ui.reagent
 
 import android.app.AlertDialog
 import android.app.DatePickerDialog
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.PorterDuff
+import android.net.Uri
 import android.os.Bundle
 import android.util.Base64
 import android.util.Log
@@ -31,25 +33,35 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.switchmaterial.SwitchMaterial
+import com.google.android.material.tabs.TabLayout
 import com.google.android.material.textfield.TextInputEditText
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.R
+import info.proteo.cupcake.SessionManager
 import info.proteo.cupcake.data.remote.model.reagent.StoredReagent
 import info.proteo.cupcake.databinding.FragmentStoredReagentDetailBinding
+import info.proteo.cupcake.ui.barcode.BarcodeScannerFragment
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import androidx.core.net.toUri
 
 @AndroidEntryPoint
 class StoredReagentDetailFragment : Fragment() {
+    private var barcodeResult: String? = null
     private lateinit var actionAdapter: ReagentActionAdapter
     private var _binding: FragmentStoredReagentDetailBinding? = null
     private val binding get() = _binding!!
     private val viewModel: StoredReagentDetailViewModel by viewModels()
     private var menu: Menu? = null
+    private var progressDialog: AlertDialog? = null
+    private lateinit var documentAdapter: ReagentDocumentBrowserAdapter
+    private lateinit var sessionManager: SessionManager
+
+
     private val pickImageRequest = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let {
             try {
@@ -80,6 +92,7 @@ class StoredReagentDetailFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        sessionManager = SessionManager(requireContext())
     }
 
 
@@ -120,6 +133,7 @@ class StoredReagentDetailFragment : Fragment() {
 
         setupBarcodeFormatSpinner()
         setupReagentActionsList()
+        setupDocumentBrowser()
         setupObservers()
 
 
@@ -140,12 +154,17 @@ class StoredReagentDetailFragment : Fragment() {
             override fun onPrepareMenu(menu: Menu) {
                 menu.findItem(R.id.action_edit_photo)?.isVisible = viewModel.canEdit.value
                 menu.findItem(R.id.action_edit_reagent)?.isVisible = viewModel.canEdit.value
+                menu.findItem(R.id.action_update_barcode)?.isVisible = viewModel.canEdit.value
                 menu.findItem(R.id.action_add_reagent)?.isVisible = viewModel.canUse.value
                 menu.findItem(R.id.action_reserve_reagent)?.isVisible = viewModel.canUse.value
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
                 return when (menuItem.itemId) {
+                    R.id.action_update_barcode -> {
+                        showBarcodeUpdateDialog()
+                        true
+                    }
                     R.id.action_edit_reagent -> {
                         showEditReagentDialog()
                         true
@@ -185,9 +204,82 @@ class StoredReagentDetailFragment : Fragment() {
 
     }
 
-    private fun updateMenuVisibility() {
+    private fun showBarcodeUpdateDialog() {
+        val options = arrayOf("Scan Barcode", "Enter Manually")
 
+        AlertDialog.Builder(requireContext())
+            .setTitle("Update Barcode")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> launchBarcodeScanner()
+                    1 -> showManualBarcodeEntryDialog()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
 
+    private fun launchBarcodeScanner() {
+        val scannerFragment = BarcodeScannerFragment().apply {
+            setOnBarcodeDetectedListener { barcode ->
+                viewModel.setBarcodeResult(barcode)
+
+                activity?.runOnUiThread {
+                    parentFragmentManager.popBackStack()
+                }
+            }
+        }
+
+        parentFragmentManager.beginTransaction()
+            .add(android.R.id.content, scannerFragment, "barcode_scanner")
+            .addToBackStack("barcode_scanner")
+            .commit()
+    }
+
+    private fun showManualBarcodeEntryDialog() {
+        val dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_input_barcode, null)
+
+        val editTextBarcode = dialogView.findViewById<TextInputEditText>(R.id.editTextBarcode)
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Enter Barcode")
+            .setView(dialogView)
+            .setPositiveButton("Save") { _, _ ->
+                val barcode = editTextBarcode.text.toString().trim()
+                if (barcode.isNotEmpty()) {
+                    viewModel.setBarcodeResult(barcode)
+                } else {
+                    Snackbar.make(binding.root, "Barcode cannot be empty", Snackbar.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun updateReagentBarcode(barcode: String) {
+        viewModel.storedReagent.value?.let { reagent ->
+            val updatedReagent = reagent.copy(barcode = barcode)
+            val progressDialog = AlertDialog.Builder(requireContext())
+                .setView(R.layout.dialog_loading)
+                .setCancelable(false)
+                .create()
+            progressDialog.show()
+
+            viewLifecycleOwner.lifecycleScope.launch {
+                Log.d("StoredReagentDetailFragment", "Updating barcode: $barcode for reagent ID: ${reagent.id}")
+                viewModel.saveStoredReagent(updatedReagent).collectLatest { result ->
+                    progressDialog.dismiss()
+                    result.onSuccess {
+                        Snackbar.make(binding.root, "Barcode updated successfully", Snackbar.LENGTH_SHORT).show()
+                        viewModel.generateBarcode(barcode)
+                        Log.d("StoredReagentDetailFragment", "Barcode updated successfully: $barcode")
+                    }.onFailure { exception ->
+                        Snackbar.make(binding.root, "Failed to update barcode: ${exception.message}", Snackbar.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
     }
 
     private fun setupBarcodeFormatSpinner() {
@@ -278,6 +370,136 @@ class StoredReagentDetailFragment : Fragment() {
             viewModel.actionLoadError.collectLatest { errorMsg ->
                 if (errorMsg != null) {
                     Snackbar.make(binding.root, errorMsg, Snackbar.LENGTH_LONG).show()
+                }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.isBarcodeUpdating.collectLatest { isUpdating ->
+                if (isUpdating) {
+                    val progressDialog = AlertDialog.Builder(requireContext())
+                        .setView(R.layout.dialog_loading)
+                        .setCancelable(false)
+                        .create()
+                    progressDialog.show()
+
+                    this@StoredReagentDetailFragment.progressDialog = progressDialog
+                } else {
+                    progressDialog?.dismiss()
+                    progressDialog = null
+                }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.barcodeUpdateStatus.collectLatest { result ->
+                result?.let {
+                    it.fold(
+                        onSuccess = { message ->
+                            Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
+                        },
+                        onFailure = { exception ->
+                            Snackbar.make(binding.root, "Failed to update barcode: ${exception.message}",
+                                Snackbar.LENGTH_SHORT).show()
+                        }
+                    )
+                    viewModel.clearBarcodeUpdateStatus()
+                }
+            }
+        }
+    }
+
+    private fun setupDocumentBrowser() {
+        documentAdapter = ReagentDocumentBrowserAdapter()
+
+        binding.recyclerViewDocuments.apply {
+            adapter = documentAdapter
+            layoutManager = LinearLayoutManager(context)
+            addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
+        }
+
+        documentAdapter.setOnItemClickListener { document ->
+            document.id.let { annotationId ->
+                downloadDocument(annotationId)
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.documentFolders.collectLatest { folders ->
+                binding.tabLayout.removeAllTabs()
+                folders.forEach { folder ->
+                    binding.tabLayout.addTab(
+                        binding.tabLayout.newTab().setText(folder.name)
+                    )
+                }
+
+                if (folders.isEmpty()) {
+                    binding.emptyDocumentsView.text = "No document folders available"
+                    binding.emptyDocumentsView.visibility = View.VISIBLE
+                    binding.tabLayout.visibility = View.GONE
+                } else {
+                    binding.emptyDocumentsView.visibility = View.GONE
+                    binding.tabLayout.visibility = View.VISIBLE
+                }
+            }
+        }
+
+        binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab) {
+                arguments?.getInt("REAGENT_ID", -1)?.let { reagentId ->
+                    if (reagentId != -1) {
+                        viewModel.loadDocuments(reagentId, tab.text.toString())
+                    }
+                }
+            }
+
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+            override fun onTabReselected(tab: TabLayout.Tab?) {}
+        })
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.documents.collectLatest { documents ->
+                documentAdapter.submitList(documents)
+                binding.emptyDocumentsView.visibility =
+                    if (documents.isEmpty()) View.VISIBLE else View.GONE
+                binding.recyclerViewDocuments.visibility =
+                    if (documents.isEmpty()) View.GONE else View.VISIBLE
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.isLoadingDocuments.collectLatest { isLoading ->
+                binding.progressBarDocuments.visibility =
+                    if (isLoading) View.VISIBLE else View.GONE
+            }
+        }
+
+        arguments?.getInt("REAGENT_ID", -1)?.let { reagentId ->
+            if (reagentId != -1) {
+                viewModel.loadDocumentFolders(reagentId)
+            }
+        }
+    }
+
+    private fun downloadDocument(annotationId: Int) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.getDocumentDownloadToken(annotationId).collect { result ->
+                result.onSuccess { response ->
+                    val baseUrl = sessionManager.getBaseUrl()
+                    val downloadUrl = "${baseUrl}api/reagent_documents/download_signed?token=${response.token}"
+
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        data = downloadUrl.toUri()
+                    }
+                    try {
+                        startActivity(intent)
+                    } catch (e: Exception) {
+                        Snackbar.make(binding.root, "No app available to open this document",
+                            Snackbar.LENGTH_SHORT).show()
+                    }
+                }.onFailure { error ->
+                    Snackbar.make(binding.root, "Error downloading document: ${error.message}",
+                        Snackbar.LENGTH_LONG).show()
                 }
             }
         }
@@ -408,6 +630,8 @@ class StoredReagentDetailFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        progressDialog?.dismiss()
+        progressDialog = null
         super.onDestroyView()
         _binding = null
     }
@@ -605,6 +829,10 @@ class StoredReagentDetailFragment : Fragment() {
                 )
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
     }
 
 }
