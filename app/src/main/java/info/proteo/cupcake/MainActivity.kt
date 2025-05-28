@@ -47,6 +47,12 @@ class MainActivity : AppCompatActivity() {
                     binding.drawerLayout?.closeDrawers()
                     true
                 }
+                R.id.nav_instruments -> {
+                    val intent = Intent(this, InstrumentActivity::class.java)
+                    startActivity(intent)
+                    binding.drawerLayout?.closeDrawers()
+                    true
+                }
                 R.id.nav_messages -> {
                     val intent = Intent(this, MessageActivity::class.java)
                     startActivity(intent)
@@ -61,11 +67,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        if (savedInstanceState == null) {
-            binding.root.post {
-                navController.navigate(R.id.nav_main)
-            }
-        }
     }
 
     override fun onSupportNavigateUp(): Boolean {

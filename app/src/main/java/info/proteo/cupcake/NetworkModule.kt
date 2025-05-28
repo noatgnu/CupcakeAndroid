@@ -9,6 +9,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import info.proteo.cupcake.data.local.dao.annotation.AnnotationDao
 import info.proteo.cupcake.data.local.dao.annotation.AnnotationFolderDao
+import info.proteo.cupcake.data.local.dao.instrument.InstrumentDao
+import info.proteo.cupcake.data.local.dao.instrument.SupportInformationDao
 import info.proteo.cupcake.data.local.dao.message.MessageAttachmentDao
 import info.proteo.cupcake.data.local.dao.message.MessageDao
 import info.proteo.cupcake.data.local.dao.message.MessageRecipientDao
@@ -25,6 +27,9 @@ import info.proteo.cupcake.data.remote.interceptor.AuthInterceptor
 import info.proteo.cupcake.data.remote.service.AuthApiService
 import info.proteo.cupcake.data.remote.service.AuthService
 import info.proteo.cupcake.data.remote.service.AuthServiceImpl
+import info.proteo.cupcake.data.remote.service.InstrumentApiService
+import info.proteo.cupcake.data.remote.service.InstrumentService
+import info.proteo.cupcake.data.remote.service.InstrumentServiceImpl
 import info.proteo.cupcake.data.remote.service.LabGroupApiService
 import info.proteo.cupcake.data.remote.service.LabGroupService
 import info.proteo.cupcake.data.remote.service.LabGroupServiceImpl
@@ -49,6 +54,7 @@ import info.proteo.cupcake.data.remote.service.StoredReagentServiceImpl
 import info.proteo.cupcake.data.remote.service.UserApiService
 import info.proteo.cupcake.data.remote.service.UserService
 import info.proteo.cupcake.data.remote.service.UserServiceImpl
+import info.proteo.cupcake.data.repository.InstrumentRepository
 import info.proteo.cupcake.data.repository.MessageRepository
 import info.proteo.cupcake.data.repository.MessageRepositoryImpl
 import info.proteo.cupcake.data.repository.MessageThreadRepository
@@ -403,6 +409,39 @@ object NetworkModule {
         reagentDocumentService: ReagentDocumentService
     ): ReagentDocumentRepository {
         return ReagentDocumentRepository(reagentDocumentService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideInstrumentApiService(
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        @Named("baseUrl") baseUrl: String,
+        moshi: Moshi
+    ): InstrumentApiService {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
+            .create(InstrumentApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideInstrumentService(
+        instrumentApiService: InstrumentApiService,
+        instrumentDao: InstrumentDao,
+        supportInformationDao: SupportInformationDao
+    ): InstrumentService {
+        return InstrumentServiceImpl(instrumentApiService, instrumentDao, supportInformationDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideInstrumentRepository(
+        instrumentService: InstrumentService
+    ): InstrumentRepository {
+        return InstrumentRepository(instrumentService)
     }
 }
 

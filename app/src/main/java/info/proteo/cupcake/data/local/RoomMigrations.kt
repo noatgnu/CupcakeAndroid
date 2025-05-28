@@ -366,18 +366,21 @@ object RoomMigrations {
             )
         """)
 
-        // Instrument related
         database.execSQL("""
             CREATE TABLE IF NOT EXISTS instrument (
                 id INTEGER PRIMARY KEY NOT NULL,
-                name TEXT NOT NULL,
-                model TEXT,
-                serial_number TEXT,
-                description TEXT,
-                location TEXT,
-                enabled INTEGER NOT NULL DEFAULT 1,
+                max_days_ahead_pre_approval INTEGER,
+                max_days_within_usage_pre_approval INTEGER,
+                instrument_name TEXT NOT NULL,
+                instrument_description TEXT,
                 created_at TEXT,
-                updated_at TEXT
+                updated_at TEXT,
+                enabled INTEGER NOT NULL DEFAULT 1,
+                image TEXT,
+                last_warranty_notification_sent TEXT,
+                last_maintenance_notification_sent TEXT,
+                days_before_warranty_notification INTEGER DEFAULT 30,
+                days_before_maintenance_notification INTEGER DEFAULT 14
             )
         """)
 

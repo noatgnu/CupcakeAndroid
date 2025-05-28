@@ -22,8 +22,8 @@ class MainViewModel @Inject constructor(
     private val messageThreadRepository: MessageThreadRepository
 ) : ViewModel() {
 
-    private val _userData = MutableLiveData<User>()
-    val userData: LiveData<User> = _userData
+    private val _userData = MutableLiveData<User?>()
+    val userData: LiveData<User?> = _userData
 
     private val _messageThreads = MutableStateFlow<List<MessageThread>>(emptyList())
     val messageThreads: StateFlow<List<MessageThread>> = _messageThreads.asStateFlow()
@@ -33,20 +33,26 @@ class MainViewModel @Inject constructor(
 
     fun loadUserData() {
         viewModelScope.launch {
+            _isLoading.value = true
             try {
                 Log.d("MainViewModel", "Loading user data")
                 val user = userRepository.getUserFromActivePreference()
                 Log.d("MainViewModel", "getUserFromActivePreference returned: $user")
+                _userData.postValue(user)
 
                 if (user != null) {
                     Log.d("MainViewModel", "User data found: ${user.username}")
-                    _userData.postValue(user)
                     fetchLatestMessageThreads()
                 } else {
                     Log.d("MainViewModel", "No active user found")
+                    _messageThreads.value = emptyList()
+                    _isLoading.value = false
                 }
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Error loading user data", e)
+                _userData.postValue(null)
+                _messageThreads.value = emptyList()
+                _isLoading.value = false
             }
         }
     }
@@ -54,16 +60,19 @@ class MainViewModel @Inject constructor(
     fun fetchLatestMessageThreads() {
         Log.d("MainViewModel", "Fetching latest message threads")
         viewModelScope.launch {
-            _isLoading.value = true
+
             messageThreadRepository.getMessageThreads(
                 offset = 0,
                 limit = 5
             ).collect { result ->
-                _isLoading.value = false
                 result.onSuccess { response ->
-                    Log.d("MainViewModel", "Fetched message threads: ${response}")
+                    Log.d("MainViewModel", "Fetched message threads: ${response.results}")
                     _messageThreads.value = response.results
+                }.onFailure {
+                    Log.e("MainViewModel", "Error fetching message threads", it)
+                    _messageThreads.value = emptyList()
                 }
+                _isLoading.value = false
             }
         }
     }

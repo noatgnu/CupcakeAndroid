@@ -14,7 +14,11 @@ data class InstrumentEntity(
     @ColumnInfo(name = "created_at") val createdAt: String?,
     @ColumnInfo(name = "updated_at") val updatedAt: String?,
     val enabled: Boolean,
-    val image: String?
+    val image: String?,
+    @ColumnInfo(name = "last_warranty_notification_sent") val lastWarrantyNotificationSent: String?,
+    @ColumnInfo(name = "last_maintenance_notification_sent") val lastMaintenanceNotificationSent: String?,
+    @ColumnInfo(name = "days_before_warranty_notification") val daysBeforeWarrantyNotification: Int?,
+    @ColumnInfo(name = "days_before_maintenance_notification") val daysBeforeMaintenanceNotification: Int?
 )
 
 @Entity(tableName = "instrument_usage")

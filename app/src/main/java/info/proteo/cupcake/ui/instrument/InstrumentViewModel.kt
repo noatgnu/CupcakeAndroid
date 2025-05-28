@@ -1,0 +1,87 @@
+package info.proteo.cupcake.ui.instrument
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
+import info.proteo.cupcake.data.remote.model.instrument.Instrument
+import info.proteo.cupcake.data.repository.InstrumentRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import javax.inject.Inject
+import android.util.Log
+
+@HiltViewModel
+class InstrumentViewModel @Inject constructor(
+    private val repository: InstrumentRepository
+) : ViewModel() {
+
+    private val _instruments = MutableStateFlow<Result<LimitOffsetResponse<Instrument>>>(
+        Result.success(LimitOffsetResponse(count = 0, next = null, previous = null, results = emptyList()))
+    )
+    val instruments: StateFlow<Result<LimitOffsetResponse<Instrument>>> = _instruments
+
+    private var currentOffset = 0
+    private val pageSize = 20
+    private var hasMoreData = true
+    private var searchQuery: String? = null
+    private var ordering: String? = null
+
+    init {
+        loadInitialInstruments()
+    }
+
+    fun loadInitialInstruments() {
+        currentOffset = 0
+        loadInstruments(refresh = true)
+    }
+
+    fun loadMoreInstruments() {
+        if (hasMoreData) {
+            loadInstruments(refresh = false)
+        }
+    }
+
+    fun search(query: String?) {
+        searchQuery = query
+        loadInitialInstruments()
+    }
+
+    private fun loadInstruments(refresh: Boolean) {
+        if (refresh) {
+            currentOffset = 0
+        }
+
+        repository.getInstruments(
+            search = searchQuery,
+            ordering = ordering,
+            limit = pageSize,
+            offset = currentOffset
+        ).onEach { result ->
+            result.onSuccess { response ->
+                Log.d("InstrumentViewModel", "Fetched instruments: ${response.results.size} items")
+                if (!refresh && _instruments.value.isSuccess) {
+                    val currentList = _instruments.value.getOrNull()?.results ?: emptyList()
+                    val combinedList = currentList + response.results
+                    _instruments.value = Result.success(
+                        response.copy(results = combinedList)
+                    )
+                } else {
+                    _instruments.value = result
+                }
+
+                hasMoreData = response.next != null
+                if (hasMoreData) {
+                    currentOffset += pageSize
+                }
+            }.onFailure {
+                _instruments.value = result
+            }
+        }.catch { exception ->
+            _instruments.value = Result.failure(exception)
+        }.launchIn(viewModelScope)
+    }
+}

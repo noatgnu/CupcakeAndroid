@@ -15,5 +15,11 @@ data class SupportInformationEntity(
     @ColumnInfo(name = "warranty_start_date") val warrantyStartDate: String?,
     @ColumnInfo(name = "warranty_end_date") val warrantyEndDate: String?,
     @ColumnInfo(name = "created_at") val createdAt: String?,
-    @ColumnInfo(name = "updated_at") val updatedAt: String?
+    @ColumnInfo(name = "updated_at") val updatedAt: String?,
+    val enabled: Boolean,
+    val image: String?,
+    @ColumnInfo(name = "last_warranty_notification_sent") val lastWarrantyNotificationSent: String?,
+    @ColumnInfo(name = "last_maintenance_notification_sent") val lastMaintenanceNotificationSent: String?,
+    @ColumnInfo(name = "days_before_warranty_notification") val daysBeforeWarrantyNotification: Int?,
+    @ColumnInfo(name = "days_before_maintenance_notification") val daysBeforeMaintenanceNotification: Int?
 )

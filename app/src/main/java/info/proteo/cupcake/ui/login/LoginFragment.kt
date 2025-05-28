@@ -9,7 +9,6 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.R
@@ -46,12 +45,10 @@ class LoginFragment : Fragment() {
             }
         }
 
-        // Check if user is already logged in
         lifecycleScope.launch {
             viewModel.checkExistingLogin()
         }
 
-        // Observe login state
         viewModel.loginState.observe(viewLifecycleOwner) { state ->
             when (state) {
                 is LoginViewModel.LoginState.Loading -> {
@@ -63,7 +60,7 @@ class LoginFragment : Fragment() {
                 }
                 is LoginViewModel.LoginState.Success -> handleLoginSuccess(state.user)
                 is LoginViewModel.LoginState.Error -> showError(state.message)
-                is LoginViewModel.LoginState.ExistingLoginFound -> navigateToMainScreen()
+                is LoginViewModel.LoginState.ExistingLoginFound -> navigateToMainScreen() // If existing login found, just return
                 else -> showLoading(false)
             }
         }
@@ -72,13 +69,11 @@ class LoginFragment : Fragment() {
     private fun handleLoginSuccess(user: User) {
         showLoading(false)
 
-        // Show success with user name
         val message = "Welcome, ${user.firstName} ${user.lastName}"
         Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
 
-        // Navigate after a short delay to show the welcome message
         lifecycleScope.launch {
-            delay(800)
+            delay(800) // Keep delay for snackbar visibility
             navigateToMainScreen()
         }
     }
@@ -125,23 +120,12 @@ class LoginFragment : Fragment() {
         Toast.makeText(context, message, Toast.LENGTH_LONG).show()
     }
 
-
     private fun navigateToMainScreen() {
-        try {
-            if (findNavController().currentDestination?.id == R.id.loginFragment) {
-                findNavController().navigate(R.id.action_loginFragment_to_mainFragment)
-            } else {
-                Log.w("LoginFragment", "Navigation attempted when not at loginFragment. Current destination: ${findNavController().currentDestination?.label}")
-            }
-        } catch (e: Exception) {
-            Log.e("LoginFragment", "Navigation error", e)
-        }
+        activity?.finish()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
-
-
 }

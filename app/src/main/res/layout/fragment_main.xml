@@ -66,4 +66,15 @@
         app:layout_constraintBottom_toBottomOf="@id/recyclerViewThreads"
         app:layout_constraintStart_toStartOf="@id/recyclerViewThreads"
         app:layout_constraintEnd_toEndOf="@id/recyclerViewThreads" />
+
+    <Button
+        android:id="@+id/button_login"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="Log in"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

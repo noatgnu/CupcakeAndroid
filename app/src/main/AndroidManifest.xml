@@ -22,21 +22,23 @@
         android:theme="@style/Theme.Cupcake"
         tools:targetApi="31">
         <activity
-            android:name=".MessageActivity"
-            android:windowSoftInputMode="adjustResize"
+            android:name=".InstrumentActivity"
             android:exported="false"
             android:theme="@style/Theme.Cupcake.NoActionBar"
             />
+        <activity
+            android:name=".MessageActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Cupcake.NoActionBar"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".StoredReagentActivity"
             android:exported="false"
-            android:theme="@style/Theme.Cupcake.NoActionBar"
-            />
+            android:theme="@style/Theme.Cupcake.NoActionBar" />
         <activity
             android:name=".StorageActivity"
             android:exported="false"
-            android:theme="@style/Theme.Cupcake.NoActionBar"
-            />
+            android:theme="@style/Theme.Cupcake.NoActionBar" />
         <activity
             android:name=".SplashActivity"
             android:exported="true"

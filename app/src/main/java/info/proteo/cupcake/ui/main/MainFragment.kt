@@ -1,7 +1,7 @@
 package info.proteo.cupcake.ui.main
 
+import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.Menu
@@ -18,6 +18,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
+import info.proteo.cupcake.LoginActivity
 import info.proteo.cupcake.R
 import info.proteo.cupcake.data.remote.model.message.MessageThread
 import info.proteo.cupcake.databinding.FragmentMainBinding
@@ -49,6 +50,11 @@ class MainFragment : Fragment() {
         setupClickListeners()
     }
 
+    override fun onResume() {
+        super.onResume()
+        viewModel.loadUserData()
+    }
+
     private fun setupRecyclerView() {
         threadAdapter = MessageThreadAdapter { thread ->
             navigateToMessageDetail(thread)
@@ -63,13 +69,35 @@ class MainFragment : Fragment() {
 
     private fun setupObservers() {
         viewModel.userData.observe(viewLifecycleOwner) { user ->
-            binding.textViewUsername.text = user.username
+            if (user != null) {
+                binding.textViewUsername.text = user.username
+                binding.buttonLogin.visibility = View.GONE
+
+                binding.textViewRecentMessages.visibility = View.VISIBLE
+                binding.textViewViewAll.visibility = View.VISIBLE
+                binding.recyclerViewThreads.visibility = View.VISIBLE
+
+            } else {
+                binding.textViewUsername.text = ""
+                binding.buttonLogin.visibility = View.VISIBLE
+
+                binding.textViewRecentMessages.visibility = View.GONE
+                binding.textViewViewAll.visibility = View.GONE
+                binding.recyclerViewThreads.visibility = View.GONE
+                threadAdapter.submitList(emptyList())
+
+                binding.textViewEmptyState.text = getString(R.string.please_log_in)
+                binding.textViewEmptyState.visibility = View.VISIBLE
+                binding.progressBar.visibility = View.GONE
+            }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.messageThreads.collect { threads ->
-                    updateMessageThreadsUI(threads)
+                    if (viewModel.userData.value != null) {
+                        updateMessageThreadsUI(threads)
+                    }
                 }
             }
         }
@@ -77,34 +105,45 @@ class MainFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.isLoading.collect { isLoading ->
-                    binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+                    if (viewModel.userData.value != null) {
+                        binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+
+                        if (!isLoading && viewModel.messageThreads.value.isEmpty()) {
+                            updateMessageThreadsUI(viewModel.messageThreads.value)
+                        }
+                    } else {
+                        binding.progressBar.visibility = View.GONE
+                    }
                 }
             }
         }
-
-        viewModel.loadUserData()
-        Log.d("MainFragment", "User data loaded: ${viewModel.userData.value?.username}")
     }
 
     private fun setupClickListeners() {
         binding.textViewViewAll.setOnClickListener {
-            findNavController().navigate(R.id.action_mainFragment_to_messageActivity)
+            if (viewModel.userData.value != null) {
+                findNavController().navigate(R.id.action_mainFragment_to_messageActivity)
+            }
+        }
+        binding.buttonLogin.setOnClickListener {
+            val intent = Intent(requireContext(), LoginActivity::class.java)
+            startActivity(intent)
         }
     }
 
     private fun updateMessageThreadsUI(threads: List<MessageThread>) {
         threadAdapter.submitList(threads)
-
-        binding.textViewEmptyState.visibility = if (threads.isEmpty() && !viewModel.isLoading.value) {
-            View.VISIBLE
-        } else {
-            View.GONE
+        if (viewModel.userData.value != null) {
+            binding.textViewEmptyState.text = getString(R.string.no_messages_yet)
+            binding.textViewEmptyState.visibility = if (threads.isEmpty() && !viewModel.isLoading.value) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
         }
     }
 
-
     private fun navigateToMessageDetail(thread: MessageThread) {
-        // Navigate to thread detail screen with thread ID
         val bundle = Bundle().apply {
             putInt("threadId", thread.id)
         }

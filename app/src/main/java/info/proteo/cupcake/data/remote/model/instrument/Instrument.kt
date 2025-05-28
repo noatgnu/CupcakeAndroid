@@ -1,9 +1,11 @@
 package info.proteo.cupcake.data.remote.model.instrument
 
 import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 import info.proteo.cupcake.data.remote.model.annotation.AnnotationFolder
 import info.proteo.cupcake.data.remote.model.metadatacolumn.MetadataColumn
 
+@JsonClass(generateAdapter = true)
 data class Instrument(
     val id: Int,
     @Json(name = "max_days_ahead_pre_approval") val maxDaysAheadPreApproval: Int?,
@@ -16,5 +18,9 @@ data class Instrument(
     @Json(name = "metadata_columns") val metadataColumns: List<MetadataColumn>?,
     @Json(name = "annotation_folders") val annotationFolders: List<AnnotationFolder>?,
     val image: String?,
-    @Json(name = "support_information") val supportInformation: List<SupportInformation>?
+    @Json(name = "support_information") val supportInformation: List<SupportInformation>?,
+    @Json(name = "last_warranty_notification_sent") val lastWarrantyNotificationSent: String?,
+    @Json(name = "last_maintenance_notification_sent") val lastMaintenanceNotificationSent: String?,
+    @Json(name = "days_before_warranty_notification") val daysBeforeWarrantyNotification: Int?,
+    @Json(name = "days_before_maintenance_notification") val daysBeforeMaintenanceNotification: Int?
 )

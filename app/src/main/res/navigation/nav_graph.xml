@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/loginFragment">
+    app:startDestination="@id/nav_main">
 
     <fragment
         android:id="@+id/nav_settings"
@@ -86,9 +86,20 @@
             app:argType="integer" />
     </fragment>
 
+    <fragment
+        android:id="@+id/nav_instruments"
+        android:name="info.proteo.cupcake.ui.instrument.InstrumentFragment"
+        android:label="Instruments"
+        tools:layout="@layout/fragment_instrument" />
+
     <activity
         android:id="@+id/messageActivity"
-        android:name="info.proteo.cupcake.ui.message.MessageActivity"
+        android:name="info.proteo.cupcake.MessageActivity"
         android:label="Message Threads"/>
+    <activity
+        android:id="@+id/instrumentActivity"
+        android:name="info.proteo.cupcake.InstrumentActivity"
+        android:label="Instrument Details"/>
+
 
 </navigation>
