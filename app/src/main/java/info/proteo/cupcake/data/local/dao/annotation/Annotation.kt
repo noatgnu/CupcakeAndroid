@@ -39,6 +39,18 @@ interface AnnotationDao {
 
     @Query("DELETE FROM annotation")
     suspend fun deleteAll()
+
+    @Query("SELECT COUNT(*) FROM annotation")
+    fun countAll(): Flow<Int>
+
+    @Query("SELECT * FROM annotation LIMIT :limit OFFSET :offset")
+    fun getAllPaginated(limit: Int, offset: Int): Flow<List<AnnotationEntity>>
+
+    @Query("SELECT * FROM annotation WHERE folder_id = :folderId ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    fun getByFolderIdPaginated(folderId: Int, limit: Int, offset: Int): Flow<List<AnnotationEntity>>
+
+    @Query("SELECT COUNT(*) FROM annotation WHERE folder_id = :folderId")
+    fun countByFolderId(folderId: Int): Flow<Int>
 }
 
 @Dao

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/instrument_nav_graph"
+    app:startDestination="@id/instrumentFragment">
+
+    <fragment
+        android:id="@+id/instrumentFragment"
+        android:name="info.proteo.cupcake.ui.instrument.InstrumentFragment"
+        android:label="Instruments"
+        tools:layout="@layout/fragment_instrument" >
+        <action
+            android:id="@+id/action_instrumentFragment_to_instrumentDetailFragment"
+            app:destination="@id/instrumentDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/instrumentDetailFragment"
+        android:name="info.proteo.cupcake.ui.instrument.InstrumentDetailFragment"
+        android:label="Instrument Details"
+        tools:layout="@layout/fragment_instrument_detail">
+        <argument
+            android:name="instrumentId"
+            app:argType="integer" />
+    </fragment>
+</navigation>

@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.instrument.InstrumentDetailFragment">
+
+    <LinearLayout
+        android:id="@+id/layout_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <ImageView
+            android:id="@+id/instrument_detail_image"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:scaleType="centerCrop"
+            android:visibility="gone"
+            android:contentDescription="Instrument Image"
+            tools:src="@drawable/ic_placeholder_image" />
+
+        <TextView
+            android:id="@+id/instrument_detail_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"
+            tools:text="Instrument Name" />
+
+        <TextView
+            android:id="@+id/instrument_detail_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
+            tools:text="Detailed instrument description goes here." />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Details"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6" />
+
+        <TableLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp">
+
+            <TableRow android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Created At"
+                    android:textAppearance="?attr/textAppearanceBody2"
+                    android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/instrument_detail_created_at"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="2"
+                    android:textAppearance="?attr/textAppearanceBody2"
+                    tools:text="N/A" />
+            </TableRow>
+
+            <TableRow android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Updated At"
+                    android:textAppearance="?attr/textAppearanceBody2"
+                    android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/instrument_detail_updated_at"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="2"
+                    android:textAppearance="?attr/textAppearanceBody2"
+                    tools:text="N/A" />
+            </TableRow>
+
+            <TableRow android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Max Pre-approval (days)"
+                    android:textAppearance="?attr/textAppearanceBody2"
+                    android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/instrument_detail_max_preapproval_days"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="2"
+                    android:textAppearance="?attr/textAppearanceBody2"
+                    tools:text="N/A" />
+            </TableRow>
+
+            <TableRow android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Usage Window (days)"
+                    android:textAppearance="?attr/textAppearanceBody2"
+                    android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/instrument_detail_max_usage_preapproval_window"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="2"
+                    android:textAppearance="?attr/textAppearanceBody2"
+                    tools:text="N/A" />
+            </TableRow>
+        </TableLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Annotation Folders"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6" />
+
+        <!-- Remove or comment out the old LinearLayout for annotation folders -->
+        <!-- <LinearLayout
+            android:id="@+id/layout_annotation_folders_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="8dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"/> -->
+
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tab_layout_annotation_folders"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:tabMode="scrollable"
+            android:visibility="gone"
+            tools:visibility="visible"/>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:minHeight="200dp">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_view_annotations"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                tools:listitem="@layout/item_instrument_annotation"
+                tools:visibility="visible"/>
+
+            <ProgressBar
+                android:id="@+id/progress_bar_annotations"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/text_view_empty_annotations"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="No annotations in this folder."
+                android:visibility="gone"
+                tools:visibility="visible"/>
+        </FrameLayout>
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="24dp">
+
+            <Button
+                android:id="@+id/button_edit_instrument"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Edit Instrument" />
+
+            <Button
+                android:id="@+id/button_view_maintenance"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="View Maintenance History" />
+
+            <Button
+                android:id="@+id/button_manage_access"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Manage Access" />
+
+            <Button
+                android:id="@+id/button_attach_document"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Attach Document" />
+
+            <Button
+                android:id="@+id/button_delete_instrument"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textColor="?attr/colorError"
+                app:strokeColor="?attr/colorError"
+                android:text="Delete Instrument" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

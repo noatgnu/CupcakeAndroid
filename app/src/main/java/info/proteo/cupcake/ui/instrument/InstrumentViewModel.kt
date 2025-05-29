@@ -26,7 +26,8 @@ class InstrumentViewModel @Inject constructor(
 
     private var currentOffset = 0
     private val pageSize = 20
-    private var hasMoreData = true
+    private var _hasMoreData = true
+    val hasMoreData: Boolean get() = _hasMoreData
     private var searchQuery: String? = null
     private var ordering: String? = null
 
@@ -36,11 +37,12 @@ class InstrumentViewModel @Inject constructor(
 
     fun loadInitialInstruments() {
         currentOffset = 0
+        _hasMoreData = true
         loadInstruments(refresh = true)
     }
 
     fun loadMoreInstruments() {
-        if (hasMoreData) {
+        if (_hasMoreData) {
             loadInstruments(refresh = false)
         }
     }
@@ -73,8 +75,8 @@ class InstrumentViewModel @Inject constructor(
                     _instruments.value = result
                 }
 
-                hasMoreData = response.next != null
-                if (hasMoreData) {
+                _hasMoreData = response.next != null
+                if (_hasMoreData) {
                     currentOffset += pageSize
                 }
             }.onFailure {

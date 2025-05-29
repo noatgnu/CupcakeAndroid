@@ -9,6 +9,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import info.proteo.cupcake.data.local.dao.annotation.AnnotationDao
 import info.proteo.cupcake.data.local.dao.annotation.AnnotationFolderDao
+import info.proteo.cupcake.data.local.dao.annotation.AnnotationFolderPathDao
 import info.proteo.cupcake.data.local.dao.instrument.InstrumentDao
 import info.proteo.cupcake.data.local.dao.instrument.SupportInformationDao
 import info.proteo.cupcake.data.local.dao.message.MessageAttachmentDao
@@ -22,8 +23,12 @@ import info.proteo.cupcake.data.local.dao.storage.StorageObjectDao
 import info.proteo.cupcake.data.local.dao.user.LabGroupDao
 import info.proteo.cupcake.data.local.dao.user.UserDao
 import info.proteo.cupcake.data.local.dao.user.UserPreferencesDao
+import info.proteo.cupcake.data.model.api.user.User
 import info.proteo.cupcake.data.remote.LimitOffsetResponseAdapterFactory
 import info.proteo.cupcake.data.remote.interceptor.AuthInterceptor
+import info.proteo.cupcake.data.remote.service.AnnotationApiService
+import info.proteo.cupcake.data.remote.service.AnnotationService
+import info.proteo.cupcake.data.remote.service.AnnotationServiceImpl
 import info.proteo.cupcake.data.remote.service.AuthApiService
 import info.proteo.cupcake.data.remote.service.AuthService
 import info.proteo.cupcake.data.remote.service.AuthServiceImpl
@@ -54,6 +59,7 @@ import info.proteo.cupcake.data.remote.service.StoredReagentServiceImpl
 import info.proteo.cupcake.data.remote.service.UserApiService
 import info.proteo.cupcake.data.remote.service.UserService
 import info.proteo.cupcake.data.remote.service.UserServiceImpl
+import info.proteo.cupcake.data.repository.AnnotationRepository
 import info.proteo.cupcake.data.repository.InstrumentRepository
 import info.proteo.cupcake.data.repository.MessageRepository
 import info.proteo.cupcake.data.repository.MessageRepositoryImpl
@@ -61,6 +67,7 @@ import info.proteo.cupcake.data.repository.MessageThreadRepository
 import info.proteo.cupcake.data.repository.MessageThreadRepositoryImpl
 import info.proteo.cupcake.data.repository.ReagentActionRepository
 import info.proteo.cupcake.data.repository.ReagentDocumentRepository
+import info.proteo.cupcake.data.repository.StoredReagentRepository
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
@@ -231,6 +238,14 @@ object NetworkModule {
         )
     }
 
+    @Provides
+    @Singleton
+    fun provideStoredReagentRepository(
+        storedReagentService: StoredReagentService
+    ): StoredReagentRepository {
+        return StoredReagentRepository(storedReagentService)
+    }
+
 
     @Provides
     @Singleton
@@ -394,12 +409,16 @@ object NetworkModule {
     fun provideReagentDocumentService(
         reagentDocumentApiService: ReagentDocumentApiService,
         annotationDao: AnnotationDao,
-        annotationFolderDao: AnnotationFolderDao
+        annotationFolderDao: AnnotationFolderDao,
+        userDao: UserDao,
+        annotationFolderPathDao: AnnotationFolderPathDao
     ): ReagentDocumentService {
         return ReagentDocumentServiceImpl(
             reagentDocumentApiService = reagentDocumentApiService,
             annotationDao = annotationDao,
-            annotationFolderDao = annotationFolderDao
+            annotationFolderDao = annotationFolderDao,
+            userDao = userDao,
+            annotationFolderPathDao = annotationFolderPathDao
         )
     }
 
@@ -442,6 +461,43 @@ object NetworkModule {
         instrumentService: InstrumentService
     ): InstrumentRepository {
         return InstrumentRepository(instrumentService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAnnotationApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): AnnotationApiService {
+        val converter = MoshiConverterFactory.create(moshi)
+            .asLenient()
+
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(converter)
+            .build()
+            .create(AnnotationApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAnnotationService(
+        apiService: AnnotationApiService,
+        annotationDao: AnnotationDao,
+        userDao: UserDao,
+        annotationFolderPathDao: AnnotationFolderPathDao
+    ): AnnotationService {
+        return AnnotationServiceImpl(apiService, annotationDao, userDao, annotationFolderPathDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAnnotationRepository(
+        annotationService: AnnotationService
+    ): AnnotationRepository {
+        return AnnotationRepository(annotationService)
     }
 }
 

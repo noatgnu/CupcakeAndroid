@@ -10,9 +10,12 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
+// Instrument import is no longer needed for navigation action if passing only ID
 import info.proteo.cupcake.databinding.FragmentInstrumentBinding
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -24,7 +27,7 @@ class InstrumentFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: InstrumentViewModel by viewModels()
-    private lateinit var adapter: InstrumentAdapter
+    private lateinit var instrumentAdapter: InstrumentAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -43,10 +46,18 @@ class InstrumentFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        adapter = InstrumentAdapter()
+        instrumentAdapter = InstrumentAdapter { instrumentId -> // Listener now receives instrumentId (Int)
+            navigateToDetail(instrumentId)
+        }
         binding.recyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext())
-            adapter = this@InstrumentFragment.adapter
+            adapter = instrumentAdapter
+
+            val dividerItemDecoration = DividerItemDecoration(
+                requireContext(),
+                (layoutManager as LinearLayoutManager).orientation
+            )
+            addItemDecoration(dividerItemDecoration)
 
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -57,12 +68,17 @@ class InstrumentFragment : Fragment() {
                     val firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
 
                     if ((visibleItemCount + firstVisibleItem) >= totalItemCount - 5
-                        && firstVisibleItem >= 0 && dy > 0) {
+                        && firstVisibleItem >= 0 && dy > 0 && viewModel.hasMoreData) {
                         viewModel.loadMoreInstruments()
                     }
                 }
             })
         }
+    }
+
+    private fun navigateToDetail(instrumentId: Int) { // Parameter is now instrumentId (Int)
+        val action = InstrumentFragmentDirections.actionInstrumentFragmentToInstrumentDetailFragment(instrumentId)
+        findNavController().navigate(action)
     }
 
     private fun setupSwipeRefresh() {
@@ -78,7 +94,7 @@ class InstrumentFragment : Fragment() {
                     binding.swipeRefreshLayout.isRefreshing = false
 
                     result.onSuccess { response ->
-                        adapter.submitList(response.results)
+                        instrumentAdapter.submitList(response.results)
                         binding.emptyView.visibility =
                             if (response.results.isEmpty()) View.VISIBLE else View.GONE
                     }.onFailure { error ->
@@ -93,6 +109,7 @@ class InstrumentFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        binding.recyclerView.adapter = null
         _binding = null
     }
 }

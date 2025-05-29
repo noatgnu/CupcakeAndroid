@@ -24,7 +24,9 @@ data class AnnotationEntity(
     @ColumnInfo(name = "summary") val summary: String?,
     @ColumnInfo(name = "fixed") val fixed: Boolean?,
     @ColumnInfo(name = "user_id") val userId: Int?,
-    @ColumnInfo(name = "stored_reagent") val storedReagent: Int?
+    @ColumnInfo(name = "stored_reagent") val storedReagent: Int?,
+    @ColumnInfo(name = "folder_id") val folderId: Int?
+
 )
 
 @Entity(tableName = "annotation_folder_path")

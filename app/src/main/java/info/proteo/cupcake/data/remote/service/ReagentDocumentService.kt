@@ -2,9 +2,14 @@ package info.proteo.cupcake.data.remote.service
 
 import info.proteo.cupcake.data.local.dao.annotation.AnnotationDao
 import info.proteo.cupcake.data.local.dao.annotation.AnnotationFolderDao
+import info.proteo.cupcake.data.local.dao.annotation.AnnotationFolderPathDao
+import info.proteo.cupcake.data.local.dao.user.UserDao
 import info.proteo.cupcake.data.local.entity.annotation.AnnotationEntity
+import info.proteo.cupcake.data.local.entity.annotation.AnnotationFolderPathEntity
 import info.proteo.cupcake.data.remote.model.annotation.Annotation
 import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
+import info.proteo.cupcake.data.remote.model.annotation.AnnotationFolderPath
+import info.proteo.cupcake.data.remote.model.user.UserBasic
 import kotlinx.coroutines.flow.first
 import retrofit2.http.GET
 import retrofit2.http.Query
@@ -58,7 +63,9 @@ interface ReagentDocumentService {
 class ReagentDocumentServiceImpl @Inject constructor(
     private val reagentDocumentApiService: ReagentDocumentApiService,
     private val annotationDao: AnnotationDao,
-    private val annotationFolderDao: AnnotationFolderDao
+    private val annotationFolderDao: AnnotationFolderDao,
+    private val userDao: UserDao,
+    private val annotationFolderPathDao: AnnotationFolderPathDao
 ) : ReagentDocumentService {
 
     override suspend fun getReagentDocuments(
@@ -89,7 +96,28 @@ class ReagentDocumentServiceImpl @Inject constructor(
                     cachedAnnotations
                 }
 
-                val domainObjects = filteredAnnotations.map { it.toDomainModel() }
+                val domainObjects = filteredAnnotations.map { annotationEntity ->
+                    val user = annotationEntity.userId?.let { userId ->
+                        val userData = userDao.getById(userId)
+                        if (userData == null) {
+                            null
+                        } else {
+                            UserBasic(
+                                id = userData.id,
+                                username = userData.username,
+                                firstName = userData.firstName,
+                                lastName = userData.lastName
+                            )
+                        }
+
+                    }
+                    val folderPathList = annotationEntity.folderId?.let { folderId ->
+                        annotationFolderPathDao.getById(folderId)?.let { folderPathEntity ->
+                            listOf(folderPathEntity.toDomain())
+                        }
+                    }
+                    annotationEntity.toDomain(user = user, folderPathList = folderPathList)
+                }
                 val typedResponse = LimitOffsetResponse<Annotation>(
                     count = domainObjects.size,
                     next = null,
@@ -155,11 +183,12 @@ class ReagentDocumentServiceImpl @Inject constructor(
             summary = annotation.summary,
             fixed = annotation.fixed,
             userId = annotation.user?.id,
-            storedReagent = annotation.storedReagent
+            storedReagent = annotation.storedReagent,
+            folderId = annotation.folder.first().id
         )
     }
 
-    private fun AnnotationEntity.toDomainModel(): Annotation {
+    fun AnnotationEntity.toDomain(user: UserBasic?, folderPathList: List<AnnotationFolderPath>?): Annotation {
         return Annotation(
             id = id,
             step = step,
@@ -175,13 +204,28 @@ class ReagentDocumentServiceImpl @Inject constructor(
             translation = translation,
             scratched = scratched,
             annotationName = annotationName,
-            folder = null,
+            folder = folderPathList ?: emptyList(),
             summary = summary,
             instrumentUsage = null,
             metadataColumns = null,
             fixed = fixed,
-            user = null,
+            user = user,
             storedReagent = storedReagent
+        )
+    }
+
+    fun AnnotationFolderPath.toEntity(): AnnotationFolderPathEntity {
+        return AnnotationFolderPathEntity(
+            id = this.id,
+            folderName = this.folderName
+        )
+    }
+
+
+    fun AnnotationFolderPathEntity.toDomain(): AnnotationFolderPath {
+        return AnnotationFolderPath(
+            id = id,
+            folderName = folderName
         )
     }
 

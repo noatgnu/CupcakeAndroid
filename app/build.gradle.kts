@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     id("com.google.devtools.ksp") version "2.1.0-1.0.29"
     alias(libs.plugins.hilt)
-    id ("androidx.navigation.safeargs.kotlin") version "2.5.3" apply false
+    id ("androidx.navigation.safeargs.kotlin")
 }
 
 hilt {
@@ -86,6 +86,8 @@ dependencies {
     implementation(libs.barcode.scanning)
 
     implementation(libs.richeditor.android)
+
+    implementation(libs.coil)
 
     implementation (libs.androidx.navigation.fragment.ktx.v277)
     implementation (libs.androidx.navigation.ui.ktx.v277)

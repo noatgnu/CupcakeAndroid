@@ -4,13 +4,18 @@ import android.os.Bundle
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.navigation.NavController
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.ui.setupActionBarWithNavController
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.databinding.ActivityInstrumentBinding
-import info.proteo.cupcake.ui.instrument.InstrumentFragment
 
 @AndroidEntryPoint
 class InstrumentActivity : AppCompatActivity() {
     private lateinit var binding: ActivityInstrumentBinding
+    private lateinit var navController: NavController
+    private lateinit var appBarConfiguration: AppBarConfiguration
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -18,27 +23,31 @@ class InstrumentActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         setSupportActionBar(binding.toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = "Instruments"
+
+        val navHostFragment =
+            supportFragmentManager.findFragmentById(R.id.instrument_nav_host_fragment) as NavHostFragment
+        navController = navHostFragment.navController
+
+        appBarConfiguration = AppBarConfiguration(navController.graph)
+        setupActionBarWithNavController(navController, appBarConfiguration)
+
         binding.toolbar.navigationIcon?.setTint(
             ContextCompat.getColor(this, R.color.white)
         )
 
-        initializeInstruments()
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        return navController.navigateUp() || super.onSupportNavigateUp()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == android.R.id.home) {
-            finish()
+            if (!navController.popBackStack()) {
+                finish()
+            }
             return true
         }
         return super.onOptionsItemSelected(item)
-    }
-
-    private fun initializeInstruments() {
-        val instrumentFragment = InstrumentFragment()
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.instrument_container, instrumentFragment)
-            .commit()
     }
 }
