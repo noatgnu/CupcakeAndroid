@@ -57,6 +57,7 @@ dependencies {
     implementation(libs.moshi)
     implementation(libs.moshi.kotlin)
     implementation(libs.converter.moshi)
+    implementation(libs.androidx.ui.android)
     ksp("com.squareup.moshi:moshi-kotlin-codegen:${libs.versions.moshi.get()}")
 
     // Reactive: LiveData

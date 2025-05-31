@@ -87,4 +87,6 @@
     <string name="error_contact_name_empty">Error empty contact name</string>
     <string name="title_edit_contact">Edit contact</string>
     <string name="title_add_contact">Add contact</string>
+    <string name="button_remove_description">Delete contact</string>
+    <string name="button_edit_description">Edit contact</string>
 </resources>
