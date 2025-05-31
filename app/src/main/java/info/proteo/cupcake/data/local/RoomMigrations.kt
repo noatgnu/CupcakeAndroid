@@ -72,14 +72,7 @@ object RoomMigrations {
         database.execSQL("""
             CREATE TABLE IF NOT EXISTS external_contact (
                 id INTEGER PRIMARY KEY NOT NULL,
-                user INTEGER NOT NULL,
-                name TEXT NOT NULL,
-                organization TEXT,
-                details_id INTEGER,
-                created_at TEXT,
-                updated_at TEXT,
-                FOREIGN KEY (user) REFERENCES user(id) ON DELETE CASCADE,
-                FOREIGN KEY (details_id) REFERENCES external_contact_details(id) ON DELETE SET NULL
+                contact_value TEXT
             )
         """)
 
@@ -87,10 +80,36 @@ object RoomMigrations {
         database.execSQL("""
             CREATE TABLE IF NOT EXISTS support_information (
                 id INTEGER PRIMARY KEY NOT NULL,
-                key TEXT NOT NULL UNIQUE,
-                value TEXT NOT NULL,
+                vendor_name TEXT,
+                manufacturer_name TEXT,
+                serial_number TEXT,
+                maintenance_frequency_days INTEGER,
+                location_id INTEGER,
+                warranty_start_date TEXT,
+                warranty_end_date TEXT,
                 created_at TEXT,
-                updated_at TEXT
+                updated_at TEXT,
+                FOREIGN KEY (location_id) REFERENCES storage_object(id) ON DELETE SET NULL
+            )
+        """)
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS support_information_vendor_contact (
+                support_information_id INTEGER NOT NULL,
+                contact_id INTEGER NOT NULL,
+                PRIMARY KEY(support_information_id, contact_id),
+                FOREIGN KEY (support_information_id) REFERENCES support_information(id) ON DELETE CASCADE,
+                FOREIGN KEY (contact_id) REFERENCES external_contact(id) ON DELETE CASCADE
+            )
+        """)
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS support_information_manufacturer_contact (
+                support_information_id INTEGER NOT NULL,
+                contact_id INTEGER NOT NULL,
+                PRIMARY KEY(support_information_id, contact_id),
+                FOREIGN KEY (support_information_id) REFERENCES support_information(id) ON DELETE CASCADE,
+                FOREIGN KEY (contact_id) REFERENCES external_contact(id) ON DELETE CASCADE
             )
         """)
 
@@ -698,5 +717,7 @@ object RoomMigrations {
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_protocol_tag_protocol ON protocol_tag(protocol)")
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_message_thread ON message(thread_id)")
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_message_recipient_message ON message_recipient(message_id)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_support_info_vendor_contact ON support_information_vendor_contact(support_information_id)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_support_info_manufacturer_contact ON support_information_manufacturer_contact(support_information_id)")
     }
 }

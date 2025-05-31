@@ -78,4 +78,13 @@
     <string name="shareable">Shareable</string>
     <string name="please_log_in">Please log in</string>
     <string name="instrument_image_description">Instrument image</string>
+    <string name="tab_vendor_contacts">Vendor</string>
+    <string name="tab_manufacturer_contacts">Manufacturer</string>
+    <string name="dialog_title_remove_contact">Remove Contact</string>
+    <string name="dialog_message_remove_contact_confirmation">Are you sure you want to remove this contact?</string>
+    <string name="action_remove">Remove</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="error_contact_name_empty">Error empty contact name</string>
+    <string name="title_edit_contact">Edit contact</string>
+    <string name="title_add_contact">Add contact</string>
 </resources>

@@ -10,6 +10,7 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.databinding.ActivityInstrumentBinding
+import info.proteo.cupcake.ui.main.MainFragment
 
 @AndroidEntryPoint
 class InstrumentActivity : AppCompatActivity() {
@@ -28,7 +29,9 @@ class InstrumentActivity : AppCompatActivity() {
             supportFragmentManager.findFragmentById(R.id.instrument_nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
 
-        appBarConfiguration = AppBarConfiguration(navController.graph)
+        appBarConfiguration = AppBarConfiguration(
+            setOf(),
+        )
         setupActionBarWithNavController(navController, appBarConfiguration)
 
         binding.toolbar.navigationIcon?.setTint(
@@ -50,4 +53,5 @@ class InstrumentActivity : AppCompatActivity() {
         }
         return super.onOptionsItemSelected(item)
     }
+
 }

@@ -45,9 +45,6 @@ interface ExternalContactDao {
     @Query("SELECT * FROM external_contact WHERE id = :id")
     suspend fun getById(id: Int): ExternalContactEntity?
 
-    @Query("SELECT * FROM external_contact WHERE user = :userId")
-    fun getByUserId(userId: Int): Flow<List<ExternalContactEntity>>
-
     @Query("DELETE FROM external_contact")
     suspend fun deleteAll()
 }

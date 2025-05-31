@@ -10,6 +10,7 @@ import dagger.hilt.components.SingletonComponent
 import info.proteo.cupcake.data.local.dao.annotation.AnnotationDao
 import info.proteo.cupcake.data.local.dao.annotation.AnnotationFolderDao
 import info.proteo.cupcake.data.local.dao.annotation.AnnotationFolderPathDao
+import info.proteo.cupcake.data.local.dao.instrument.ExternalContactDao
 import info.proteo.cupcake.data.local.dao.instrument.InstrumentDao
 import info.proteo.cupcake.data.local.dao.instrument.SupportInformationDao
 import info.proteo.cupcake.data.local.dao.message.MessageAttachmentDao
@@ -56,6 +57,9 @@ import info.proteo.cupcake.data.remote.service.StorageObjectServiceImpl
 import info.proteo.cupcake.data.remote.service.StoredReagentApiService
 import info.proteo.cupcake.data.remote.service.StoredReagentService
 import info.proteo.cupcake.data.remote.service.StoredReagentServiceImpl
+import info.proteo.cupcake.data.remote.service.SupportInformationApiService
+import info.proteo.cupcake.data.remote.service.SupportInformationService
+import info.proteo.cupcake.data.remote.service.SupportInformationServiceImpl
 import info.proteo.cupcake.data.remote.service.UserApiService
 import info.proteo.cupcake.data.remote.service.UserService
 import info.proteo.cupcake.data.remote.service.UserServiceImpl
@@ -68,6 +72,7 @@ import info.proteo.cupcake.data.repository.MessageThreadRepositoryImpl
 import info.proteo.cupcake.data.repository.ReagentActionRepository
 import info.proteo.cupcake.data.repository.ReagentDocumentRepository
 import info.proteo.cupcake.data.repository.StoredReagentRepository
+import info.proteo.cupcake.data.repository.SupportInformationRepository
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
@@ -498,6 +503,46 @@ object NetworkModule {
         annotationService: AnnotationService
     ): AnnotationRepository {
         return AnnotationRepository(annotationService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSupportInformationApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): SupportInformationApiService {
+        val converter = MoshiConverterFactory.create(moshi)
+            .asLenient()
+
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(converter)
+            .build()
+            .create(SupportInformationApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSupportInformationService(
+        apiService: SupportInformationApiService,
+        supportInformationDao: SupportInformationDao,
+        externalContactDao: ExternalContactDao
+    ): SupportInformationService {
+        return SupportInformationServiceImpl(
+            apiService,
+            supportInformationDao,
+            externalContactDao
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideSupportInformationRepository(
+        supportInformationService: SupportInformationService
+    ): SupportInformationRepository {
+        return SupportInformationRepository(supportInformationService)
     }
 }
 

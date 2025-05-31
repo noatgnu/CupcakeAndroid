@@ -15,8 +15,7 @@ data class ExternalContactDetailsEntity(
 @Entity(tableName = "external_contact")
 data class ExternalContactEntity(
     @PrimaryKey val id: Int,
-    val user: Int,
     @ColumnInfo(name = "contact_value") val contactName: String?
-    // contact_details handled with relation
 )
+
 

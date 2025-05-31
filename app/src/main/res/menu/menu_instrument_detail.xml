@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_edit_instrument"
+        android:title="Edit Instrument"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_update_image"
+        android:title="Update Image"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_view_support_info"
+        android:title="Support Information"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_view_maintenance"
+        android:title="View Maintenance History"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_manage_access"
+        android:title="Manage Access"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_attach_document"
+        android:title="Attach Document"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_delete_instrument"
+        android:title="Delete Instrument"
+        app:showAsAction="never" />
+</menu>

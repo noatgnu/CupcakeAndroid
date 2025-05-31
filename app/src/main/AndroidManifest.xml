@@ -22,21 +22,34 @@
         android:theme="@style/Theme.Cupcake"
         tools:targetApi="31">
         <activity
-            android:name=".InstrumentActivity"
+            android:name=".ExternalContactActivity"
+            android:label="External Contacts"
             android:exported="false"
-            android:theme="@style/Theme.Cupcake.NoActionBar"
-            />
+            android:theme="@style/Theme.Cupcake.NoActionBar" />
+        <activity
+            android:name=".SupportInformationActivity"
+            android:label="Support Information"
+            android:exported="false"
+            android:theme="@style/Theme.Cupcake.NoActionBar" />
+        <activity
+            android:name=".InstrumentActivity"
+            android:label="Instrument Details"
+            android:exported="false"
+            android:theme="@style/Theme.Cupcake.NoActionBar" />
         <activity
             android:name=".MessageActivity"
+            android:label="Messages"
             android:exported="false"
             android:theme="@style/Theme.Cupcake.NoActionBar"
             android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".StoredReagentActivity"
+            android:label="Stored Reagents"
             android:exported="false"
             android:theme="@style/Theme.Cupcake.NoActionBar" />
         <activity
             android:name=".StorageActivity"
+            android:label="Storage Locations"
             android:exported="false"
             android:theme="@style/Theme.Cupcake.NoActionBar" />
         <activity

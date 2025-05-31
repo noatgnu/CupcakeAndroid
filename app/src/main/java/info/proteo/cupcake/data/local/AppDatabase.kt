@@ -42,6 +42,8 @@ import java.util.Date
         ExternalContactDetailsEntity::class,
         ExternalContactEntity::class,
         SupportInformationEntity::class,
+        SupportInformationVendorContactCrossRef::class,
+        SupportInformationManufacturerContactCrossRef::class,
         ProtocolModelEntity::class,
         ProtocolStepEntity::class,
         ProtocolSectionEntity::class,
