@@ -1,5 +1,8 @@
 package info.proteo.cupcake.ui.contact
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import info.proteo.cupcake.R
 import info.proteo.cupcake.data.remote.model.instrument.ExternalContact
 import androidx.recyclerview.widget.DiffUtil
+import com.google.android.material.snackbar.Snackbar
 
 class ExternalContactAdapter(
     private val onRemoveClick: (contactId: Int) -> Unit,
@@ -50,6 +54,12 @@ class ExternalContactAdapter(
         private val removeButton: ImageButton = itemView.findViewById(R.id.buttonRemoveContact)
         private val detailsContainer: ViewGroup = itemView.findViewById(R.id.detailsContainer)
 
+        private fun copyToClipboard(context: Context, text: String) {
+            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("Contact Detail", text)
+            clipboard.setPrimaryClip(clip)
+        }
+
         fun bind(
             contact: ExternalContact,
             isExpanded: Boolean,
@@ -76,9 +86,19 @@ class ExternalContactAdapter(
 
                     typeText.text = detail.contactType?.uppercase() ?: "UNKNOWN"
                     valueText.text = detail.contactValue ?: "N/A"
+                    val copyButton = detailView.findViewById<ImageButton>(R.id.buttonCopyDetail)
+
 
                     if (!detail.contactMethodAltName.isNullOrEmpty()) {
                         typeText.text = "${typeText.text} (${detail.contactMethodAltName})"
+                    }
+
+                    copyButton.setOnClickListener {
+                        val value = detail.contactValue
+                        if (!value.isNullOrEmpty()) {
+                            copyToClipboard(itemView.context, value)
+                            Snackbar.make(itemView, "Copied: $value", Snackbar.LENGTH_SHORT).show()
+                        }
                     }
 
                     detailsContainer.addView(detailView)
@@ -94,6 +114,8 @@ class ExternalContactAdapter(
             }
         }
     }
+
+
 }
 
 class DiffCallback : DiffUtil.ItemCallback<ExternalContact>() {

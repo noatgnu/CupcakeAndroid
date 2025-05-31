@@ -89,4 +89,7 @@
     <string name="title_add_contact">Add contact</string>
     <string name="button_remove_description">Delete contact</string>
     <string name="button_edit_description">Edit contact</string>
+    <string name="button_copy_description">Copy contact details</string>
+    <string name="search_reagents">Search Reagents</string>
+    <string name="enter_reagent_name_or_id">Enter reagent name or ID</string>
 </resources>

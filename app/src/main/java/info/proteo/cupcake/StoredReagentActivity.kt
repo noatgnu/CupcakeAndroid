@@ -20,6 +20,7 @@ class StoredReagentActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_STORAGE_OBJECT_ID = "extra_storage_object_id"
         const val EXTRA_OPEN_SCANNER = "extra_open_scanner"
+        const val EXTRA_SEARCH_TERM = "extra_search_term"
     }
 
     private lateinit var binding: ActivityStoredReagentBinding
@@ -33,18 +34,24 @@ class StoredReagentActivity : AppCompatActivity() {
 
         val storageObjectId = intent.getIntExtra(EXTRA_STORAGE_OBJECT_ID, -1)
 
-        // Set default title for Activity
         if (storageObjectId == -1) {
             supportActionBar?.title = "All Locations"
             binding.textViewLocation.text = "All Locations"
         }
 
-        // Create fragment only once
         if (savedInstanceState == null) {
+
             loadStoredReagentFragment(storageObjectId)
 
             if (intent.getBooleanExtra(EXTRA_OPEN_SCANNER, false)) {
                 openBarcodeScanner(storageObjectId)
+            }
+            if (intent.hasExtra(EXTRA_SEARCH_TERM)) {
+                val searchTerm = intent.getStringExtra(EXTRA_SEARCH_TERM)
+                if (!searchTerm.isNullOrEmpty()) {
+                    binding.textViewSearchIndicator.visibility = View.VISIBLE
+                    binding.textViewSearchIndicator.text = "Searching: $searchTerm"
+                }
             }
         }
     }

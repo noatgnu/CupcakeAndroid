@@ -32,7 +32,8 @@ interface StoredReagentApiService {
         @Query("limit") limit: Int,
         @Query("storage_object") storageObjectId: Int? = null,
         @Query("lab_group") labGroupId: Int? = null,
-        @Query("barcode") barcode: String? = null
+        @Query("barcode") barcode: String? = null,
+        @Query("search") search: String? = null
     ): LimitOffsetResponse<StoredReagent>
 
     @GET("api/stored_reagent/{id}/")
@@ -68,7 +69,7 @@ interface StoredReagentApiService {
 }
 
 interface StoredReagentService {
-    suspend fun getStoredReagents(offset: Int, limit: Int, storageObjectId: Int? = null, labGroupId: Int? = null, barcode: String? = null): Result<LimitOffsetResponse<StoredReagent>>
+    suspend fun getStoredReagents(offset: Int, limit: Int, storageObjectId: Int? = null, labGroupId: Int? = null, barcode: String? = null, search: String? = null): Result<LimitOffsetResponse<StoredReagent>>
     suspend fun getStoredReagentById(id: Int): Result<StoredReagent>
     suspend fun createStoredReagent(storedReagent: StoredReagent): Result<StoredReagent>
     suspend fun updateStoredReagent(id: Int, storedReagent: StoredReagent): Result<StoredReagent>
@@ -94,10 +95,11 @@ class StoredReagentServiceImpl @Inject constructor(
         limit: Int,
         storageObjectId: Int?,
         labGroupId: Int?,
-        barcode: String?
+        barcode: String?,
+        search: String?
     ): Result<LimitOffsetResponse<StoredReagent>> {
         return try {
-            val response = apiService.getStoredReagents(offset, limit, storageObjectId, labGroupId, barcode)
+            val response = apiService.getStoredReagents(offset, limit, storageObjectId, labGroupId, barcode, search)
             response.results.forEach {
                 cacheStoredReagentWithRelations(it)
             }
@@ -127,11 +129,9 @@ class StoredReagentServiceImpl @Inject constructor(
     override suspend fun getStoredReagentById(id: Int): Result<StoredReagent> {
         return try {
             val response = apiService.getStoredReagentById(id)
-            // Cache the result with reagent data
             cacheStoredReagentWithRelations(response)
             Result.success(response)
         } catch (e: Exception) {
-            // Try to fetch from cache on failure
             val cachedObject = storedReagentDao.getById(id)
             if (cachedObject != null) {
                 Result.success(loadStoredReagentWithRelations(cachedObject))
@@ -155,7 +155,6 @@ class StoredReagentServiceImpl @Inject constructor(
     override suspend fun updateStoredReagent(id: Int, storedReagent: StoredReagent): Result<StoredReagent> {
         return try {
             val response = apiService.updateStoredReagent(id, storedReagent)
-            // Update cache with reagent data
             cacheStoredReagentWithRelations(response)
             Result.success(response)
         } catch (e: Exception) {
@@ -166,7 +165,6 @@ class StoredReagentServiceImpl @Inject constructor(
     override suspend fun deleteStoredReagent(id: Int): Result<Unit> {
         return try {
             apiService.deleteStoredReagent(id)
-            // Remove from cache
             storedReagentDao.getById(id)?.let { storedReagentDao.delete(it) }
             Result.success(Unit)
         } catch (e: Exception) {
@@ -244,7 +242,6 @@ class StoredReagentServiceImpl @Inject constructor(
             val existingStorageObject = storageObjectDao.getById(storageObject.id)
 
             if (existingStorageObject == null) {
-                // Storage object doesn't exist, insert a new one
                 storageObjectDao.insert(StorageObjectEntity(
                     id = storageObject.id,
                     objectName = storageObject.objectName ?: "",

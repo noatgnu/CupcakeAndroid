@@ -41,7 +41,6 @@ class StoredReagentFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Register for barcode scan results
         requireActivity().supportFragmentManager.setFragmentResultListener(
             "barcode_result", viewLifecycleOwner
         ) { _, bundle ->
@@ -70,11 +69,19 @@ class StoredReagentFragment : Fragment() {
         arguments?.let { args ->
             val storageObjectId = args.getInt("STORAGE_OBJECT_ID", -1)
             Log.d("StoredReagentFragment", "Got storageObjectId: $storageObjectId")
-            if (storageObjectId != -1) {
+
+            val searchTerm = activity?.intent?.getStringExtra(StoredReagentActivity.EXTRA_SEARCH_TERM)
+            Log.d("StoredReagentFragment", "Search term from intent: $searchTerm")
+
+            if (!searchTerm.isNullOrEmpty()) {
+                val searchId = if (storageObjectId != -1) storageObjectId else null
+                Log.d("StoredReagentFragment", "Searching for term: $searchTerm in location: $searchId")
+                viewModel.searchByTerm(searchTerm, searchId)
+            } else if (storageObjectId != -1) {
                 viewModel.loadStoredReagents(storageObjectId)
                 viewModel.loadStorageObjectInfo(storageObjectId)
             } else {
-                showError("All Locations")
+                viewModel.loadStoredReagents(-1)
             }
         } ?: run {
             Log.e("StoredReagentFragment", "No arguments provided")

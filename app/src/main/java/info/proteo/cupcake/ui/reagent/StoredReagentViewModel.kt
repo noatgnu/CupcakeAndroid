@@ -216,4 +216,52 @@ class StoredReagentViewModel @Inject constructor(
             }
         }
     }
+
+    fun searchByTerm(searchTerm: String, storageObjectId: Int? = null) {
+        viewModelScope.launch {
+            _reagentsState.value = StoredReagentUiState.Loading
+            currentOffset = 0
+            hasMoreData = true
+            currentBarcode = null
+            currentStorageObjectId = storageObjectId
+            _isSearchingByBarcode.value = true
+            _currentBarcodeState.value = searchTerm
+
+            try {
+                Log.d("StoredReagentViewModel", "Starting search for term: $searchTerm in storageObjectId: $storageObjectId")
+                val result = storedReagentService.getStoredReagents(
+                    offset = 0,
+                    limit = pageSize,
+                    storageObjectId = storageObjectId,
+                    search = searchTerm
+                )
+
+                result.onSuccess { response ->
+                    if (response.results.isNotEmpty()) {
+                        response.results.forEach { reagent ->
+                            reagent.storageObject.id.let { locationId ->
+                                fetchLocationPath(locationId)
+                            }
+                        }
+                        _reagentsState.value = StoredReagentUiState.Success(response.results)
+                    } else {
+                        _reagentsState.value = StoredReagentUiState.NoSearchResults(searchTerm)
+                    }
+                    hasMoreData = response.next != null
+                }
+
+                result.onFailure { throwable ->
+                    _reagentsState.value = StoredReagentUiState.Error(
+                        throwable.message ?: "Failed to search for: $searchTerm"
+                    )
+                }
+            } catch (e: Exception) {
+                _reagentsState.value = StoredReagentUiState.Error(
+                    e.message ?: "An error occurred while searching"
+                )
+            } finally {
+                _isSearchingByBarcode.value = false
+            }
+        }
+    }
 }

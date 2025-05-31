@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="horizontal"
     android:paddingTop="4dp"
     android:paddingBottom="4dp">
@@ -18,5 +19,14 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1" />
+
+    <ImageButton
+        android:id="@+id/buttonCopyDetail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/button_copy_description"
+        android:padding="4dp"
+        app:srcCompat="@drawable/outline_content_copy_24" />
 
 </LinearLayout>

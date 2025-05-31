@@ -39,4 +39,17 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
     </style>
+    <style name="FullScreenDialogStyle" parent="Theme.Cupcake">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowBackground">@color/dark</item>
+        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+        <item name="android:windowEnterAnimation">@android:anim/fade_in</item>
+        <item name="android:windowExitAnimation">@android:anim/fade_out</item>
+        <item name="android:windowSoftInputMode">adjustResize</item>
+        <item name="colorControlNormal">@color/dark</item>
+        <item name="colorOnPrimary">@color/dark</item>
+        <item name="colorPrimary">@color/primary_dark_theme</item>
+    </style>
 </resources>

@@ -19,9 +19,10 @@ class StoredReagentRepository @Inject constructor(
         limit: Int,
         storageObjectId: Int? = null,
         labGroupId: Int? = null,
-        barcode: String? = null
+        barcode: String? = null,
+        search: String? = null
     ): Flow<Result<LimitOffsetResponse<StoredReagent>>> = flow {
-        emit(storedReagentService.getStoredReagents(offset, limit, storageObjectId, labGroupId, barcode))
+        emit(storedReagentService.getStoredReagents(offset, limit, storageObjectId, labGroupId, barcode, search))
     }
 
     fun getStoredReagentById(id: Int): Flow<Result<StoredReagent>> = flow {

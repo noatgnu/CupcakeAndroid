@@ -26,7 +26,6 @@ class AddEditContactDialogFragment : DialogFragment() {
     private val binding get() = _binding!!
 
     private val viewModel: AddEditContactDialogViewModel by viewModels()
-    // ViewModel of the parent ExternalContactFragment
     private val parentViewModel: ExternalContactViewModel by viewModels({ requireParentFragment() })
 
 
@@ -64,11 +63,19 @@ class AddEditContactDialogFragment : DialogFragment() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        dialog?.window?.apply {
+            setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setStyle(DialogFragment.STYLE_NORMAL, R.style.FullScreenDialogStyle)
+
         arguments?.let {
             supportInfoIdArg = it.getInt(ARG_SUPPORT_INFO_ID)
-            // Retrieve contactId correctly, allowing for null if not present or explicitly null
             contactIdToEditArg = if (it.containsKey(ARG_CONTACT_ID) && it.get(ARG_CONTACT_ID) is Int) {
                 it.getInt(ARG_CONTACT_ID)
             } else {

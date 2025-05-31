@@ -15,6 +15,7 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.view.MenuProvider
@@ -36,10 +37,9 @@ import info.proteo.cupcake.ui.storage.adapter.StorageAdapter
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.compareTo
-import kotlin.text.replace
 import androidx.core.view.get
 import androidx.core.view.size
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 @AndroidEntryPoint
 class StorageFragment : Fragment() {
@@ -90,6 +90,10 @@ class StorageFragment : Fragment() {
                         openBarcodeScanner()
                         true
                     }
+                    R.id.action_search_reagent -> {
+                        showSearchDialog()
+                        true
+                    }
                     else -> false
                 }
             }
@@ -125,13 +129,11 @@ class StorageFragment : Fragment() {
                     val totalItemCount = layoutManager.itemCount
                     val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
 
-                    // Check if we're at the bottom and not already loading
                     if (!isLoading &&
                         (visibleItemCount + firstVisibleItemPosition) >= totalItemCount &&
                         firstVisibleItemPosition >= 0 &&
                         totalItemCount >= PAGE_SIZE) {
 
-                        // Load next page
                         viewModel.loadMoreStorageObjects()
                         isLoading = true
                     }
@@ -174,7 +176,6 @@ class StorageFragment : Fragment() {
             }
         }
 
-        // Observe path changes for breadcrumb navigation
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.currentPath.collectLatest { path ->
                 updateBreadcrumbs(path)
@@ -210,7 +211,6 @@ class StorageFragment : Fragment() {
                     }
                 }
             } catch (e: Exception) {
-                // Button stays hidden on error
             }
         }
     }
@@ -244,7 +244,6 @@ class StorageFragment : Fragment() {
             }
             binding.breadcrumbsContainer.addView(separator)
 
-            // Add path segment
             val segmentView = TextView(requireContext()).apply {
                 text = storageObject.objectName
                 setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white))
@@ -252,18 +251,16 @@ class StorageFragment : Fragment() {
                 setTypeface(typeface, Typeface.BOLD)
                 setPadding(16, 0, 16, 0)
 
-                // Make final item different color or style
                 if (index == path.size - 1) {
-                    alpha = 1.0f  // Full opacity for current item
+                    alpha = 1.0f
                 } else {
-                    alpha = 0.85f  // Slightly dimmer for parent paths
+                    alpha = 0.85f
                     setOnClickListener { viewModel.loadStorageObjects(storageObject.id) }
                 }
             }
             binding.breadcrumbsContainer.addView(segmentView)
         }
 
-        // Scroll to the end to show the current location
         binding.scrollBreadcrumbs.post {
             binding.scrollBreadcrumbs.fullScroll(View.FOCUS_RIGHT)
         }
@@ -283,6 +280,33 @@ class StorageFragment : Fragment() {
             setChipBackgroundColorResource(R.color.primary)
             setTextColor(getResources().getColor(R.color.light))
         }
+    }
+
+    private fun showSearchDialog() {
+        val dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_search_reagent, null)
+
+        val searchInput = dialogView.findViewById<EditText>(R.id.editTextSearch)
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Search Reagents")
+            .setView(dialogView)
+            .setPositiveButton("Search") { _, _ ->
+                val searchTerm = searchInput.text.toString().trim()
+                if (searchTerm.isNotEmpty()) {
+                    navigateToReagentSearch(searchTerm)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun navigateToReagentSearch(searchTerm: String) {
+        val intent = Intent(requireContext(), StoredReagentActivity::class.java).apply {
+            putExtra(StoredReagentActivity.EXTRA_STORAGE_OBJECT_ID, currentStorageObjectId)
+            putExtra(StoredReagentActivity.EXTRA_SEARCH_TERM, searchTerm)
+        }
+        startActivity(intent)
     }
 
     private fun setupSwipeRefresh() {

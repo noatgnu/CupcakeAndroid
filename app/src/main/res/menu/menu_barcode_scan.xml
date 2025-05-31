@@ -6,4 +6,9 @@
         android:icon="@drawable/ic_barcode_scan"
         android:title="@string/scan_barcode"
         app:showAsAction="always" />
+    <item
+        android:id="@+id/action_search_reagent"
+        android:icon="@drawable/outline_feature_search_24"
+        android:title="@string/search_reagents"
+        app:showAsAction="ifRoom" />
 </menu>
