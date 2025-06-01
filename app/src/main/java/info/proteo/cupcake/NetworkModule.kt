@@ -17,6 +17,7 @@ import info.proteo.cupcake.data.local.dao.message.MessageAttachmentDao
 import info.proteo.cupcake.data.local.dao.message.MessageDao
 import info.proteo.cupcake.data.local.dao.message.MessageRecipientDao
 import info.proteo.cupcake.data.local.dao.message.MessageThreadDao
+import info.proteo.cupcake.data.local.dao.protocol.TimeKeeperDao
 import info.proteo.cupcake.data.local.dao.reagent.ReagentActionDao
 import info.proteo.cupcake.data.local.dao.reagent.ReagentDao
 import info.proteo.cupcake.data.local.dao.reagent.StoredReagentDao
@@ -45,6 +46,9 @@ import info.proteo.cupcake.data.remote.service.MessageServiceImpl
 import info.proteo.cupcake.data.remote.service.MessageThreadApiService
 import info.proteo.cupcake.data.remote.service.MessageThreadService
 import info.proteo.cupcake.data.remote.service.MessageThreadServiceImpl
+import info.proteo.cupcake.data.remote.service.ProtocolStepApiService
+import info.proteo.cupcake.data.remote.service.ProtocolStepService
+import info.proteo.cupcake.data.remote.service.ProtocolStepServiceImpl
 import info.proteo.cupcake.data.remote.service.ReagentActionApiService
 import info.proteo.cupcake.data.remote.service.ReagentActionService
 import info.proteo.cupcake.data.remote.service.ReagentActionServiceImpl
@@ -60,6 +64,9 @@ import info.proteo.cupcake.data.remote.service.StoredReagentServiceImpl
 import info.proteo.cupcake.data.remote.service.SupportInformationApiService
 import info.proteo.cupcake.data.remote.service.SupportInformationService
 import info.proteo.cupcake.data.remote.service.SupportInformationServiceImpl
+import info.proteo.cupcake.data.remote.service.TimeKeeperApiService
+import info.proteo.cupcake.data.remote.service.TimeKeeperService
+import info.proteo.cupcake.data.remote.service.TimeKeeperServiceImpl
 import info.proteo.cupcake.data.remote.service.UserApiService
 import info.proteo.cupcake.data.remote.service.UserService
 import info.proteo.cupcake.data.remote.service.UserServiceImpl
@@ -69,10 +76,13 @@ import info.proteo.cupcake.data.repository.MessageRepository
 import info.proteo.cupcake.data.repository.MessageRepositoryImpl
 import info.proteo.cupcake.data.repository.MessageThreadRepository
 import info.proteo.cupcake.data.repository.MessageThreadRepositoryImpl
+import info.proteo.cupcake.data.repository.ProtocolStepRepository
 import info.proteo.cupcake.data.repository.ReagentActionRepository
 import info.proteo.cupcake.data.repository.ReagentDocumentRepository
 import info.proteo.cupcake.data.repository.StoredReagentRepository
 import info.proteo.cupcake.data.repository.SupportInformationRepository
+import info.proteo.cupcake.data.repository.TimeKeeperRepository
+import info.proteo.cupcake.data.repository.UserRepository
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
@@ -543,6 +553,76 @@ object NetworkModule {
         supportInformationService: SupportInformationService
     ): SupportInformationRepository {
         return SupportInformationRepository(supportInformationService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTimeKeeperApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): TimeKeeperApiService {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
+            .build()
+            .create(TimeKeeperApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTimeKeeperService(
+        apiService: TimeKeeperApiService,
+        timeKeeperDao: TimeKeeperDao,
+        userRepository: UserRepository,
+        userPreferencesDao: UserPreferencesDao
+    ): TimeKeeperService {
+        return TimeKeeperServiceImpl(
+            apiService,
+            timeKeeperDao,
+            userRepository,
+            userPreferencesDao
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideTimeKeeperRepository(
+        timeKeeperService: TimeKeeperService
+    ): TimeKeeperRepository {
+        return TimeKeeperRepository(timeKeeperService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideProtocolStepApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): ProtocolStepApiService {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
+            .build()
+            .create(ProtocolStepApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideProtocolStepService(
+        protocolStepServiceImpl: ProtocolStepServiceImpl
+    ): ProtocolStepService {
+        return protocolStepServiceImpl
+    }
+
+    @Provides
+    @Singleton
+    fun provideProtocolStepRepository(
+        protocolStepService: ProtocolStepService
+    ): ProtocolStepRepository {
+        return ProtocolStepRepository(protocolStepService)
     }
 }
 

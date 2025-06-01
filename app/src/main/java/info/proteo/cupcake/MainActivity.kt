@@ -59,6 +59,12 @@ class MainActivity : AppCompatActivity() {
                     binding.drawerLayout?.closeDrawers()
                     true
                 }
+                R.id.nav_timekeepers -> {
+                    val intent = Intent(this, TimeKeeperActivity::class.java)
+                    startActivity(intent)
+                    binding.drawerLayout?.closeDrawers()
+                    true
+                }
                 else -> {
                     navController.navigate(menuItem.itemId)
                     binding.drawerLayout?.closeDrawers()

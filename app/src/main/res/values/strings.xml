@@ -92,4 +92,6 @@
     <string name="button_copy_description">Copy contact details</string>
     <string name="search_reagents">Search Reagents</string>
     <string name="enter_reagent_name_or_id">Enter reagent name or ID</string>
+    <string name="time_keepers">Time Keepers</string>
+    <string name="instruments">Instruments</string>
 </resources>

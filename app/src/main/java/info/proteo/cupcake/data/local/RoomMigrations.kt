@@ -237,6 +237,10 @@ object RoomMigrations {
                 step INTEGER NOT NULL,
                 start_time TEXT NOT NULL,
                 end_time TEXT,
+                current_duration INTEGER NOT NULL DEFAULT 0,
+                started INTEGER NOT NULL DEFAULT 0,
+                user_id INTEGER,
+                FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE SET NULL,
                 FOREIGN KEY (session) REFERENCES session(id) ON DELETE CASCADE,
                 FOREIGN KEY (step) REFERENCES protocol_step(id) ON DELETE CASCADE
             )

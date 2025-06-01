@@ -8,8 +8,9 @@ import androidx.room.PrimaryKey
 data class TimeKeeperEntity(
     @PrimaryKey val id: Int,
     @ColumnInfo(name = "start_time") val startTime: String?,
-    val session: Int,
+    val session: Int?,
     val step: Int?,
     val started: Boolean,
-    @ColumnInfo(name = "current_duration") val currentDuration: Float?
+    @ColumnInfo(name = "current_duration") val currentDuration: Float?,
+    @ColumnInfo(name = "user_id") val userId: Int? = null,
 )

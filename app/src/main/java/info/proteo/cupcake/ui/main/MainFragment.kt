@@ -20,10 +20,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.LoginActivity
 import info.proteo.cupcake.R
+import info.proteo.cupcake.TimeKeeperActivity
 import info.proteo.cupcake.data.remote.model.message.MessageThread
+import info.proteo.cupcake.data.remote.model.protocol.TimeKeeper
 import info.proteo.cupcake.databinding.FragmentMainBinding
 import info.proteo.cupcake.ui.message.MessageThreadAdapter
+import info.proteo.cupcake.ui.timekeeper.ActiveTimeKeeperPreviewAdapter
 import kotlinx.coroutines.launch
+import kotlin.jvm.java
 
 @AndroidEntryPoint
 class MainFragment : Fragment() {
@@ -32,6 +36,8 @@ class MainFragment : Fragment() {
 
     private val viewModel: MainViewModel by viewModels()
     private lateinit var threadAdapter: MessageThreadAdapter
+    private lateinit var activeTimekeeperAdapter: ActiveTimeKeeperPreviewAdapter
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -46,6 +52,7 @@ class MainFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupMenu()
         setupRecyclerView()
+        setupActiveTimekeepersSection()
         setupObservers()
         setupClickListeners()
     }
@@ -65,6 +72,25 @@ class MainFragment : Fragment() {
             layoutManager = LinearLayoutManager(requireContext())
             addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
         }
+
+    }
+
+    private fun setupActiveTimekeepersSection() {
+        activeTimekeeperAdapter = ActiveTimeKeeperPreviewAdapter { timekeeper ->
+            val intent = Intent(requireContext(), TimeKeeperActivity::class.java)
+            intent.putExtra("timeKeeperId", timekeeper.id)
+            startActivity(intent)
+        }
+
+        binding.recyclerViewActiveTimekeepers.apply {
+            adapter = activeTimekeeperAdapter
+            layoutManager = LinearLayoutManager(requireContext())
+        }
+
+        binding.textViewViewAllTimekeepers.setOnClickListener {
+            val intent = Intent(requireContext(), TimeKeeperActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     private fun setupObservers() {
@@ -73,14 +99,17 @@ class MainFragment : Fragment() {
                 binding.textViewUsername.text = user.username
                 binding.buttonLogin.visibility = View.GONE
 
+                binding.activeTimekeepersSection.visibility = View.VISIBLE
                 binding.textViewRecentMessages.visibility = View.VISIBLE
                 binding.textViewViewAll.visibility = View.VISIBLE
                 binding.recyclerViewThreads.visibility = View.VISIBLE
+
 
             } else {
                 binding.textViewUsername.text = ""
                 binding.buttonLogin.visibility = View.VISIBLE
 
+                binding.activeTimekeepersSection.visibility = View.GONE
                 binding.textViewRecentMessages.visibility = View.GONE
                 binding.textViewViewAll.visibility = View.GONE
                 binding.recyclerViewThreads.visibility = View.GONE
@@ -98,6 +127,30 @@ class MainFragment : Fragment() {
                     if (viewModel.userData.value != null) {
                         updateMessageThreadsUI(threads)
                     }
+                }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.activeTimekeepers.collect { timekeepers ->
+                    updateActiveTimekeepersUI(timekeepers)
+                }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.activeTimerStates.collect { timerStates ->
+                    activeTimekeeperAdapter.updateActiveTimers(timerStates)
+                }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.activeTimekeepersCount.collect { count ->
+                    binding.textViewActiveCount.text = "$count active timekeepers"
                 }
             }
         }
@@ -172,5 +225,23 @@ class MainFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    private fun updateActiveTimekeepersUI(timekeepers: List<TimeKeeper>) {
+        activeTimekeeperAdapter.submitList(timekeepers)
+
+        if (viewModel.userData.value != null) {
+            binding.activeTimekeepersSection.visibility = View.VISIBLE
+
+            if (timekeepers.isEmpty() && !viewModel.isLoading.value) {
+                binding.textViewActiveCount.text = "No active timekeepers"
+                binding.recyclerViewActiveTimekeepers.visibility = View.GONE
+            } else {
+                binding.textViewActiveCount.text = "${viewModel.activeTimekeepersCount.value} active timekeepers"
+                binding.recyclerViewActiveTimekeepers.visibility = View.VISIBLE
+            }
+        } else {
+            binding.activeTimekeepersSection.visibility = View.GONE
+        }
     }
 }

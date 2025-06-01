@@ -58,8 +58,11 @@ interface ProtocolStepDao {
     @Query("SELECT * FROM protocol_step WHERE id = :id")
     suspend fun getById(id: Int): ProtocolStepEntity?
 
-    @Query("SELECT * FROM protocol_step WHERE protocol = :protocolId ORDER BY id")
-    fun getStepsByProtocol(protocolId: Int): Flow<List<ProtocolStepEntity>>
+    @Query("SELECT * FROM protocol_step WHERE protocol = :protocolId ORDER BY id LIMIT :limit OFFSET :offset")
+    fun getStepsByProtocol(protocolId: Int, limit: Int, offset: Int): Flow<List<ProtocolStepEntity>>
+
+    @Query("SELECT COUNT(*) FROM protocol_step WHERE protocol = :protocolId")
+    fun countStepsByProtocol(protocolId: Int): Flow<Int>
 
     @Query("DELETE FROM protocol_step WHERE protocol = :protocolId")
     suspend fun deleteByProtocol(protocolId: Int)

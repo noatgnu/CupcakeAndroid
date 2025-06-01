@@ -33,7 +33,7 @@
     <fragment
         android:id="@+id/nav_main"
         android:name="info.proteo.cupcake.ui.main.MainFragment"
-        android:label="Main menu"
+        android:label="CUPCAKE"
         tools:layout="@layout/fragment_main">
         <action
             android:id="@+id/action_main_to_settings"

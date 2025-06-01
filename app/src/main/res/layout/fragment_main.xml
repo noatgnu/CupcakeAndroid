@@ -15,6 +15,58 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <LinearLayout
+        android:id="@+id/activeTimekeepersSection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/textViewUsername">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/textViewActiveTimekeepers"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Active Timekeepers"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/textViewViewAllTimekeepers"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="View All"
+                android:textColor="@color/purple_500" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/textViewActiveCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginBottom="8dp"
+            android:text="0 active timekeepers" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewActiveTimekeepers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipToPadding="false"
+            android:padding="8dp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="8dp"
+            android:background="?android:attr/listDivider" />
+    </LinearLayout>
+
     <TextView
         android:id="@+id/textViewRecentMessages"
         android:layout_width="wrap_content"
@@ -23,7 +75,7 @@
         android:textStyle="bold"
         android:layout_margin="16dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textViewUsername" />
+        app:layout_constraintTop_toBottomOf="@id/activeTimekeepersSection" />
 
     <TextView
         android:id="@+id/textViewViewAll"
