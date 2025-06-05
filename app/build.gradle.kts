@@ -48,12 +48,10 @@ android {
 dependencies {
     implementation(libs.javapoet)
 
-    // Networking: Retrofit + OkHttp
     implementation(libs.retrofit)
     implementation(libs.okhttp)
     implementation(libs.logging.interceptor)
 
-    // Serialization: Moshi
     implementation(libs.moshi)
     implementation(libs.moshi.kotlin)
     implementation(libs.converter.moshi)
@@ -92,6 +90,8 @@ dependencies {
 
     implementation (libs.androidx.navigation.fragment.ktx.v277)
     implementation (libs.androidx.navigation.ui.ktx.v277)
+
+    implementation(libs.androidx.lifecycle.process)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

@@ -1,9 +1,11 @@
 package info.proteo.cupcake.ui.timekeeper
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import info.proteo.cupcake.data.remote.model.protocol.TimeKeeper
+import info.proteo.cupcake.data.remote.service.WebSocketService
 import info.proteo.cupcake.data.repository.ProtocolStepRepository
 import info.proteo.cupcake.data.repository.TimeKeeperRepository
 import kotlinx.coroutines.Job
@@ -11,13 +13,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import javax.inject.Inject
 
 @HiltViewModel
 class TimeKeeperViewModel @Inject constructor(
     private val timeKeeperRepository: TimeKeeperRepository,
-    private val protocolStepRepository: ProtocolStepRepository
+    private val protocolStepRepository: ProtocolStepRepository,
+    private val webSocketService: WebSocketService
 ) : ViewModel() {
 
     private val _timeKeepers = MutableStateFlow<List<TimeKeeper>>(emptyList())
@@ -32,40 +38,171 @@ class TimeKeeperViewModel @Inject constructor(
     private val _activeTimers = MutableStateFlow<Map<Int, TimerState>>(emptyMap())
     val activeTimers: StateFlow<Map<Int, TimerState>> = _activeTimers.asStateFlow()
 
-    // Map to keep track of timer coroutine jobs
     private val timerJobs = mutableMapOf<Int, Job>()
 
-    // Timer state data class
+    private data class TimerNotification(
+        val type: String,
+        val action: String,
+        val timer_id: Int,
+        val started: Boolean,
+        val current_duration: Double,
+        val timestamp: String
+    )
+
     data class TimerState(
         val id: Int,
-        val currentDuration: Float,
+        val currentDuration: Int,
         val started: Boolean
     )
 
-    // Methods to load timeKeepers
+    init {
+        observeWebSocketNotifications()
+    }
+
+    private fun observeWebSocketNotifications() {
+        viewModelScope.launch {
+            webSocketService.notificationMessages
+                .catch { e ->
+                    Log.e("TimeKeeperViewModel", "Error collecting WebSocket messages", e)
+                    _error.value = "WebSocket connection error: ${e.message}"
+                }
+                .collect { jsonString ->
+                    try {
+                        Log.d("TimeKeeperViewModel", "Received WebSocket message: $jsonString")
+                        val jsonObj = JSONObject(jsonString)
+                        val type = jsonObj.optString("type")
+                        val action = jsonObj.optString("action")
+
+                        if (type == "timer_notification" && action == "updated") {
+                            val timerId = jsonObj.getInt("timer_id")
+                            val started = jsonObj.getBoolean("started")
+                            val currentDurationDouble = jsonObj.getDouble("current_duration")
+                            val timestamp = jsonObj.getString("timestamp")
+
+                            val notification = TimerNotification(
+                                type, action, timerId, started, currentDurationDouble, timestamp
+                            )
+                            handleTimerNotification(notification)
+                        }
+                    } catch (e: Exception) {
+                        Log.e("TimeKeeperViewModel", "Error parsing WebSocket message", e)
+                        _error.value = "Error processing WebSocket update: ${e.message}"
+                    }
+                }
+        }
+    }
+
+    private fun handleTimerNotification(notification: TimerNotification) {
+        val timerId = notification.timer_id
+        val wsStarted = notification.started
+        val wsDuration = notification.current_duration.toInt().coerceAtLeast(0)
+
+        Log.d("TimeKeeperViewModel", "Handling Timer Notification for ID $timerId: Started=$wsStarted, Duration=$wsDuration")
+
+        _timeKeepers.value = _timeKeepers.value.map { tk ->
+            if (tk.id == timerId) {
+                tk.copy(
+                    started = wsStarted,
+                    currentDuration = wsDuration
+                )
+            } else {
+                tk
+            }
+        }
+
+        _activeTimers.value = _activeTimers.value.toMutableMap().apply {
+            this[timerId] = TimerState(timerId, wsDuration, wsStarted)
+        }
+
+        timerJobs[timerId]?.cancel()
+        timerJobs.remove(timerId)
+
+        if (wsStarted) {
+            timerJobs[timerId] = viewModelScope.launch {
+                var currentLocalDuration = wsDuration
+                try {
+                    Log.d("TimeKeeperViewModel", "WS: Starting local timer job for ID $timerId, duration $currentLocalDuration")
+                    while (this.isActive && currentLocalDuration > 0) {
+                        delay(1000)
+                        currentLocalDuration -= 1
+                        _activeTimers.value = _activeTimers.value.toMutableMap().apply {
+                            this[timerId]?.takeIf { it.started }?.let {
+                                this[timerId] = it.copy(currentDuration = currentLocalDuration)
+                            }
+                        }
+                    }
+                    if (this.isActive && currentLocalDuration <= 0) { // Timer reached zero
+                        Log.d("TimeKeeperViewModel", "WS: Local timer job for ID $timerId reached zero.")
+                        _activeTimers.value = _activeTimers.value.toMutableMap().apply {
+                            this[timerId]?.let { this[timerId] = it.copy(started = false, currentDuration = 0) }
+                        }
+                        _timeKeepers.value = _timeKeepers.value.map { tk ->
+                            if (tk.id == timerId) tk.copy(started = false, currentDuration = 0) else tk
+                        }
+                    }
+                } finally {
+                    if (timerJobs[timerId] == this.coroutineContext[Job]) {
+                        timerJobs.remove(timerId)
+                        Log.d("TimeKeeperViewModel", "WS: Cleaned up local timer job for ID $timerId")
+                    }
+                }
+            }
+        } else {
+            Log.d("TimeKeeperViewModel", "WS: Timer ID $timerId is not started. No local job created/job removed.")
+        }
+    }
+
     fun loadTimeKeepers() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
                 val result = timeKeeperRepository.getTimeKeepers()
                 if (result.isSuccess) {
-                    _timeKeepers.value = result.getOrNull()?.results ?: emptyList()
+                    val fetchedTimeKeepers = result.getOrNull()?.results ?: emptyList()
+                    _timeKeepers.value = fetchedTimeKeepers
 
-                    // Initialize active timers
-                    val initialTimers = _timeKeepers.value
+                    val initialActiveTimers = fetchedTimeKeepers
                         .filter { it.started == true }
                         .associate {
                             it.id to TimerState(
                                 id = it.id,
-                                currentDuration = it.currentDuration ?: 0f,
+                                currentDuration = it.currentDuration ?: 0,
                                 started = true
                             )
                         }
-                    _activeTimers.value = initialTimers
+                    _activeTimers.value = initialActiveTimers
 
-                    // Start jobs for active timers
-                    initialTimers.forEach { (id, state) ->
-                        startTimer(id, _timeKeepers.value.find { it.id == id }?.step, state.currentDuration)
+                    initialActiveTimers.forEach { (id, state) ->
+                        timerJobs[id]?.cancel() // Cancel any old job
+                        timerJobs[id] = viewModelScope.launch {
+                            var currentLocalDuration = state.currentDuration
+                            try {
+                                Log.d("TimeKeeperViewModel", "Load: Starting local timer job for ID $id, duration $currentLocalDuration")
+                                while (this.isActive && currentLocalDuration > 0) {
+                                    delay(1000)
+                                    currentLocalDuration -= 1
+                                    _activeTimers.value = _activeTimers.value.toMutableMap().apply {
+                                        this[id]?.takeIf { it.started }?.let {
+                                            this[id] = it.copy(currentDuration = currentLocalDuration)
+                                        }
+                                    }
+                                }
+                                if (this.isActive && currentLocalDuration <= 0) {
+                                    Log.d("TimeKeeperViewModel", "Load: Local timer job for ID $id reached zero.")
+                                    _activeTimers.value = _activeTimers.value.toMutableMap().apply {
+                                        this[id]?.let { this[id] = it.copy(started = false, currentDuration = 0) }
+                                    }
+                                    _timeKeepers.value = _timeKeepers.value.map { tk ->
+                                        if (tk.id == id) tk.copy(started = false, currentDuration = 0) else tk
+                                    }
+                                }
+                            } finally {
+                                if (timerJobs[id] == this.coroutineContext[Job]) {
+                                    timerJobs.remove(id)
+                                    Log.d("TimeKeeperViewModel", "Load: Cleaned up local timer job for ID $id")
+                                }
+                            }
+                        }
                     }
                 } else {
                     _error.value = result.exceptionOrNull()?.message ?: "Failed to load timeKeepers"
@@ -78,12 +215,10 @@ class TimeKeeperViewModel @Inject constructor(
         }
     }
 
-    // Methods to manage timeKeepers
-    fun createTimeKeeper(sessionId: Int?, stepId: Int?, started: Boolean, initialDuration: Float) {
+    fun createTimeKeeper(sessionId: Int?, stepId: Int?, started: Boolean, initialDuration: Int) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // If a step ID is provided, try to get the duration from the step
                 val duration = if (stepId != null) {
                     getStepDurationById(stepId) ?: initialDuration
                 } else {
@@ -91,21 +226,23 @@ class TimeKeeperViewModel @Inject constructor(
                 }
 
                 val timeKeeper = TimeKeeper(
-                    id = 0,  // Will be assigned by the backend
+                    id = 0,
                     session = sessionId,
                     step = stepId,
                     started = started,
                     currentDuration = duration,
-                    startTime = null  // Will be assigned by the backend if started is true
+                    startTime = null
                 )
 
                 val result = timeKeeperRepository.createTimeKeeper(timeKeeper)
                 if (result.isSuccess) {
                     val createdTimeKeeper = result.getOrNull()
-                    if (createdTimeKeeper != null && started) {
-                        startTimer(createdTimeKeeper.id, stepId, duration)
-                    }
                     loadTimeKeepers()
+                    if (createdTimeKeeper != null && started) {
+                        _activeTimers.value = _activeTimers.value.toMutableMap().apply {
+                            this[createdTimeKeeper.id] = TimerState(createdTimeKeeper.id, createdTimeKeeper.currentDuration ?:0, true)
+                        }
+                    }
                 } else {
                     _error.value = "Failed to create timeKeeper: ${result.exceptionOrNull()?.message}"
                 }
@@ -121,8 +258,11 @@ class TimeKeeperViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // Cancel any running timer for this ID
-                pauseTimer(id)
+
+                timerJobs[id]?.cancel()
+                timerJobs.remove(id)
+                _activeTimers.value = _activeTimers.value.toMutableMap().apply { remove(id) }
+
 
                 val result = timeKeeperRepository.deleteTimeKeeper(id)
                 if (result.isSuccess) {
@@ -138,109 +278,155 @@ class TimeKeeperViewModel @Inject constructor(
         }
     }
 
-    // Timer management methods
-    fun startTimer(id: Int, step: Int?, initialDuration: Float) {
-        // Cancel any existing timer job for this ID
-        pauseTimer(id)
+    fun startTimer(id: Int, step: Int?, initialDuration: Int) {
+        Log.d("TimeKeeperViewModel", "User action: Start timer ID $id, duration $initialDuration")
+        timerJobs[id]?.cancel()
 
-        // Update timer state
-        val mutableTimers = _activeTimers.value.toMutableMap()
-        mutableTimers[id] = TimerState(id, initialDuration, true)
-        _activeTimers.value = mutableTimers
+        _activeTimers.value = _activeTimers.value.toMutableMap().apply {
+            this[id] = TimerState(id, initialDuration, true)
+        }
+        _timeKeepers.value = _timeKeepers.value.map { tk ->
+            if (tk.id == id) tk.copy(started = true, currentDuration = initialDuration) else tk
+        }
 
-        // Start a new timer job
         timerJobs[id] = viewModelScope.launch {
-            val timer = mutableTimers[id] ?: return@launch
-            var newDuration = timer.currentDuration
-
-            while (true) {
-                delay(1000) // Update every second
-
-                if (timer.started) {
-                    newDuration -= 1f
-
-                    // Update the timer state
-                    val updatedTimers = _activeTimers.value.toMutableMap()
-                    updatedTimers[id] = timer.copy(currentDuration = newDuration)
-                    _activeTimers.value = updatedTimers
-
-                    if (newDuration <= 0) {
-                        pauseTimer(id)
-                        break
+            var currentLocalDuration = initialDuration
+            try {
+                while (this.isActive && currentLocalDuration > 0) {
+                    delay(1000)
+                    currentLocalDuration -= 1
+                    _activeTimers.value = _activeTimers.value.toMutableMap().apply {
+                        this[id]?.takeIf { it.started }?.let {
+                            this[id] = it.copy(currentDuration = currentLocalDuration)
+                        }
                     }
+                }
+                if (this.isActive && currentLocalDuration <= 0) {
+                    Log.d("TimeKeeperViewModel", "User action: Timer ID $id reached zero.")
+                    _activeTimers.value = _activeTimers.value.toMutableMap().apply {
+                        this[id]?.let { this[id] = it.copy(started = false, currentDuration = 0) }
+                    }
+                    _timeKeepers.value = _timeKeepers.value.map { tk ->
+                        if (tk.id == id) tk.copy(started = false, currentDuration = 0) else tk
+                    }
+                    updateTimeKeeperOnServer(id, false, 0)
+                }
+            } finally {
+                if (timerJobs[id] == this.coroutineContext[Job]) {
+                    timerJobs.remove(id)
                 }
             }
         }
-
-        // Update timeKeeper on the server
         updateTimeKeeperOnServer(id, true, initialDuration)
     }
 
     fun pauseTimer(id: Int) {
-        // Cancel the running job if it exists
+        Log.d("TimeKeeperViewModel", "User action: Pause timer ID $id")
         timerJobs[id]?.cancel()
 
-        // Update the timer state to paused
-        val mutableTimers = _activeTimers.value.toMutableMap()
-        val currentTimer = mutableTimers[id]
-        if (currentTimer != null) {
-            mutableTimers[id] = currentTimer.copy(started = false)
-            _activeTimers.value = mutableTimers
+        val currentTimerState = _activeTimers.value[id]
+        val durationToReport = currentTimerState?.currentDuration
+            ?: _timeKeepers.value.find { it.id == id }?.currentDuration
+            ?: 0
 
-            // Update timeKeeper on the server
-            updateTimeKeeperOnServer(id, false, currentTimer.currentDuration)
+        _activeTimers.value = _activeTimers.value.toMutableMap().apply {
+            this[id] = TimerState(id, durationToReport, false)
+        }
+        _timeKeepers.value = _timeKeepers.value.map { tk ->
+            if (tk.id == id) tk.copy(started = false, currentDuration = durationToReport) else tk
         }
 
-        // Remove the job reference
-        timerJobs.remove(id)
+        updateTimeKeeperOnServer(id, false, durationToReport)
     }
 
-    fun resetTimer(id: Int, newDuration: Float) {
-        // Cancel the running job
+    fun resetTimer(id: Int, newDuration: Int) {
+        Log.d("TimeKeeperViewModel", "User action: Reset timer ID $id to duration $newDuration")
         timerJobs[id]?.cancel()
 
-        // Update the timer state
-        val mutableTimers = _activeTimers.value.toMutableMap()
-        mutableTimers[id] = TimerState(id, newDuration, false)
-        _activeTimers.value = mutableTimers
-
-        // Update timeKeeper on the server
+        _activeTimers.value = _activeTimers.value.toMutableMap().apply {
+            this[id] = TimerState(id, newDuration, false)
+        }
+        _timeKeepers.value = _timeKeepers.value.map { tk ->
+            if (tk.id == id) tk.copy(started = false, currentDuration = newDuration) else tk
+        }
         updateTimeKeeperOnServer(id, false, newDuration)
-
-        // Remove the job reference
-        timerJobs.remove(id)
     }
 
-    private fun updateTimeKeeperOnServer(id: Int, started: Boolean, currentDuration: Float) {
+    private fun updateTimeKeeperOnServer(id: Int, started: Boolean, currentDuration: Int) {
         viewModelScope.launch {
             try {
-                val existingTimeKeeper = _timeKeepers.value.find { it.id == id }
-                if (existingTimeKeeper != null) {
-                    val updatedTimeKeeper = existingTimeKeeper.copy(
-                        started = started,
-                        currentDuration = currentDuration
-                    )
-                    timeKeeperRepository.updateTimeKeeper(id, updatedTimeKeeper)
+                val existingTimeKeeper = _timeKeepers.value.find { it.id == id } ?: run {
+                    Log.e("TimeKeeperViewModel", "TimeKeeper with id $id not found for server update.")
+                    _error.value = "Cannot update: TimeKeeper $id not found."
+                    return@launch
+                }
+
+                val timeKeeperToUpdate = existingTimeKeeper.copy(
+                    started = started,
+                    currentDuration = currentDuration
+                )
+                Log.d("TimeKeeperViewModel", "Updating server for ID $id: Started=$started, Duration=$currentDuration")
+                val result = timeKeeperRepository.updateTimeKeeper(id, timeKeeperToUpdate)
+
+                if (result.isSuccess) {
+                    val updatedFromServer = result.getOrNull()
+                    if (updatedFromServer != null) {
+                        Log.d("TimeKeeperViewModel", "Server update success for ID $id. New state: Started=${updatedFromServer.started}, Duration=${updatedFromServer.currentDuration}")
+                        _timeKeepers.value = _timeKeepers.value.map {
+                            if (it.id == updatedFromServer.id) updatedFromServer else it
+                        }
+                        _activeTimers.value = _activeTimers.value.toMutableMap().apply {
+                            this[id] = TimerState(
+                                updatedFromServer.id,
+                                updatedFromServer.currentDuration ?: 0,
+                                updatedFromServer.started ?: false
+                            )
+                        }
+                        if (updatedFromServer.started != timerJobs[id]?.isActive) {
+                            handleTimerNotification(TimerNotification(
+                                type = "timer_notification",
+                                action = "updated",
+                                timer_id = updatedFromServer.id,
+                                started = updatedFromServer.started ?: false,
+                                current_duration = (updatedFromServer.currentDuration ?: 0).toDouble(),
+                                timestamp = ""
+                            ))
+                        }
+
+                    } else {
+                        Log.w("TimeKeeperViewModel", "Server update for ID $id successful but no data returned.")
+                    }
+                } else {
+                    Log.e("TimeKeeperViewModel", "Failed to update timeKeeper on server for ID $id: ${result.exceptionOrNull()?.message}")
+                    _error.value = "Failed to update timeKeeper $id on server: ${result.exceptionOrNull()?.message}"
+
                 }
             } catch (e: Exception) {
-                _error.value = "Failed to update timeKeeper on server: ${e.message}"
+                Log.e("TimeKeeperViewModel", "Exception during updateTimeKeeperOnServer for ID $id", e)
+                _error.value = "Exception updating timeKeeper $id: ${e.message}"
             }
         }
     }
 
-    // Get the duration from a protocol step using the repository
-    private suspend fun getStepDurationById(stepId: Int): Float? {
+    private suspend fun getStepDurationById(stepId: Int): Int? {
         return try {
             val result = protocolStepRepository.getProtocolStepById(stepId)
             if (result.isSuccess) {
-                val step = result.getOrNull()
-                step?.stepDuration?.toFloatOrNull()?.times(60) // Convert minutes to seconds
+                result.getOrNull()?.stepDuration ?: 0
             } else {
+                _error.value = "Failed to retrieve step duration for step $stepId: ${result.exceptionOrNull()?.message}"
                 null
             }
         } catch (e: Exception) {
-            _error.value = "Failed to retrieve step duration: ${e.message}"
+            _error.value = "Exception retrieving step duration for step $stepId: ${e.message}"
             null
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        timerJobs.values.forEach { it.cancel() }
+        timerJobs.clear()
+        Log.d("TimeKeeperViewModel", "ViewModel cleared, all timer jobs cancelled.")
     }
 }

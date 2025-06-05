@@ -113,33 +113,43 @@ object RoomMigrations {
             )
         """)
 
-        // Protocol related tables
         database.execSQL("""
             CREATE TABLE IF NOT EXISTS protocol_model (
                 id INTEGER PRIMARY KEY NOT NULL,
-                title TEXT NOT NULL,
-                description TEXT,
-                version TEXT,
+                protocol_id Long,
+                protocol_created_on TEXT,
+                protocol_doi TEXT,
+                protocol_title TEXT NOT NULL,
+                protocol_description TEXT,
+                protocol_url TEXT,
+                protocol_version_uri TEXT,
                 created_at TEXT,
                 updated_at TEXT,
                 enabled INTEGER NOT NULL DEFAULT 1,
-                creator INTEGER,
-                FOREIGN KEY (creator) REFERENCES user(id) ON DELETE SET NULL
+                user INTEGER,
+                duration_rating REAL DEFAULT 0,
+                complexity_rating REAL DEFAULT 0,
+                FOREIGN KEY (user) REFERENCES user(id) ON DELETE SET NULL
             )
         """)
 
         database.execSQL("""
-            CREATE TABLE IF NOT EXISTS protocol_step (
-                id INTEGER PRIMARY KEY NOT NULL,
-                protocol INTEGER NOT NULL,
-                section INTEGER,
-                step_number INTEGER NOT NULL,
-                title TEXT,
-                description TEXT,
-                estimated_time INTEGER,
-                critical INTEGER NOT NULL DEFAULT 0,
-                FOREIGN KEY (protocol) REFERENCES protocol_model(id) ON DELETE CASCADE,
-                FOREIGN KEY (section) REFERENCES protocol_section(id) ON DELETE SET NULL
+            CREATE TABLE IF NOT EXISTS protocol_editor_cross_ref (
+                protocolId INTEGER NOT NULL,
+                userId INTEGER NOT NULL,
+                PRIMARY KEY(protocolId, userId),
+                FOREIGN KEY(protocolId) REFERENCES protocol_model(id) ON DELETE CASCADE,
+                FOREIGN KEY(userId) REFERENCES user(id) ON DELETE CASCADE
+            )
+        """)
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS protocol_viewer_cross_ref (
+                protocolId INTEGER NOT NULL,
+                userId INTEGER NOT NULL,
+                PRIMARY KEY(protocolId, userId),
+                FOREIGN KEY(protocolId) REFERENCES protocol_model(id) ON DELETE CASCADE,
+                FOREIGN KEY(userId) REFERENCES user(id) ON DELETE CASCADE
             )
         """)
 
@@ -147,12 +157,48 @@ object RoomMigrations {
             CREATE TABLE IF NOT EXISTS protocol_section (
                 id INTEGER PRIMARY KEY NOT NULL,
                 protocol INTEGER NOT NULL,
-                title TEXT,
-                description TEXT,
-                section_number INTEGER NOT NULL,
+                section_description TEXT,
+                section_duration LONG,
+                created_at TEXT,
+                updated_at TEXT,
+                remote_id LONG,
+                remote_host INTEGER,
                 FOREIGN KEY (protocol) REFERENCES protocol_model(id) ON DELETE CASCADE
             )
         """)
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS protocol_step (
+                id INTEGER PRIMARY KEY NOT NULL,
+                protocol INTEGER NOT NULL,
+                step_id INTEGER,
+                step_description TEXT NOT NULL,
+                step_section INTEGER,
+                step_duration INTEGER,
+                previous_step INTEGER,
+                original INTEGER NOT NULL DEFAULT 1,
+                branch_from INTEGER,
+                remote_id INTEGER,
+                created_at TEXT,
+                updated_at TEXT,
+                remote_host INTEGER,
+                FOREIGN KEY (protocol) REFERENCES protocol_model(id) ON DELETE CASCADE,
+                FOREIGN KEY (step_section) REFERENCES protocol_section(id) ON DELETE SET NULL,
+                FOREIGN KEY (previous_step) REFERENCES protocol_step(id) ON DELETE SET NULL
+            )
+        """)
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS protocol_step_next_relation (
+                from_step INTEGER NOT NULL,
+                to_step INTEGER NOT NULL,
+                PRIMARY KEY(from_step, to_step),
+                FOREIGN KEY (from_step) REFERENCES protocol_step(id) ON DELETE CASCADE,
+                FOREIGN KEY (to_step) REFERENCES protocol_step(id) ON DELETE CASCADE
+            )
+        """)
+
+
 
         // Annotation tables
         database.execSQL("""
@@ -723,5 +769,8 @@ object RoomMigrations {
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_message_recipient_message ON message_recipient(message_id)")
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_support_info_vendor_contact ON support_information_vendor_contact(support_information_id)")
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_support_info_manufacturer_contact ON support_information_manufacturer_contact(support_information_id)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_protocol_step_next_from ON protocol_step_next_relation(from_step)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_protocol_step_next_to ON protocol_step_next_relation(to_step)")
+
     }
 }

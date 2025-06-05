@@ -15,22 +15,25 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import android.util.Log
 import info.proteo.cupcake.data.remote.model.protocol.TimeKeeper
+import info.proteo.cupcake.data.remote.service.WebSocketService
 import info.proteo.cupcake.data.repository.TimeKeeperRepository
 import info.proteo.cupcake.ui.timekeeper.TimeKeeperViewModel.TimerState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.catch
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
 import javax.inject.Inject
-import kotlin.collections.component1
-import kotlin.collections.component2
+import kotlin.math.max
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val messageThreadRepository: MessageThreadRepository,
-    private val timeKeeperRepository: TimeKeeperRepository
+    private val timeKeeperRepository: TimeKeeperRepository,
+    private val webSocketService: WebSocketService
 ) : ViewModel() {
 
     private val _userData = MutableLiveData<User?>()
@@ -49,52 +52,146 @@ class MainViewModel @Inject constructor(
     val activeTimerStates: StateFlow<Map<Int, TimerState>> = _activeTimerStates.asStateFlow()
 
     private var timerJob: Job? = null
+    private var webSocketListenerJob: Job? = null
 
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private data class TimerNotification(
+        val type: String,
+        val action: String,
+        val timer_id: Int,
+        val started: Boolean,
+        val current_duration: Double,
+        val timestamp: String
+    )
+
+    init {
+        observeWebSocketNotifications()
+    }
+
+    private fun observeWebSocketNotifications() {
+        webSocketListenerJob?.cancel()
+        webSocketListenerJob = viewModelScope.launch {
+            webSocketService.notificationMessages
+                .catch { e ->
+                    Log.e("MainViewModel", "Error collecting WebSocket messages", e)
+                }
+                .collect { jsonString ->
+                    try {
+                        Log.d("MainViewModel", "Received WebSocket message: $jsonString")
+                        val jsonObj = JSONObject(jsonString)
+                        val type = jsonObj.optString("type")
+                        val action = jsonObj.optString("action")
+
+                        if (type == "timer_notification" && action == "updated") {
+                            val timerId = jsonObj.getInt("timer_id")
+                            val started = jsonObj.getBoolean("started")
+                            val currentDurationDouble = jsonObj.getDouble("current_duration")
+                            val timestamp = jsonObj.getString("timestamp")
+
+                            val notification = TimerNotification(
+                                type, action, timerId, started, currentDurationDouble, timestamp
+                            )
+                            handleTimerNotification(notification)
+                        }
+                    } catch (e: Exception) {
+                        Log.e("MainViewModel", "Error parsing WebSocket message", e)
+                    }
+                }
+        }
+    }
+
+    private fun handleTimerNotification(notification: TimerNotification) {
+        val timerId = notification.timer_id
+        val wsStarted = notification.started
+        val wsDuration = notification.current_duration.toInt().coerceAtLeast(0)
+
+        Log.d("MainViewModel", "Handling WS Notification for Timer ID $timerId: Started=$wsStarted, Duration=$wsDuration")
+
+        _activeTimerStates.value = _activeTimerStates.value.toMutableMap().apply {
+            this[timerId] = TimerState(timerId, wsDuration, wsStarted)
+        }
+
+        val currentDisplayedTks = _activeTimekeepers.value.toMutableList()
+        val existingTkIndex = currentDisplayedTks.indexOfFirst { it.id == timerId }
+
+        var needsRefresh = false
+
+        if (existingTkIndex != -1) {
+            val oldTk = currentDisplayedTks[existingTkIndex]
+            if (wsStarted) {
+                currentDisplayedTks[existingTkIndex] = oldTk.copy(started = true, currentDuration = wsDuration)
+                _activeTimekeepers.value = currentDisplayedTks
+            } else {
+
+                if (oldTk.started == true) {
+                    needsRefresh = true
+                }
+            }
+        } else {
+            if (wsStarted) {
+                needsRefresh = true
+            }
+        }
+
+        if (needsRefresh) {
+            Log.d("MainViewModel", "WS: Needs refresh for timer $timerId, wsStarted: $wsStarted")
+            fetchActiveTimekeepers()
+        } else {
+            if (existingTkIndex != -1 && wsStarted) {
+                _activeTimekeepers.value = _activeTimekeepers.value.map {
+                    if (it.id == timerId) {
+                        it.copy(started = true, currentDuration = wsDuration)
+                    } else {
+                        it
+                    }
+                }
+            }
+        }
+    }
+
+
     private fun startTimerUpdates() {
         timerJob?.cancel()
         timerJob = viewModelScope.launch {
             while (true) {
-                updateTimerStates()
                 delay(1000)
+                updateTimerStates()
             }
         }
     }
 
     private fun updateTimerStates() {
-        val currentStates = _activeTimerStates.value.toMutableMap()
-        val currentTime = System.currentTimeMillis() / 1000
+        val newActiveTimerStates = _activeTimerStates.value.toMutableMap()
+        var listModifiedDueToLocalStop = false
 
-        _activeTimekeepers.value.forEach { timeKeeper ->
-            if (timeKeeper.started == true) {
-                val totalDuration = timeKeeper.currentDuration ?: 0f
-                val startTimeSeconds = parseTimeToSeconds(timeKeeper.startTime)
-                val elapsedSeconds = if (startTimeSeconds > 0) {
-                    (currentTime - startTimeSeconds).toFloat()
-                } else {
-                    0f
+        val timerIdsBeingTracked = _activeTimerStates.value.keys.toList()
+
+        for (timerId in timerIdsBeingTracked) {
+            val currentState = _activeTimerStates.value[timerId]
+            if (currentState != null && currentState.started) {
+                val newDuration = max(0, currentState.currentDuration - 1)
+                val newStartedState = newDuration > 0
+                newActiveTimerStates[timerId] = currentState.copy(currentDuration = newDuration, started = newStartedState)
+
+                if (!newStartedState) {
+                    Log.d("MainViewModel", "Local Countdown: Timer ID $timerId reached zero.")
+                    if (_activeTimekeepers.value.any { it.id == timerId && it.started == true }) {
+                        listModifiedDueToLocalStop = true
+                    }
                 }
-                val remainingSeconds = maxOf(0f, totalDuration - elapsedSeconds)
-
-                currentStates[timeKeeper.id] = TimerState(
-                    timeKeeper.id,
-                    started = true,
-                    currentDuration = remainingSeconds
-                )
-            } else {
-                currentStates[timeKeeper.id] = TimerState(
-                    timeKeeper.id,
-                    started = false,
-                    currentDuration = timeKeeper.currentDuration ?: 0f
-                )
             }
         }
+        _activeTimerStates.value = newActiveTimerStates
 
-        _activeTimerStates.value = currentStates
+        if (listModifiedDueToLocalStop) {
+            Log.d("MainViewModel", "Local Countdown: Refreshing active timekeepers as a timer stopped.")
+            fetchActiveTimekeepers()
+        }
     }
+
 
     private fun parseTimeToSeconds(timeStr: String?): Long {
         return try {
@@ -104,7 +201,15 @@ class MainViewModel @Inject constructor(
             val date = format.parse(timeStr) ?: return 0
             date.time / 1000
         } catch (e: Exception) {
-            0
+            try {
+                val formatNoMillis = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
+                formatNoMillis.timeZone = TimeZone.getTimeZone("UTC")
+                val date = formatNoMillis.parse(timeStr) ?: return 0
+                date.time / 1000
+            } catch (e2: Exception) {
+                Log.e("MainViewModel", "Error parsing time string: $timeStr", e)
+                0
+            }
         }
     }
 
@@ -118,21 +223,35 @@ class MainViewModel @Inject constructor(
                 )
 
                 if (result.isSuccess) {
-                    val timekeepers = result.getOrNull()?.results ?: emptyList()
-                    _activeTimekeepers.value = timekeepers
-                    _activeTimekeepersCount.value = result.getOrNull()?.count ?: 0
-                    updateTimerStates()
-                    startTimerUpdates()
-                    Log.d("MainViewModel", "Active timekeepers fetched successfully: ${timekeepers}")
+                    val fetchedTimekeepers = result.getOrNull()?.results ?: emptyList()
+                    val totalCount = result.getOrNull()?.count ?: 0
 
-                    Log.d("MainViewModel", "Active timekeepers fetched: ${_activeTimekeepers.value.size}")
+                    _activeTimekeepers.value = fetchedTimekeepers
+                    _activeTimekeepersCount.value = totalCount
+
+                    val newTimerStates = _activeTimerStates.value.toMutableMap()
+                    fetchedTimekeepers.forEach { tk ->
+                        if (!newTimerStates.containsKey(tk.id) || newTimerStates[tk.id]?.started != tk.started || newTimerStates[tk.id]?.currentDuration != tk.currentDuration) {
+                            newTimerStates[tk.id] = TimerState(
+                                id = tk.id,
+                                currentDuration = tk.currentDuration ?: 0,
+                                started = tk.started ?: false
+                            )
+                        }
+                    }
+                    _activeTimerStates.value = newTimerStates
+                    Log.d("MainViewModel", "Active timekeepers fetched: ${fetchedTimekeepers.size}, Total active: $totalCount")
+                    if (fetchedTimekeepers.isNotEmpty()) {
+                        startTimerUpdates()
+                    } else {
+                        timerJob?.cancel()
+                    }
                 } else {
-                    Log.e("MainViewModel", "Error fetching active timekeepers: ${result.exceptionOrNull()}")
-                    _activeTimekeepers.value = emptyList()
-                    _activeTimekeepersCount.value = 0
+                    Log.e("MainViewModel", "Error fetching active timekeepers: ${result.exceptionOrNull()?.message}")
                 }
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Exception fetching timekeepers", e)
+            } finally {
             }
         }
     }
@@ -154,12 +273,16 @@ class MainViewModel @Inject constructor(
                 } else {
                     Log.d("MainViewModel", "No active user found")
                     _messageThreads.value = emptyList()
-                    _isLoading.value = false
+                    _activeTimekeepers.value = emptyList()
+                    _activeTimekeepersCount.value = 0
+                    _activeTimerStates.value = emptyMap()
+                    timerJob?.cancel()
                 }
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Error loading user data", e)
                 _userData.postValue(null)
                 _messageThreads.value = emptyList()
+            } finally {
                 _isLoading.value = false
             }
         }
@@ -168,19 +291,17 @@ class MainViewModel @Inject constructor(
     fun fetchLatestMessageThreads() {
         Log.d("MainViewModel", "Fetching latest message threads")
         viewModelScope.launch {
-
             messageThreadRepository.getMessageThreads(
                 offset = 0,
                 limit = 5
             ).collect { result ->
                 result.onSuccess { response ->
-                    Log.d("MainViewModel", "Fetched message threads: ${response.results}")
+                    Log.d("MainViewModel", "Fetched message threads: ${response.results.size}")
                     _messageThreads.value = response.results
                 }.onFailure {
                     Log.e("MainViewModel", "Error fetching message threads", it)
                     _messageThreads.value = emptyList()
                 }
-                _isLoading.value = false
             }
         }
     }
@@ -188,5 +309,7 @@ class MainViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         timerJob?.cancel()
+        webSocketListenerJob?.cancel() // Clean up WebSocket listener
+        Log.d("MainViewModel", "ViewModel cleared, jobs cancelled.")
     }
 }

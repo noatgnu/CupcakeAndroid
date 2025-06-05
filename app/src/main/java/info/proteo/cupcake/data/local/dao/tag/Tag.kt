@@ -24,10 +24,23 @@ interface TagDao {
     suspend fun delete(tag: TagEntity)
 
     @Query("SELECT * FROM tag WHERE id = :id")
-    suspend fun getById(id: Int): TagEntity?
+    fun getById(id: Int): Flow<TagEntity?>
 
     @Query("SELECT * FROM tag")
     fun getAllTags(): Flow<List<TagEntity>>
+
+    @Query("SELECT * FROM tag LIMIT :limit OFFSET :offset")
+    fun getAllTags(limit: Int, offset: Int): Flow<List<TagEntity>>
+
+    @Query("SELECT * FROM tag WHERE tag = :name")
+    suspend fun getByName(name: String): TagEntity?
+
+    @Query("SELECT * FROM tag WHERE tag LIKE '%' || :name || '%'")
+    fun searchByName(name: String): Flow<List<TagEntity>>
+
+
+    @Query("SELECT * FROM tag WHERE tag LIKE '%' || :name || '%' LIMIT :limit OFFSET :offset")
+    fun searchByName(name: String, limit: Int, offset: Int): Flow<List<TagEntity>>
 
     @Query("DELETE FROM tag")
     suspend fun deleteAll()

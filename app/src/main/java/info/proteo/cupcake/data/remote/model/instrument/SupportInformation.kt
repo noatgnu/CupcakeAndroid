@@ -1,8 +1,11 @@
 package info.proteo.cupcake.data.remote.model.instrument
 
 import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 import info.proteo.cupcake.data.remote.model.storage.StorageObjectBasic
 
+
+@JsonClass(generateAdapter = true)
 data class SupportInformation(
     val id: Int,
     @Json(name = "vendor_name") val vendorName: String?,

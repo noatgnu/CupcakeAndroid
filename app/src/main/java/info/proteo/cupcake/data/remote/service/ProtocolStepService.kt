@@ -1,17 +1,21 @@
 package info.proteo.cupcake.data.remote.service
 
 import com.squareup.moshi.Json
+import info.proteo.cupcake.data.local.dao.annotation.AnnotationDao
 import info.proteo.cupcake.data.local.dao.protocol.ProtocolStepDao
 import info.proteo.cupcake.data.local.dao.user.UserPreferencesDao
 import info.proteo.cupcake.data.local.entity.protocol.ProtocolStepEntity
+import info.proteo.cupcake.data.local.entity.protocol.ProtocolStepNextRelation
 import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
 import info.proteo.cupcake.data.remote.model.protocol.StepReagent
 import info.proteo.cupcake.data.remote.model.protocol.StepTag
 import info.proteo.cupcake.data.remote.model.protocol.TimeKeeper
+import info.proteo.cupcake.data.remote.model.annotation.Annotation
 import info.proteo.cupcake.data.remote.model.reagent.ReagentAction
 import info.proteo.cupcake.data.repository.UserRepository
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import retrofit2.Response
 import retrofit2.http.Body
@@ -167,7 +171,8 @@ class ProtocolStepServiceImpl @Inject constructor(
     private val apiService: ProtocolStepApiService,
     private val protocolStepDao: ProtocolStepDao,
     private val userRepository: UserRepository,
-    private val userPreferencesDao: UserPreferencesDao
+    private val userPreferencesDao: UserPreferencesDao,
+    private val annotationDao: AnnotationDao
 ) : ProtocolStepService {
 
     override suspend fun getProtocolSteps(
@@ -365,36 +370,110 @@ class ProtocolStepServiceImpl @Inject constructor(
     }
 
     private suspend fun cacheProtocolStep(protocolStep: ProtocolStep) {
-        protocolStepDao.insert(ProtocolStepEntity(
+        // First insert/update the protocol step entity
+        protocolStepDao.insertStep(ProtocolStepEntity(
             id = protocolStep.id,
             protocol = protocolStep.protocol,
-            stepId = protocolStep.stepId,
-            stepDescription = protocolStep.stepDescription,
+            stepId = protocolStep.stepId?.toLong(),
+            description = protocolStep.stepDescription ?: "",
             stepSection = protocolStep.stepSection,
-            stepDuration = protocolStep.stepDuration,
-            nextStep = protocolStep.nextStep,
+            duration = protocolStep.stepDuration,
             previousStep = protocolStep.previousStep,
+            original = true, // Default value, adjust as needed
+            branchFrom = null, // Default value, adjust as needed
+            remoteId = null, // Default value, adjust as needed
             createdAt = protocolStep.createdAt,
-            updatedAt = protocolStep.updatedAt
+            updatedAt = protocolStep.updatedAt,
+            remoteHost = null // Default value, adjust as needed
         ))
+
+        // Clear existing next step relations for this step
+        protocolStepDao.clearNextStepsForStep(protocolStep.id)
+
+        // Add new next step relations
+        protocolStep.nextStep?.forEach { nextStepId ->
+            protocolStepDao.addNextStepRelation(
+                ProtocolStepNextRelation(
+                    fromStep = protocolStep.id,
+                    toStep = nextStepId
+                )
+            )
+        }
     }
 
-    private fun ProtocolStepEntity.toDomainModel(): ProtocolStep {
+    private suspend fun ProtocolStepEntity.toDomainModel(): ProtocolStep {
+        val annotationEntities = annotationDao.getByStep(id).firstOrNull() ?: emptyList()
+        val annotations = annotationEntities.map { entity ->
+            Annotation(
+                id = entity.id,
+                step = entity.step,
+                session = entity.session,
+                annotation = entity.annotation,
+                file = entity.file,
+                createdAt = entity.createdAt,
+                updatedAt = entity.updatedAt,
+                annotationType = entity.annotationType,
+                transcribed = entity.transcribed,
+                transcription = entity.transcription,
+                language = entity.language,
+                translation = entity.translation,
+                scratched = entity.scratched,
+                annotationName = entity.annotationName,
+                folder = emptyList(),
+                summary = entity.summary,
+                instrumentUsage = null,
+                metadataColumns = null,
+                fixed = entity.fixed,
+                user = null,
+                storedReagent = entity.storedReagent
+            )
+        }
+
+        val stepWithNextSteps = protocolStepDao.getStepWithNextSteps(id)
+        val nextStepIds = stepWithNextSteps?.nextSteps?.map { it.id } ?: emptyList()
+
         return ProtocolStep(
             id = id,
             protocol = protocol,
-            stepId = stepId,
-            stepDescription = stepDescription,
+            stepDescription = description,
             stepSection = stepSection,
-            stepDuration = stepDuration,
-            nextStep = nextStep,
+            stepDuration = duration,
+            nextStep = nextStepIds,
             previousStep = previousStep,
             createdAt = createdAt,
             updatedAt = updatedAt,
-            annotations = emptyList(),
-            variations = emptyList(),
             reagents = emptyList(),
-            tags = emptyList()
+            variations = emptyList(),
+            tags = emptyList(),
+            annotations = annotations,
+            stepId = stepId?.toInt(),
         )
+    }
+
+    fun ProtocolStep.toEntity(): ProtocolStepEntity {
+        return ProtocolStepEntity(
+            id = id,
+            protocol = protocol,
+            stepId = stepId?.toLong(),
+            description = stepDescription ?: "",
+            stepSection = stepSection,
+            duration = stepDuration,
+            previousStep = previousStep,
+            original = true,
+            branchFrom = null,
+            remoteId = null,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            remoteHost = null
+        )
+    }
+
+    fun ProtocolStep.toNextStepRelations(): List<ProtocolStepNextRelation> {
+        return nextStep?.map { nextStepId ->
+            ProtocolStepNextRelation(
+                fromStep = id,
+                toStep = nextStepId
+            )
+        } ?: emptyList()
     }
 }

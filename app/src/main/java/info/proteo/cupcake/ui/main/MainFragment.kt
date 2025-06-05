@@ -70,7 +70,6 @@ class MainFragment : Fragment() {
         binding.recyclerViewThreads.apply {
             adapter = threadAdapter
             layoutManager = LinearLayoutManager(requireContext())
-            addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
         }
 
     }

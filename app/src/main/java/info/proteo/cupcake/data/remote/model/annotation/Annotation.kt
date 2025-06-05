@@ -1,10 +1,12 @@
 package info.proteo.cupcake.data.remote.model.annotation
 
 import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 import info.proteo.cupcake.data.remote.model.instrument.InstrumentUsage
 import info.proteo.cupcake.data.remote.model.metadatacolumn.MetadataColumn
 import info.proteo.cupcake.data.remote.model.user.UserBasic
 
+@JsonClass(generateAdapter = true)
 data class Annotation(
     val id: Int,
     val step: Int?,
@@ -29,11 +31,13 @@ data class Annotation(
     @Json(name = "stored_reagent") val storedReagent: Int?
 )
 
+@JsonClass(generateAdapter = true)
 data class AnnotationFolderPath(
     val id: Int,
     @Json(name = "folder_name") val folderName: String
 )
 
+@JsonClass(generateAdapter = true)
 data class AnnotationFolder(
     val id: Int,
     @Json(name = "folder_name") val folderName: String,
@@ -45,6 +49,7 @@ data class AnnotationFolder(
     @Json(name = "stored_reagent") val storedReagent: Int?
 )
 
+@JsonClass(generateAdapter = true)
 data class AnnotationFolderDetails(
     val id: Int,
     @Json(name = "folder_name") val folderName: String

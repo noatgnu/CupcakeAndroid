@@ -1,6 +1,7 @@
 package info.proteo.cupcake.data.remote.model.instrument
 
 import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 import info.proteo.cupcake.data.remote.model.metadatacolumn.MetadataColumn
 import info.proteo.cupcake.data.remote.model.metadatacolumn.MetadataTableTemplate
 import info.proteo.cupcake.data.remote.model.project.Project
@@ -10,6 +11,7 @@ import info.proteo.cupcake.data.remote.model.reagent.StoredReagent
 import info.proteo.cupcake.data.remote.model.user.LabGroupBasic
 import info.proteo.cupcake.data.remote.model.user.UserBasic
 
+@JsonClass(generateAdapter = true)
 data class InstrumentJob(
     val id: Int,
     val instrument: Int,

@@ -41,7 +41,6 @@ class TimeKeeperActivity : AppCompatActivity() {
         setupObservers()
         setupClickListeners()
 
-        // Load initial data
         viewModel.loadTimeKeepers()
     }
 
@@ -49,14 +48,14 @@ class TimeKeeperActivity : AppCompatActivity() {
         adapter = TimeKeeperAdapter(
             onItemClick = { timeKeeper -> showTimeKeeperOptions(timeKeeper) },
             onStartClick = { timeKeeper ->
-                val initialDuration = timeKeeper.currentDuration ?: 30f
+                val initialDuration = timeKeeper.currentDuration ?: 30
                 viewModel.startTimer(timeKeeper.id, timeKeeper.step, initialDuration)
             },
             onPauseClick = { timeKeeper -> viewModel.pauseTimer(timeKeeper.id) },
             onResetClick = { timeKeeper ->
-                val initialDuration = timeKeeper.currentDuration ?: 30f
+                val initialDuration = timeKeeper.currentDuration ?: 30
                 viewModel.resetTimer(timeKeeper.id, initialDuration)
-            }
+            },
         )
 
         binding.recyclerViewTimeKeepers.apply {
@@ -121,10 +120,9 @@ class TimeKeeperActivity : AppCompatActivity() {
                 try {
                     val sessionId = if (sessionIdText.isBlank()) null else sessionIdText.toInt()
                     val stepId = if (stepIdText.isBlank()) null else stepIdText.toInt()
-                    val duration = if (durationText.isBlank()) null else durationText.toFloat()
+                    val duration = if (durationText.isBlank()) null else durationText.toInt()
                     val started = dialogBinding.switchStarted.isChecked
-                    // convert duration to seconds
-                    val durationInSeconds = duration?.times(60) ?: 30f * 60
+                    val durationInSeconds = duration?.times(60) ?: 30 * 60
                     viewModel.createTimeKeeper(sessionId, stepId, started, durationInSeconds)
                     dialog.dismiss()
                 } catch (e: NumberFormatException) {

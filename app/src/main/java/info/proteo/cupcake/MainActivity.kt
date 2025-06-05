@@ -65,6 +65,12 @@ class MainActivity : AppCompatActivity() {
                     binding.drawerLayout?.closeDrawers()
                     true
                 }
+                R.id.nav_protocols -> {
+                    val intent = Intent(this, ProtocolActivity::class.java)
+                    startActivity(intent)
+                    binding.drawerLayout?.closeDrawers()
+                    true
+                }
                 else -> {
                     navController.navigate(menuItem.itemId)
                     binding.drawerLayout?.closeDrawers()

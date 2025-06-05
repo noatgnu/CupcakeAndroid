@@ -1,9 +1,11 @@
 package info.proteo.cupcake.data.remote.model.protocol
 
 import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 import info.proteo.cupcake.data.remote.model.reagent.Reagent
 import info.proteo.cupcake.data.remote.model.tag.Tag
 
+@JsonClass(generateAdapter = true)
 data class StepVariation(
     val id: Int,
     val step: Int,
@@ -11,6 +13,7 @@ data class StepVariation(
     @Json(name = "variation_duration") val variationDuration: String?
 )
 
+@JsonClass(generateAdapter = true)
 data class StepReagent(
     val id: Int,
     val step: Int,
@@ -22,6 +25,7 @@ data class StepReagent(
     @Json(name = "scalable_factor") val scalableFactor: Float?
 )
 
+@JsonClass(generateAdapter = true)
 data class StepTag(
     val id: Int,
     val step: Int,

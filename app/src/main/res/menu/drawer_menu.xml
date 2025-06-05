@@ -16,4 +16,8 @@
         android:id="@+id/nav_timekeepers"
         android:icon="@drawable/outline_calendar_clock_24"
         android:title="@string/time_keepers" />
+    <item
+        android:id="@+id/nav_protocols"
+        android:icon="@drawable/ic_session"
+        android:title="@string/protocols" />
 </menu>

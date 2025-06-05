@@ -94,4 +94,5 @@
     <string name="enter_reagent_name_or_id">Enter reagent name or ID</string>
     <string name="time_keepers">Time Keepers</string>
     <string name="instruments">Instruments</string>
+    <string name="protocols">Protocols</string>
 </resources>

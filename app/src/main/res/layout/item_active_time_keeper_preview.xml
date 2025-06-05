@@ -1,44 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:background="@android:color/white"
-    android:foreground="?attr/selectableItemBackground">
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="?android:attr/listDivider" />
+    android:layout_marginStart="8dp"
+    android:layout_marginEnd="8dp"
+    android:layout_marginTop="4dp"
+    android:layout_marginBottom="4dp"
+    app:cardElevation="2dp"
+    app:cardCornerRadius="8dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="12dp">
+        android:padding="16dp">
 
         <TextView
             android:id="@+id/textViewSession"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceListItemSecondary"
             android:text="Session: 1" />
 
         <TextView
             android:id="@+id/textViewStep"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textAppearance="?attr/textAppearanceListItemSecondary"
             android:text="Step: 1" />
 
         <TextView
             android:id="@+id/textViewDuration"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Duration: 00:00:00"
-            android:textStyle="bold" />
+            android:layout_marginTop="8dp"
+            android:textAppearance="?attr/textAppearanceHeadline6"
+            android:text="Duration: 00:00:00" />
     </LinearLayout>
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="?android:attr/listDivider" />
-</LinearLayout>
+</com.google.android.material.card.MaterialCardView>

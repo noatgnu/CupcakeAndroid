@@ -17,14 +17,14 @@ class TimeKeeperAdapter(
     private val onItemClick: (TimeKeeper) -> Unit,
     private val onStartClick: (TimeKeeper) -> Unit,
     private val onPauseClick: (TimeKeeper) -> Unit,
-    private val onResetClick: (TimeKeeper) -> Unit
+    private val onResetClick: (TimeKeeper) -> Unit,
 ) : ListAdapter<TimeKeeper, TimeKeeperAdapter.TimeKeeperViewHolder>(DIFF_CALLBACK) {
 
     private var activeTimers: Map<Int, TimeKeeperViewModel.TimerState> = emptyMap()
 
     fun updateActiveTimers(timers: Map<Int, TimeKeeperViewModel.TimerState>) {
         activeTimers = timers
-        notifyDataSetChanged() // Consider using DiffUtil for more efficient updates if list changes frequently
+        notifyDataSetChanged()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TimeKeeperViewHolder {
@@ -108,7 +108,7 @@ class TimeKeeperAdapter(
             }
         }
 
-        private fun formatDuration(seconds: Float): String {
+        private fun formatDuration(seconds: Int): String {
             val totalSeconds = seconds.toInt()
             val hours = totalSeconds / 3600
             val mins = (totalSeconds % 3600) / 60

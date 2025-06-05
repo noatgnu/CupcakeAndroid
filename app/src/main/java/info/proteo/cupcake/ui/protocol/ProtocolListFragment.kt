@@ -1,0 +1,140 @@
+package info.proteo.cupcake.ui.protocol
+
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
+import androidx.core.view.MenuProvider
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import dagger.hilt.android.AndroidEntryPoint
+import info.proteo.cupcake.R
+import info.proteo.cupcake.databinding.FragmentProtocolListBinding
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+
+@AndroidEntryPoint
+class ProtocolListFragment : Fragment() {
+    private var _binding: FragmentProtocolListBinding? = null
+    private val binding get() = _binding!!
+
+    private val viewModel: ProtocolListViewModel by viewModels()
+    private lateinit var protocolAdapter: ProtocolAdapter
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentProtocolListBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        setupToolbar()
+        setupRecyclerView()
+        requireActivity().addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                menuInflater.inflate(R.menu.protocol_list_menu, menu)
+                val searchItem = menu.findItem(R.id.action_search)
+                val searchView = searchItem?.actionView as? SearchView
+
+                searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+                    override fun onQueryTextSubmit(query: String?): Boolean {
+                        viewModel.searchProtocols(query)
+                        return true
+                    }
+
+                    override fun onQueryTextChange(newText: String?): Boolean {
+                        if (newText.isNullOrBlank()) {
+                            viewModel.searchProtocols(null)
+                        }
+                        return true
+                    }
+                })
+            }
+
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                return when (menuItem.itemId) {
+                    // Handle menu item clicks here
+                    else -> false
+                }
+            }
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
+        observeViewModel()
+    }
+
+    private fun setupToolbar() {
+        (activity as? AppCompatActivity)?.let {
+            it.setSupportActionBar(binding.toolbar)
+            it.supportActionBar?.title = "Protocols"
+        }
+    }
+
+    private fun setupRecyclerView() {
+        protocolAdapter = ProtocolAdapter(
+            onProtocolClick = { protocol ->
+                // Handle protocol click
+            },
+            onSessionClick = { session ->
+                // Handle session click
+            }
+        )
+
+        binding.recyclerView.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = protocolAdapter
+
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+
+                    val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                    val visibleItemCount = layoutManager.childCount
+                    val totalItemCount = layoutManager.itemCount
+                    val firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
+
+                    if (!viewModel.isLoading.value && !viewModel.isLastPage.value &&
+                        (visibleItemCount + firstVisibleItem) >= totalItemCount - 5) {
+                        viewModel.loadMoreProtocols()
+                    }
+                }
+            })
+        }
+    }
+
+    private fun observeViewModel() {
+        lifecycleScope.launch {
+            viewModel.protocols.collectLatest { protocols ->
+                protocolAdapter.submitList(protocols)
+                binding.emptyView.visibility = if (protocols.isEmpty()) View.VISIBLE else View.GONE
+            }
+        }
+
+        lifecycleScope.launch {
+            viewModel.isLoading.collectLatest { isLoading ->
+                binding.progressIndicator.visibility = if (isLoading) View.VISIBLE else View.GONE
+            }
+        }
+    }
+
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+}

@@ -1,10 +1,10 @@
 package info.proteo.cupcake.data.remote.interceptor
 
 import info.proteo.cupcake.data.local.dao.user.UserPreferencesDao
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
+import java.util.UUID
 import javax.inject.Inject
 
 class AuthInterceptor @Inject constructor(
@@ -26,13 +26,25 @@ class AuthInterceptor @Inject constructor(
 
             activePreferences?.let { preferences ->
                 val requestBuilder = originalRequest.newBuilder()
+
                 preferences.authToken?.let { token ->
                     requestBuilder.header("Authorization", "Token $token")
-                }
 
-                // Add any other headers if needed, like session token
-                preferences.sessionToken?.let { session ->
-                    requestBuilder.header("X-Cupcake-Instance-Id", session)
+                    if (preferences.sessionToken == null) {
+                        val newSessionToken = StringBuilder().append(UUID.randomUUID().toString()).append("android").toString()
+
+                        runBlocking {
+                            userPreferencesDao.updateSessionToken(
+                                preferences.userId,
+                                preferences.hostname,
+                                newSessionToken
+                            )
+                        }
+
+                        requestBuilder.header("X-Cupcake-Instance-Id", newSessionToken)
+                    } else {
+                        requestBuilder.header("X-Cupcake-Instance-Id", preferences.sessionToken)
+                    }
                 }
 
                 return chain.proceed(requestBuilder.build())

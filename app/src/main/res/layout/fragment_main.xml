@@ -37,12 +37,12 @@
                 android:text="Active Timekeepers"
                 android:textStyle="bold" />
 
-            <TextView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/textViewViewAllTimekeepers"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="View All"
-                android:textColor="@color/purple_500" />
+                android:text="View All" />
         </LinearLayout>
 
         <TextView
@@ -77,13 +77,13 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/activeTimekeepersSection" />
 
-    <TextView
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/textViewViewAll"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/view_all"
-        android:textColor="@color/purple_500"
-        android:layout_margin="16dp"
+        android:layout_marginEnd="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/textViewRecentMessages"
         app:layout_constraintBottom_toBottomOf="@id/textViewRecentMessages" />

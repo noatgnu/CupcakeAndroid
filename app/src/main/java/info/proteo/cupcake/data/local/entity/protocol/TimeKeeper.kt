@@ -11,6 +11,6 @@ data class TimeKeeperEntity(
     val session: Int?,
     val step: Int?,
     val started: Boolean,
-    @ColumnInfo(name = "current_duration") val currentDuration: Float?,
+    @ColumnInfo(name = "current_duration") val currentDuration: Int?,
     @ColumnInfo(name = "user_id") val userId: Int? = null,
 )

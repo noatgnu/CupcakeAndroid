@@ -4,6 +4,7 @@ barcodeScanning = "17.3.0"
 cameraCore = "1.4.2"
 coil = "2.5.0"
 coreVersion = "3.5.2"
+firebaseBom = "33.14.0"
 javapoet = "1.13.0"
 kotlin = "2.1.0"
 coreKtx = "1.16.0"
@@ -39,6 +40,7 @@ androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", versi
 androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "cameraCore" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-livedata-ktx-v290 = { module = "androidx.lifecycle:lifecycle-livedata-ktx", version.ref = "lifecycleLivedataKtxVersion" }
+androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycleLivedataKtxVersion" }
 androidx-navigation-fragment-ktx-v277 = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "navigationFragmentKtxVersion" }
 androidx-navigation-ui-ktx-v277 = { module = "androidx.navigation:navigation-ui-ktx", version.ref = "navigationUiKtxVersion" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomVersion" }
@@ -47,6 +49,9 @@ androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "
 barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "barcodeScanning" }
 coil = { module = "io.coil-kt:coil", version.ref = "coil" }
 converter-moshi = { module = "com.squareup.retrofit2:converter-moshi", version.ref = "retrofit" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+firebase-inappmessaging-display = { module = "com.google.firebase:firebase-inappmessaging-display" }
 javapoet = { module = "com.squareup:javapoet", version.ref = "javapoet" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

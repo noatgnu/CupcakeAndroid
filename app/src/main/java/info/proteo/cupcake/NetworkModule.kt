@@ -1,6 +1,7 @@
 package info.proteo.cupcake
 
 import android.util.Log
+import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
@@ -46,6 +47,12 @@ import info.proteo.cupcake.data.remote.service.MessageServiceImpl
 import info.proteo.cupcake.data.remote.service.MessageThreadApiService
 import info.proteo.cupcake.data.remote.service.MessageThreadService
 import info.proteo.cupcake.data.remote.service.MessageThreadServiceImpl
+import info.proteo.cupcake.data.remote.service.ProtocolApiService
+import info.proteo.cupcake.data.remote.service.ProtocolSectionApiService
+import info.proteo.cupcake.data.remote.service.ProtocolSectionService
+import info.proteo.cupcake.data.remote.service.ProtocolSectionServiceImpl
+import info.proteo.cupcake.data.remote.service.ProtocolService
+import info.proteo.cupcake.data.remote.service.ProtocolServiceImpl
 import info.proteo.cupcake.data.remote.service.ProtocolStepApiService
 import info.proteo.cupcake.data.remote.service.ProtocolStepService
 import info.proteo.cupcake.data.remote.service.ProtocolStepServiceImpl
@@ -64,23 +71,31 @@ import info.proteo.cupcake.data.remote.service.StoredReagentServiceImpl
 import info.proteo.cupcake.data.remote.service.SupportInformationApiService
 import info.proteo.cupcake.data.remote.service.SupportInformationService
 import info.proteo.cupcake.data.remote.service.SupportInformationServiceImpl
+import info.proteo.cupcake.data.remote.service.TagApiService
+import info.proteo.cupcake.data.remote.service.TagService
+import info.proteo.cupcake.data.remote.service.TagServiceImpl
 import info.proteo.cupcake.data.remote.service.TimeKeeperApiService
 import info.proteo.cupcake.data.remote.service.TimeKeeperService
 import info.proteo.cupcake.data.remote.service.TimeKeeperServiceImpl
 import info.proteo.cupcake.data.remote.service.UserApiService
 import info.proteo.cupcake.data.remote.service.UserService
 import info.proteo.cupcake.data.remote.service.UserServiceImpl
+import info.proteo.cupcake.data.remote.service.WebSocketManager
+import info.proteo.cupcake.data.remote.service.WebSocketService
 import info.proteo.cupcake.data.repository.AnnotationRepository
 import info.proteo.cupcake.data.repository.InstrumentRepository
 import info.proteo.cupcake.data.repository.MessageRepository
 import info.proteo.cupcake.data.repository.MessageRepositoryImpl
 import info.proteo.cupcake.data.repository.MessageThreadRepository
 import info.proteo.cupcake.data.repository.MessageThreadRepositoryImpl
+import info.proteo.cupcake.data.repository.ProtocolRepository
+import info.proteo.cupcake.data.repository.ProtocolSectionRepository
 import info.proteo.cupcake.data.repository.ProtocolStepRepository
 import info.proteo.cupcake.data.repository.ReagentActionRepository
 import info.proteo.cupcake.data.repository.ReagentDocumentRepository
 import info.proteo.cupcake.data.repository.StoredReagentRepository
 import info.proteo.cupcake.data.repository.SupportInformationRepository
+import info.proteo.cupcake.data.repository.TagRepository
 import info.proteo.cupcake.data.repository.TimeKeeperRepository
 import info.proteo.cupcake.data.repository.UserRepository
 import okhttp3.Interceptor
@@ -89,6 +104,7 @@ import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import java.lang.reflect.Type
 import java.util.concurrent.TimeUnit
 import javax.inject.Named
 import javax.inject.Singleton
@@ -122,8 +138,12 @@ object NetworkModule {
     @Singleton
     @Named("authenticatedClient")
     fun provideAuthenticatedOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient {
+        val logging = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        }
         return OkHttpClient.Builder()
-            .addInterceptor(authInterceptor)
+            .addInterceptor(authInterceptor).addInterceptor(logging)  // Add HTTP logging interceptor
+            .addInterceptor(JsonResponseInterceptor())
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .build()
@@ -624,6 +644,107 @@ object NetworkModule {
     ): ProtocolStepRepository {
         return ProtocolStepRepository(protocolStepService)
     }
+
+    @Provides
+    @Singleton
+    fun provideWebSocketService(
+        userPreferencesDao: UserPreferencesDao,
+        @Named("baseUrl") baseUrl: String
+    ): WebSocketService {
+        return WebSocketService(userPreferencesDao, baseUrl)
+    }
+
+    @Provides
+    @Singleton
+    fun provideWebSocketManager(
+        webSocketService: WebSocketService,
+        userPreferencesDao: UserPreferencesDao
+    ): WebSocketManager {
+        return WebSocketManager(webSocketService, userPreferencesDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTagApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): TagApiService {
+        val converter = MoshiConverterFactory.create(moshi).asLenient()
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(converter)
+            .build()
+            .create(TagApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTagService(tagServiceImpl: TagServiceImpl): TagService {
+        return tagServiceImpl
+    }
+
+    @Provides
+    @Singleton
+    fun provideTagRepository(tagService: TagService): TagRepository {
+        return TagRepository(tagService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideProtocolApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): ProtocolApiService {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
+            .build()
+            .create(ProtocolApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideProtocolService(
+        protocolServiceImpl: ProtocolServiceImpl
+    ): ProtocolService = protocolServiceImpl
+
+    @Provides
+    @Singleton
+    fun provideProtocolRepository(
+        protocolService: ProtocolService
+    ): ProtocolRepository = ProtocolRepository(protocolService)
+
+
+    @Provides
+    @Singleton
+    fun provideProtocolSectionApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): ProtocolSectionApiService {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
+            .build()
+            .create(ProtocolSectionApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideProtocolSectionService(
+        protocolSectionServiceImpl: ProtocolSectionServiceImpl
+    ): ProtocolSectionService = protocolSectionServiceImpl
+
+    @Provides
+    @Singleton
+    fun provideProtocolSectionRepository(
+        protocolSectionService: ProtocolSectionService
+    ): ProtocolSectionRepository = ProtocolSectionRepository(protocolSectionService)
 }
 
 class JsonResponseInterceptor : Interceptor {
@@ -677,3 +798,4 @@ class HeadersLoggingInterceptor : Interceptor {
         return response
     }
 }
+

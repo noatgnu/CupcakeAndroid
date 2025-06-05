@@ -1,9 +1,11 @@
 package info.proteo.cupcake.data.remote.model.message
 
 import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 import info.proteo.cupcake.data.remote.model.user.LabGroupBasic
 import info.proteo.cupcake.data.remote.model.user.UserBasic
 
+@JsonClass(generateAdapter = true)
 data class Message(
     val id: Int,
     val sender: UserBasic,
@@ -24,7 +26,7 @@ data class Message(
     @Json(name = "stored_reagent") val storedReagent: Int?,
     @Json(name = "is_read") val isRead: Boolean
 )
-
+@JsonClass(generateAdapter = true)
 data class MessageAttachment(
     val id: Int,
     val file: String?,
@@ -33,7 +35,7 @@ data class MessageAttachment(
     @Json(name = "content_type") val contentType: String?,
     @Json(name = "created_at") val createdAt: String?,
 )
-
+@JsonClass(generateAdapter = true)
 data class MessageRecipient(
     val id: Int,
     val user: UserBasic,
@@ -42,7 +44,7 @@ data class MessageRecipient(
     @Json(name = "is_archived") val isArchived: Boolean,
     @Json(name = "is_deleted") val isDeleted: Boolean
 )
-
+@JsonClass(generateAdapter = true)
 data class ThreadMessage(
     val id: Int,
     val sender: UserBasic,
@@ -53,7 +55,7 @@ data class ThreadMessage(
     @Json(name = "attachment_count") val attachmentCount: Int,
     @Json(name = "is_read") val isRead: Boolean
 )
-
+@JsonClass(generateAdapter = true)
 data class MessageThread(
     val id: Int,
     val title: String?,
@@ -68,7 +70,7 @@ data class MessageThread(
     @Json(name = "unread_count") val unreadCount: Int,
     val creator: UserBasic
 )
-
+@JsonClass(generateAdapter = true)
 data class MessageThreadDetail(
     val id: Int,
     val title: String?,
