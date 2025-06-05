@@ -1,9 +1,13 @@
 package info.proteo.cupcake.ui.session
 
+import android.content.res.ColorStateList
+import android.content.res.Configuration
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
+import androidx.core.widget.ImageViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import info.proteo.cupcake.R
 import info.proteo.cupcake.data.remote.model.protocol.Session
@@ -79,6 +83,22 @@ class SessionAdapter(
                 if (session.enabled) R.drawable.ic_check_circle else R.drawable.ic_disabled
             )
 
+            val isNightMode = (binding.root.context.resources.configuration.uiMode and
+                Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+
+            val colorRes = if (session.enabled) {
+                if (isNightMode) R.color.accent else R.color.success
+            } else {
+                if (isNightMode) R.color.warning else R.color.danger
+            }
+
+            ImageViewCompat.setImageTintList(
+                binding.sessionStatus,
+                ColorStateList.valueOf(ContextCompat.getColor(binding.root.context, colorRes))
+            )
+
+
+
             // Format created at date
             binding.sessionCreatedAt.text = session.createdAt?.let { createdAt ->
                 try {
@@ -134,6 +154,7 @@ class SessionAdapter(
             if (binding.root.findViewById<View>(R.id.sessionEditButton) != null) {
                 binding.root.findViewById<View>(R.id.sessionEditButton).visibility =
                     if (hasEditPermission) View.VISIBLE else View.GONE
+
             }
 
             if (binding.root.findViewById<View>(R.id.sessionDeleteButton) != null) {

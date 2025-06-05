@@ -68,7 +68,7 @@
             android:contentDescription="@string/edit_session"
             android:src="@drawable/ic_outline_edit_24"
             android:visibility="gone"
-            android:layout_marginEnd="8dp" />
+            android:layout_marginEnd="8dp"/>
 
         <ImageButton
             android:id="@+id/sessionDeleteButton"
@@ -77,7 +77,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/delete_session"
             android:src="@drawable/ic_delete"
-            android:visibility="gone" />
+            android:visibility="gone"/>
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
