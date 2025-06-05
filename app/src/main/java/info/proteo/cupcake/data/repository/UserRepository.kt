@@ -9,7 +9,10 @@ import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
 import info.proteo.cupcake.data.remote.model.reagent.StoredReagentPermission
 import info.proteo.cupcake.data.remote.model.user.User
 import info.proteo.cupcake.data.remote.model.user.UserBasic
+import info.proteo.cupcake.data.remote.service.ProtocolPermissionRequest
+import info.proteo.cupcake.data.remote.service.SessionPermissionRequest
 import info.proteo.cupcake.data.remote.service.StoredReagentPermissionRequest
+import info.proteo.cupcake.data.remote.service.UserPermissionResponse
 import info.proteo.cupcake.data.remote.service.UserService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -103,7 +106,6 @@ class UserRepository @Inject constructor(
             )
         }
         Log.d("UserRepository", "User not found in local cache, fetching from network")
-        // If not in cache, fetch from network
         val user = getCurrentUser().getOrNull()
         return user
     }
@@ -131,5 +133,34 @@ class UserRepository @Inject constructor(
         }
     }
 
+    suspend fun checkSessionPermission(uniqueId: String): Result<UserPermissionResponse> {
+        return try {
+            val request = SessionPermissionRequest(session = uniqueId)
+            Result.success(userService.checkSessionPermission(request))
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Error checking session permission: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    suspend fun checkProtocolPermission(protocolId: Int): Result<UserPermissionResponse> {
+        return try {
+            val request = ProtocolPermissionRequest(protocol = protocolId)
+            Result.success(userService.checkProtocolPermission(request))
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Error checking protocol permission: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    suspend fun checkAnnotationsPermission(sessionIds: List<Int>): Result<List<StoredReagentPermission>> {
+        return try {
+            val request = StoredReagentPermissionRequest(sessionIds)
+            Result.success(userService.checkStoredReagentPermission(request))
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Error checking annotations permission: ${e.message}")
+            Result.failure(e)
+        }
+    }
 
 }

@@ -44,20 +44,83 @@
                 app:layout_constraintTop_toTopOf="parent"
                 tools:text="Protocol Title" />
 
-            <TextView
-                android:id="@+id/protocolDescription"
+            <FrameLayout
+                android:id="@+id/descriptionContainer"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:maxHeight="200dp"
-                android:scrollbars="vertical"
-                android:scrollbarStyle="insideOverlay"
-                android:fadeScrollbars="false"
-                android:padding="16dp"
-                android:textAppearance="?attr/textAppearanceBody1"
+                android:layout_height="200dp"
+                android:layout_marginTop="16dp"
                 app:layout_constraintTop_toBottomOf="@id/protocolTitle"
                 app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <WebView
+                    android:id="@+id/protocolDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="8dp"
+                    android:scrollbars="vertical"
+                    android:scrollbarStyle="insideOverlay" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:id="@+id/protocolStatsContainer"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical"
+                android:background="@drawable/rounded_background"
+                android:padding="12dp"
                 app:layout_constraintEnd_toEndOf="parent"
-                tools:text="Protocol description with potentially long HTML content..." />
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/descriptionContainer">
+
+                <TextView
+                    android:id="@+id/protocolStats"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="14sp"
+                    tools:text="Sections: 3 | Steps: 15" />
+
+                <TextView
+                    android:id="@+id/protocolStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textSize="14sp"
+                    tools:text="Status: Public" />
+
+                <TextView
+                    android:id="@+id/protocolTagsHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Tags:"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/protocolTagsChipGroup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/protocolReagentsHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Reagents:"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/protocolReagentsContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone" />
+            </LinearLayout>
 
             <View
                 android:id="@+id/divider"
@@ -67,7 +130,7 @@
                 android:background="?android:attr/listDivider"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/protocolDescription" />
+                app:layout_constraintTop_toBottomOf="@id/protocolStatsContainer" />
 
             <TextView
                 android:id="@+id/sessionsHeader"

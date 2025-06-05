@@ -274,7 +274,9 @@ class ProtocolServiceImpl @Inject constructor(
     override suspend fun getProtocolById(id: Int): Result<ProtocolModel> {
         return try {
             val protocolModel = apiService.getProtocolById(id)
+            //Log.d("ProtocolService", "Fetched protocol: ${protocolModel.reagents}")
             cacheProtocolModel(protocolModel)
+            //Log.d("ProtocolService", "Cached reagents: ${protocolModel.reagents}")
             Result.success(protocolModel)
         } catch (e: Exception) {
             val cached = protocolModelDao.getById(id).firstOrNull()
@@ -512,19 +514,18 @@ class ProtocolServiceImpl @Inject constructor(
                 )
             }
         }
-
         protocol.reagents?.forEach { protocolReagent ->
             val reagent = ReagentEntity(
                 id = protocolReagent.reagent.id,
-                name = protocolReagent.reagent.name ?: "Unknown Reagent",
-                unit = protocolReagent.reagent.unit ?: "",
+                name = protocolReagent.reagent.name,
+                unit = protocolReagent.reagent.unit,
                 createdAt = protocolReagent.reagent.createdAt,
                 updatedAt = protocolReagent.reagent.updatedAt
             )
             reagentDao.insert(reagent)
         }
 
-        protocolReagentDao.deleteByProtocol(protocol.id)
+        //protocolReagentDao.deleteByProtocol(protocol.id)
         val reagentEntities = protocol.reagents?.map { it.toEntity() } ?: emptyList()
         protocolReagentDao.insertAll(reagentEntities)
 
@@ -539,11 +540,12 @@ class ProtocolServiceImpl @Inject constructor(
             tagDao.insert(tag)
         }
 
-        protocolTagDao.deleteByProtocol(protocol.id)
+        //Log.d("ProtocolService", "Caching tags for protocol ${protocol.id}: ${protocol.tags?.map { it.tag.tag }}")
+
         val tagEntities = protocol.tags?.map { it.toEntity() } ?: emptyList()
         protocolTagDao.insertAll(tagEntities)
 
-        protocolModelDao.clearEditorsByProtocol(protocol.id)
+        //Log.d("ProtocolService", "Cached tags: ${tagEntities.map { it.tag }}")
 
     }
 
@@ -727,7 +729,7 @@ class ProtocolServiceImpl @Inject constructor(
         return ProtocolReagentEntity(
             id = id,
             protocol = protocol,
-            reagent = reagent.id, // Assuming Reagent object has an id
+            reagent = reagent.id,
             quantity = quantity,
             createdAt = createdAt,
             updatedAt = updatedAt

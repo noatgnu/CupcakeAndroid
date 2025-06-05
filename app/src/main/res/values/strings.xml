@@ -95,4 +95,7 @@
     <string name="time_keepers">Time Keepers</string>
     <string name="instruments">Instruments</string>
     <string name="protocols">Protocols</string>
+    <string name="edit_session">Edit session</string>
+    <string name="delete_session">Delete session</string>
+    <string name="session_status">Session status</string>
 </resources>

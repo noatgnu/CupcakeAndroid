@@ -85,7 +85,23 @@ class ProtocolAdapter(
                             false
                         )
 
-                        sessionBinding.sessionName.text = session.name
+                        sessionBinding.sessionName.text = session.name.takeIf { !it.isNullOrBlank() }
+                            ?: session.uniqueId
+
+                        sessionBinding.sessionCreatedAt.text = session.createdAt?.let { createdAt ->
+                            try {
+                                val date = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.getDefault())
+                                    .apply { timeZone = TimeZone.getTimeZone("UTC") }
+                                    .parse(createdAt)
+                                "Created: ${dateFormat.format(date)}"
+                            } catch (e: Exception) {
+                                Log.e("ProtocolAdapter", "Error parsing date: $createdAt", e)
+                                "Created: Unknown"
+                            }
+                        } ?: "Created: Unknown"
+
+                        sessionBinding.sessionDates.visibility = View.GONE
+
                         sessionBinding.root.setOnClickListener {
                             onSessionClick(session)
                         }

@@ -1,6 +1,7 @@
 package info.proteo.cupcake.data.remote.service
 
 import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
 import info.proteo.cupcake.data.remote.model.reagent.StoredReagentPermission
 import info.proteo.cupcake.data.remote.model.user.User
@@ -15,6 +16,32 @@ import javax.inject.Singleton
 
 data class StoredReagentPermissionRequest(
     @Json(name = "stored_reagents") val storedReagentIds: List<Int>
+)
+
+data class SessionPermissionRequest(
+    val session: String
+)
+
+
+data class ProtocolPermissionRequest(
+    val protocol: Int
+)
+
+data class AnnotationsPermissionRequest(
+    val annotations: List<Int>
+)
+
+@JsonClass(generateAdapter = true)
+data class UserPermissionResponse(
+    val edit: Boolean = false,
+    val view: Boolean = false,
+    val delete: Boolean = false,
+)
+
+@JsonClass(generateAdapter = true)
+data class AnnotationsPermissionResponse(
+    val permission: UserPermissionResponse,
+    val annotation: Int
 )
 
 interface UserApiService {
@@ -35,6 +62,15 @@ interface UserApiService {
 
     @POST("api/user/check_stored_reagent_permission/")
     suspend fun checkStoredReagentPermission(@Body request: StoredReagentPermissionRequest): List<StoredReagentPermission>
+
+    @POST("api/user/check_session_permission/")
+    suspend fun checkSessionPermission(@Body request: SessionPermissionRequest): UserPermissionResponse
+
+    @POST("api/user/check_protocol_permission/")
+    suspend fun checkProtocolPermission(@Body request: ProtocolPermissionRequest): UserPermissionResponse
+
+    @POST("api/user/check_annotations_permission/")
+    suspend fun checkAnnotationsPermission(@Body request: AnnotationsPermissionRequest): List<AnnotationsPermissionResponse>
 }
 
 interface UserService {
@@ -44,6 +80,9 @@ interface UserService {
     suspend fun getUsersInLabGroup(labGroupId: Int): LimitOffsetResponse<UserBasic>
     suspend fun getAccessibleUsers(storedReagentId: Int): LimitOffsetResponse<UserBasic>
     suspend fun checkStoredReagentPermission(request: StoredReagentPermissionRequest): List<StoredReagentPermission>
+    suspend fun checkSessionPermission(request: SessionPermissionRequest): UserPermissionResponse
+    suspend fun checkProtocolPermission(request: ProtocolPermissionRequest): UserPermissionResponse
+    suspend fun checkAnnotationsPermission(request: AnnotationsPermissionRequest): List<AnnotationsPermissionResponse>
 }
 
 @Singleton
@@ -73,5 +112,17 @@ class UserServiceImpl @Inject constructor(
 
     override suspend fun checkStoredReagentPermission(request: StoredReagentPermissionRequest): List<StoredReagentPermission> {
         return userApiService.checkStoredReagentPermission(request)
+    }
+
+    override suspend fun checkSessionPermission(request: SessionPermissionRequest): UserPermissionResponse {
+        return userApiService.checkSessionPermission(request)
+    }
+
+    override suspend fun checkProtocolPermission(request: ProtocolPermissionRequest): UserPermissionResponse {
+        return userApiService.checkProtocolPermission(request)
+    }
+
+    override suspend fun checkAnnotationsPermission(request: AnnotationsPermissionRequest): List<AnnotationsPermissionResponse> {
+        return userApiService.checkAnnotationsPermission(request)
     }
 }

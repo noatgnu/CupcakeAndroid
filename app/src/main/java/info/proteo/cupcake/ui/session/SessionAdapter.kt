@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import info.proteo.cupcake.R
 import info.proteo.cupcake.data.remote.model.protocol.Session
+import info.proteo.cupcake.data.remote.service.UserPermissionResponse
 import info.proteo.cupcake.databinding.ItemSessionBinding
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -17,10 +18,17 @@ class SessionAdapter(
 ) : RecyclerView.Adapter<SessionAdapter.SessionViewHolder>() {
 
     private var sessions: List<Session> = emptyList()
+    private var sessionPermissions = mutableMapOf<String, UserPermissionResponse>()
+
     private val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
 
     init {
         dateFormat.timeZone = TimeZone.getDefault()
+    }
+
+    fun updateSessionPermissions(permissions: Map<String, UserPermissionResponse>) {
+        sessionPermissions.putAll(permissions)
+        notifyDataSetChanged()
     }
 
     fun updateSessions(newSessions: List<Session>) {
@@ -52,7 +60,10 @@ class SessionAdapter(
             binding.root.setOnClickListener {
                 val position = bindingAdapterPosition
                 if (position != RecyclerView.NO_POSITION) {
-                    onSessionClicked(sessions[position])
+                    val session = sessions[position]
+                    if (sessionPermissions[session.uniqueId]?.view == true) {
+                        onSessionClicked(session)
+                    }
                 }
             }
         }
@@ -112,6 +123,22 @@ class SessionAdapter(
                 binding.sessionDates.visibility = View.VISIBLE
             } else {
                 binding.sessionDates.visibility = View.GONE
+            }
+
+            val hasViewPermission = sessionPermissions[session.uniqueId]?.view == true
+            binding.root.isEnabled = hasViewPermission
+            binding.root.alpha = if (hasViewPermission) 1.0f else 0.5f
+            val hasEditPermission = sessionPermissions[session.uniqueId]?.edit == true
+            val hasDeletePermission = sessionPermissions[session.uniqueId]?.delete == true
+
+            if (binding.root.findViewById<View>(R.id.sessionEditButton) != null) {
+                binding.root.findViewById<View>(R.id.sessionEditButton).visibility =
+                    if (hasEditPermission) View.VISIBLE else View.GONE
+            }
+
+            if (binding.root.findViewById<View>(R.id.sessionDeleteButton) != null) {
+                binding.root.findViewById<View>(R.id.sessionDeleteButton).visibility =
+                    if (hasDeletePermission) View.VISIBLE else View.GONE
             }
         }
     }

@@ -34,6 +34,7 @@ class ProtocolDetailViewModel @Inject constructor(
             try {
                 // Load protocol details
                 protocolRepository.getProtocolById(protocolId).onSuccess { protocol ->
+                    Log.d("ProtocolDetailViewModel", "Loaded protocol: ${protocol.reagents}")
                     _protocol.value = protocol
                 }
 

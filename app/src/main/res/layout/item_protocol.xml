@@ -31,6 +31,7 @@
             android:textSize="12sp"
             android:textColor="@android:color/darker_gray"
             tools:text="Created: Jan 01, 2023" />
+
         <TextView
             android:id="@+id/protocolStats"
             android:layout_width="match_parent"
