@@ -62,6 +62,9 @@ import info.proteo.cupcake.data.remote.service.ReagentActionServiceImpl
 import info.proteo.cupcake.data.remote.service.ReagentDocumentApiService
 import info.proteo.cupcake.data.remote.service.ReagentDocumentService
 import info.proteo.cupcake.data.remote.service.ReagentDocumentServiceImpl
+import info.proteo.cupcake.data.remote.service.SessionApiService
+import info.proteo.cupcake.data.remote.service.SessionService
+import info.proteo.cupcake.data.remote.service.SessionServiceImpl
 import info.proteo.cupcake.data.remote.service.StorageObjectApiService
 import info.proteo.cupcake.data.remote.service.StorageObjectService
 import info.proteo.cupcake.data.remote.service.StorageObjectServiceImpl
@@ -93,6 +96,7 @@ import info.proteo.cupcake.data.repository.ProtocolSectionRepository
 import info.proteo.cupcake.data.repository.ProtocolStepRepository
 import info.proteo.cupcake.data.repository.ReagentActionRepository
 import info.proteo.cupcake.data.repository.ReagentDocumentRepository
+import info.proteo.cupcake.data.repository.SessionRepository
 import info.proteo.cupcake.data.repository.StoredReagentRepository
 import info.proteo.cupcake.data.repository.SupportInformationRepository
 import info.proteo.cupcake.data.repository.TagRepository
@@ -142,8 +146,7 @@ object NetworkModule {
             level = HttpLoggingInterceptor.Level.BODY
         }
         return OkHttpClient.Builder()
-            .addInterceptor(authInterceptor).addInterceptor(logging)  // Add HTTP logging interceptor
-            .addInterceptor(JsonResponseInterceptor())
+            .addInterceptor(authInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .build()
@@ -745,6 +748,37 @@ object NetworkModule {
     fun provideProtocolSectionRepository(
         protocolSectionService: ProtocolSectionService
     ): ProtocolSectionRepository = ProtocolSectionRepository(protocolSectionService)
+
+    @Provides
+    @Singleton
+    fun provideSessionApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): SessionApiService {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
+            .build()
+            .create(SessionApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSessionService(
+        sessionServiceImpl: SessionServiceImpl
+    ): SessionService {
+        return sessionServiceImpl
+    }
+
+    @Provides
+    @Singleton
+    fun provideSessionRepository(
+        sessionService: SessionService
+    ): SessionRepository {
+        return SessionRepository(sessionService)
+    }
 }
 
 class JsonResponseInterceptor : Interceptor {

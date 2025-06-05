@@ -31,6 +31,15 @@
             android:textSize="12sp"
             android:textColor="@android:color/darker_gray"
             tools:text="Created: Jan 01, 2023" />
+        <TextView
+            android:id="@+id/protocolStats"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceCaption"
+            android:textStyle="italic"
+            android:textColor="@android:color/darker_gray"
+            android:layout_marginTop="4dp"
+            tools:text="Sections: 3 | Steps: 15" />
 
         <TextView
             android:id="@+id/protocolDescription"

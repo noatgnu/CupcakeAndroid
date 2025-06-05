@@ -31,4 +31,13 @@ interface SessionDao {
 
     @Query("DELETE FROM session")
     suspend fun deleteAll()
+
+    @Query("SELECT * FROM session WHERE started_at >= :startDate AND started_at <= :endDate")
+    fun getSessionsByDateRange(startDate: String, endDate: String): Flow<List<SessionEntity>>
+
+    @Query("SELECT * FROM session WHERE name LIKE '%' || :search || '%' LIMIT :limit OFFSET :offset")
+    fun searchSessions(search: String?, limit: Int, offset: Int): Flow<List<SessionEntity>>
+
+    @Query("SELECT COUNT(*) FROM session WHERE name LIKE '%' || :search || '%'")
+    fun countSearchSessions(search: String?): Flow<Int>
 }

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/protocol_nav_graph"
+    app:startDestination="@id/protocolListFragment">
+
+    <fragment
+        android:id="@+id/protocolListFragment"
+        android:name="info.proteo.cupcake.ui.protocol.ProtocolListFragment"
+        android:label="Protocols"
+        tools:layout="@layout/fragment_protocol_list">
+        <action
+            android:id="@+id/action_protocolListFragment_to_protocolDetailFragment"
+            app:destination="@id/protocolDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/protocolDetailFragment"
+        android:name="info.proteo.cupcake.ui.protocol.ProtocolDetailFragment"
+        android:label="Protocol Details"
+        tools:layout="@layout/fragment_protocol_detail">
+        <argument
+            android:name="protocolId"
+            app:argType="integer" />
+    </fragment>
+</navigation>

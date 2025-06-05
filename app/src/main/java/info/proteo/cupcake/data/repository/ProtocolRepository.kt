@@ -4,6 +4,7 @@ import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolModel
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolReagent
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolTag
+import info.proteo.cupcake.data.remote.model.protocol.Session
 import info.proteo.cupcake.data.remote.model.user.User
 import info.proteo.cupcake.data.remote.service.CreateExportRequest
 import info.proteo.cupcake.data.remote.service.CreateProtocolRequest
@@ -50,7 +51,7 @@ class ProtocolRepository @Inject constructor(
     fun getEnabledProtocolsFlow(): Flow<List<ProtocolModel>> =
         protocolService.getEnabledProtocolsFlow()
 
-    suspend fun getAssociatedSessions(id: Int): Result<List<SessionMinimal>> =
+    suspend fun getAssociatedSessions(id: Int): Result<List<Session>> =
         protocolService.getAssociatedSessions(id)
 
     suspend fun getUserProtocols(

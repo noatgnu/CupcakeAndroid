@@ -1,6 +1,7 @@
 package info.proteo.cupcake.ui.protocol
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -14,6 +15,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.Navigation
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
@@ -47,6 +50,8 @@ class ProtocolListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupToolbar()
         setupRecyclerView()
+        observeViewModel()
+        viewModel.loadInitialProtocols()
         requireActivity().addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.protocol_list_menu, menu)
@@ -70,25 +75,40 @@ class ProtocolListFragment : Fragment() {
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
                 return when (menuItem.itemId) {
-                    // Handle menu item clicks here
+                    android.R.id.home -> {
+                        activity?.onBackPressedDispatcher?.onBackPressed()
+                        true
+                    }
                     else -> false
                 }
             }
         }, viewLifecycleOwner, Lifecycle.State.RESUMED)
-        observeViewModel()
     }
 
     private fun setupToolbar() {
         (activity as? AppCompatActivity)?.let {
             it.setSupportActionBar(binding.toolbar)
             it.supportActionBar?.title = "Protocols"
+            it.supportActionBar?.setDisplayHomeAsUpEnabled(true)
         }
     }
+
+
 
     private fun setupRecyclerView() {
         protocolAdapter = ProtocolAdapter(
             onProtocolClick = { protocol ->
-                // Handle protocol click
+                try {
+                    val bundle = Bundle().apply {
+                        putInt("protocolId", protocol.id)
+                    }
+                    findNavController().navigate(
+                        R.id.action_protocolListFragment_to_protocolDetailFragment,
+                        bundle
+                    )
+                } catch (e: Exception) {
+                    Log.e("ProtocolListFragment", "Navigation error", e)
+                }
             },
             onSessionClick = { session ->
                 // Handle session click
@@ -119,15 +139,23 @@ class ProtocolListFragment : Fragment() {
 
     private fun observeViewModel() {
         lifecycleScope.launch {
-            viewModel.protocols.collectLatest { protocols ->
-                protocolAdapter.submitList(protocols)
-                binding.emptyView.visibility = if (protocols.isEmpty()) View.VISIBLE else View.GONE
+            viewModel.isLoading.collectLatest { isLoading ->
+                binding.progressIndicator.visibility = if (isLoading) View.VISIBLE else View.GONE
+                if (isLoading) {
+                    // When loading, always hide the empty view
+                    binding.emptyView.visibility = View.GONE
+                } else {
+                    binding.emptyView.visibility = if (viewModel.protocols.value.isEmpty()) View.VISIBLE else View.GONE
+                }
             }
         }
 
         lifecycleScope.launch {
-            viewModel.isLoading.collectLatest { isLoading ->
-                binding.progressIndicator.visibility = if (isLoading) View.VISIBLE else View.GONE
+            viewModel.protocols.collectLatest { protocols ->
+                protocolAdapter.submitList(protocols)
+                if (!viewModel.isLoading.value) {
+                    binding.emptyView.visibility = if (protocols.isEmpty()) View.VISIBLE else View.GONE
+                }
             }
         }
     }
@@ -137,4 +165,6 @@ class ProtocolListFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
+
+
 }

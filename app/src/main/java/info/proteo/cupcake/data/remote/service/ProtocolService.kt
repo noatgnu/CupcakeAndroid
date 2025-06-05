@@ -29,6 +29,7 @@ import info.proteo.cupcake.data.remote.model.protocol.ProtocolReagent
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolSection
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolTag
+import info.proteo.cupcake.data.remote.model.protocol.Session
 import info.proteo.cupcake.data.remote.model.tag.Tag
 import info.proteo.cupcake.data.remote.model.user.User
 import info.proteo.cupcake.data.repository.TagRepository
@@ -138,7 +139,7 @@ interface ProtocolApiService {
     suspend fun deleteProtocol(@Path("id") id: Int): Response<Unit>
 
     @GET("api/protocol/{id}/get_associated_sessions/")
-    suspend fun getAssociatedSessions(@Path("id") id: Int): List<SessionMinimal>
+    suspend fun getAssociatedSessions(@Path("id") id: Int): List<Session>
 
     @GET("api/protocol/get_user_protocols/")
     suspend fun getUserProtocols(
@@ -204,7 +205,7 @@ interface ProtocolService {
     fun getAllProtocolsFlow(): Flow<List<ProtocolModel>>
     fun getEnabledProtocolsFlow(): Flow<List<ProtocolModel>>
 
-    suspend fun getAssociatedSessions(id: Int): Result<List<SessionMinimal>>
+    suspend fun getAssociatedSessions(id: Int): Result<List<Session>>
     suspend fun getUserProtocols(
         offset: Int? = null,
         limit: Int? = null,
@@ -325,7 +326,7 @@ class ProtocolServiceImpl @Inject constructor(
         }
     }
 
-    override suspend fun getAssociatedSessions(id: Int): Result<List<SessionMinimal>> {
+    override suspend fun getAssociatedSessions(id: Int): Result<List<Session>> {
         return try {
             Result.success(apiService.getAssociatedSessions(id))
         } catch (e: Exception) {

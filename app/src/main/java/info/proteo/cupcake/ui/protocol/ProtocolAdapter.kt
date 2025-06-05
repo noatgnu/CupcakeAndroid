@@ -1,5 +1,6 @@
 package info.proteo.cupcake.ui.protocol
 
+import android.text.Html
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -8,6 +9,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolModel
+import info.proteo.cupcake.data.remote.model.protocol.Session
 import info.proteo.cupcake.data.remote.service.SessionMinimal
 import info.proteo.cupcake.databinding.ItemProtocolBinding
 import info.proteo.cupcake.databinding.ItemSessionBinding
@@ -18,7 +20,7 @@ import java.util.TimeZone
 
 class ProtocolAdapter(
     private val onProtocolClick: (ProtocolModel) -> Unit,
-    private val onSessionClick: (SessionMinimal) -> Unit
+    private val onSessionClick: (Session) -> Unit
 ) : ListAdapter<ProtocolWithSessions, ProtocolAdapter.ProtocolViewHolder>(ProtocolDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProtocolViewHolder {
@@ -43,9 +45,14 @@ class ProtocolAdapter(
         fun bind(item: ProtocolWithSessions) {
             val protocol = item.protocol
 
+            val sectionsCount = protocol.sections?.size ?: 0
+            val stepsCount = protocol.steps?.size ?: 0
+
             binding.apply {
+                protocolStats.text = "Sections: $sectionsCount | Steps: $stepsCount"
+                protocolStats.visibility = View.VISIBLE
                 protocolTitle.text = protocol.protocolTitle
-                protocolDescription.text = protocol.protocolDescription
+                protocolDescription.text = getPlainTextFromHtml(protocol.protocolDescription, 300)
 
                 protocol.protocolCreatedOn?.let {
                     try {
@@ -97,6 +104,18 @@ class ProtocolAdapter(
                     expandSessions.rotation = if (isVisible) 0f else 180f
                 }
             }
+        }
+    }
+
+    fun getPlainTextFromHtml(htmlString: String?, maxLength: Int): String {
+        if (htmlString.isNullOrEmpty()) return ""
+
+        val plainText = Html.fromHtml(htmlString, Html.FROM_HTML_MODE_COMPACT).toString()
+        val trimmed = plainText.trim()
+        return if (trimmed.length <= maxLength) {
+            trimmed
+        } else {
+            "${trimmed.substring(0, maxLength)}..."
         }
     }
 

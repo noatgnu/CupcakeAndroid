@@ -30,6 +30,8 @@
             app:destination="@id/nav_settings" />
     </fragment>
 
+    <include app:graph="@navigation/protocol_nav_graph" />
+
     <fragment
         android:id="@+id/nav_main"
         android:name="info.proteo.cupcake.ui.main.MainFragment"
@@ -44,6 +46,9 @@
         <action
             android:id="@+id/action_mainFragment_to_threadDetailFragment"
             app:destination="@id/threadDetailFragment" />
+        <action
+            android:id="@+id/action_mainFragment_to_protocolListFragment"
+            app:destination="@id/protocol_nav_graph" />
     </fragment>
     <fragment
         android:id="@+id/loginFragment"
