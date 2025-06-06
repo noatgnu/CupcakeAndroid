@@ -33,7 +33,6 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
-import info.proteo.cupcake.ui.user.UserSearchAdapter
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.tabs.TabLayout
@@ -45,6 +44,7 @@ import info.proteo.cupcake.SupportInformationActivity
 import info.proteo.cupcake.data.remote.model.annotation.AnnotationFolder
 import info.proteo.cupcake.data.remote.model.instrument.Instrument
 import info.proteo.cupcake.databinding.FragmentInstrumentDetailBinding
+import info.proteo.cupcake.ui.user.UserSearchAdapter
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream

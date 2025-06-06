@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.TimeZone
 import javax.inject.Inject
 
 @HiltViewModel
@@ -159,9 +161,35 @@ class TimeKeeperViewModel @Inject constructor(
                 val result = timeKeeperRepository.getTimeKeepers()
                 if (result.isSuccess) {
                     val fetchedTimeKeepers = result.getOrNull()?.results ?: emptyList()
-                    _timeKeepers.value = fetchedTimeKeepers
 
-                    val initialActiveTimers = fetchedTimeKeepers
+                    val updatedTimeKeepers = fetchedTimeKeepers.map { timeKeeper ->
+                        if (timeKeeper.started == true && timeKeeper.startTime != null) {
+                            try {
+                                val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", java.util.Locale.getDefault())
+                                formatter.timeZone = TimeZone.getTimeZone("UTC")
+                                val startTime = formatter.parse(timeKeeper.startTime)?.time ?: 0L
+
+                                val elapsedSeconds = ((System.currentTimeMillis() - startTime) / 1000).toInt()
+
+                                val initialDuration = timeKeeper.currentDuration ?: 0
+
+                                val remainingDuration = (initialDuration - elapsedSeconds).coerceAtLeast(0)
+
+                                Log.d("TimeKeeperViewModel", "Timer ${timeKeeper.id}: startTime=$startTime, elapsed=$elapsedSeconds, remaining=$remainingDuration")
+
+                                timeKeeper.copy(currentDuration = remainingDuration)
+                            } catch (e: Exception) {
+                                Log.e("TimeKeeperViewModel", "Error calculating timer duration", e)
+                                timeKeeper
+                            }
+                        } else {
+                            timeKeeper
+                        }
+                    }
+                    _timeKeepers.value = updatedTimeKeepers
+
+                    // Set up active timers with the corrected durations
+                    val initialActiveTimers = updatedTimeKeepers
                         .filter { it.started == true }
                         .associate {
                             it.id to TimerState(
@@ -172,12 +200,13 @@ class TimeKeeperViewModel @Inject constructor(
                         }
                     _activeTimers.value = initialActiveTimers
 
+                    // Start timer jobs for active timers
                     initialActiveTimers.forEach { (id, state) ->
                         timerJobs[id]?.cancel() // Cancel any old job
                         timerJobs[id] = viewModelScope.launch {
                             var currentLocalDuration = state.currentDuration
                             try {
-                                Log.d("TimeKeeperViewModel", "Load: Starting local timer job for ID $id, duration $currentLocalDuration")
+                                Log.d("TimeKeeperViewModel", "Starting local timer job for ID $id, duration $currentLocalDuration")
                                 while (this.isActive && currentLocalDuration > 0) {
                                     delay(1000)
                                     currentLocalDuration -= 1
@@ -188,18 +217,19 @@ class TimeKeeperViewModel @Inject constructor(
                                     }
                                 }
                                 if (this.isActive && currentLocalDuration <= 0) {
-                                    Log.d("TimeKeeperViewModel", "Load: Local timer job for ID $id reached zero.")
+                                    Log.d("TimeKeeperViewModel", "Timer ID $id reached zero")
                                     _activeTimers.value = _activeTimers.value.toMutableMap().apply {
                                         this[id]?.let { this[id] = it.copy(started = false, currentDuration = 0) }
                                     }
                                     _timeKeepers.value = _timeKeepers.value.map { tk ->
                                         if (tk.id == id) tk.copy(started = false, currentDuration = 0) else tk
                                     }
+                                    updateTimeKeeperOnServer(id, false, 0)
                                 }
                             } finally {
                                 if (timerJobs[id] == this.coroutineContext[Job]) {
                                     timerJobs.remove(id)
-                                    Log.d("TimeKeeperViewModel", "Load: Cleaned up local timer job for ID $id")
+                                    Log.d("TimeKeeperViewModel", "Cleaned up timer job for ID $id")
                                 }
                             }
                         }

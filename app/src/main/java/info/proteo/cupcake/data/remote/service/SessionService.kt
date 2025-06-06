@@ -1,5 +1,7 @@
 package info.proteo.cupcake.data.remote.service
 
+import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 import info.proteo.cupcake.data.local.dao.protocol.SessionDao
 import info.proteo.cupcake.data.local.entity.protocol.SessionEntity
 import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
@@ -11,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -21,64 +24,69 @@ import retrofit2.http.Query
 import javax.inject.Inject
 import javax.inject.Singleton
 
+@JsonClass(generateAdapter = true)
+data class SessionCreateRequest(
+    @Json(name = "protocol_ids") val protocolIds: List<Int>
+)
+
 interface SessionApiService {
-    @GET("sessions/")
+    @GET("api/session/")
     suspend fun getSessions(
         @Query("offset") offset: Int? = null,
         @Query("limit") limit: Int? = null,
         @Query("search") search: String? = null
-    ): Result<LimitOffsetResponse<Session>>
+    ): LimitOffsetResponse<Session>
 
-    @GET("sessions/{unique_id}/")
+    @GET("api/session/{unique_id}/")
     suspend fun getSessionByUniqueId(
         @Path("unique_id") uniqueId: String
-    ): Result<Session>
+    ): Session
 
-    @POST("sessions/")
+    @POST("api/session/")
     suspend fun createSession(
-        @Body requestBody: Map<String, List<Int>> = emptyMap()
-    ): Result<Session>
+        @Body requestBody: SessionCreateRequest
+    ): Session
 
-    @PUT("sessions/{unique_id}/")
+    @PUT("api/session/{unique_id}/")
     suspend fun updateSession(
         @Path("unique_id") uniqueId: String,
         @Body session: Session
-    ): Result<Session>
+    ): Session
 
-    @DELETE("sessions/{unique_id}/")
+    @DELETE("api/session/{unique_id}/")
     suspend fun deleteSession(
         @Path("unique_id") uniqueId: String
-    ): Result<Unit>
+    ): Response<Unit>
 
-    @GET("sessions/get_user_sessions/")
+    @GET("api/session/get_user_sessions/")
     suspend fun getUserSessions(
         @Query("limit") limit: Int? = null,
         @Query("offset") offset: Int? = null,
         @Query("search") search: String? = null
-    ): Result<LimitOffsetResponse<Session>>
+    ): LimitOffsetResponse<Session>
 
-    @GET("sessions/{unique_id}/get_associated_protocol_titles/")
+    @GET("api/session/{unique_id}/get_associated_protocol_titles/")
     suspend fun getAssociatedProtocolTitles(
         @Path("unique_id") uniqueId: String
-    ): Result<List<ProtocolModel>>
+    ): List<ProtocolModel>
 
-    @POST("sessions/{unique_id}/add_protocol/")
+    @POST("api/session/{unique_id}/add_protocol/")
     suspend fun addProtocol(
         @Path("unique_id") uniqueId: String,
         @Body request: Map<String, Int>
-    ): Result<Session>
+    ): Session
 
-    @POST("sessions/{unique_id}/remove_protocol/")
+    @POST("api/session/{unique_id}/remove_protocol/")
     suspend fun removeProtocol(
         @Path("unique_id") uniqueId: String,
         @Body request: Map<String, Int>
-    ): Result<Session>
+    ): Session
 
-    @GET("sessions/calendar_get_sessions/")
+    @GET("api/session/calendar_get_sessions/")
     suspend fun calendarGetSessions(
         @Query("start") startDate: String,
         @Query("end") endDate: String
-    ): Result<List<Session>>
+    ): List<Session>
 }
 
 interface SessionService {
@@ -89,9 +97,9 @@ interface SessionService {
     ): Result<LimitOffsetResponse<Session>>
 
     suspend fun getSessionByUniqueId(uniqueId: String): Result<Session>
-    suspend fun createSession(requestBody: Map<String, List<Int>> = emptyMap()): Result<Session>
+    suspend fun createSession(requestBody: SessionCreateRequest): Result<Session>
     suspend fun updateSession(uniqueId: String, session: Session): Result<Session>
-    suspend fun deleteSession(uniqueId: String): Result<Unit>
+    suspend fun deleteSession(uniqueId: String): Response<Unit>
 
     suspend fun getUserSessions(
         limit: Int? = null,
@@ -120,112 +128,110 @@ class SessionServiceImpl @Inject constructor(
         limit: Int?,
         search: String?
     ): Result<LimitOffsetResponse<Session>> {
-        val networkResult = sessionApiService.getSessions(offset, limit, search)
+        return try {
+            val response = sessionApiService.getSessions(offset, limit, search)
 
-        if (networkResult.isSuccess) {
-            networkResult.getOrNull()?.let { response ->
-                withContext(dispatcherProvider) {
-                    response.results.forEach { session ->
-                        sessionDao.insert(session.toEntity())
-                    }
+            withContext(dispatcherProvider) {
+                response.results.forEach { session ->
+                    sessionDao.insert(session.toEntity())
                 }
             }
-            return networkResult
-        }
 
-        val effectiveLimit = limit ?: 20
-        val effectiveOffset = offset ?: 0
+            Result.success(response)
+        } catch (e: Exception) {
+            val effectiveLimit = limit ?: 20
+            val effectiveOffset = offset ?: 0
 
-        val cachedSessions = withContext(dispatcherProvider) {
             try {
-                sessionDao.searchSessions(
-                    search = search,
-                    limit = effectiveLimit,
-                    offset = effectiveOffset
-                ).firstOrNull()?.map { it.toDomainModel() }
-                    ?: emptyList()
-            } catch (e: Exception) {
-                emptyList()
-            }
-        }
-        if (cachedSessions.isNotEmpty()) {
-            val count = withContext(dispatcherProvider) {
-                sessionDao.countSearchSessions(search).first()
-            }
-            return Result.success(
-                LimitOffsetResponse(
-                    count = count,
-                    next = if (cachedSessions.size == effectiveLimit) "yes" else null,
-                    previous = if (effectiveOffset > 0) "yes" else null,
+                val cachedSessions = withContext(dispatcherProvider) {
+                    sessionDao.searchSessions(search, effectiveLimit, effectiveOffset).first()
+                        .map { sessionEntity -> sessionEntity.toDomainModel() }
+                }
+
+                val totalCount = withContext(dispatcherProvider) {
+                    sessionDao.countSearchSessions(search).first()
+                }
+
+                val response = LimitOffsetResponse(
+                    count = totalCount,
+                    next = if (effectiveOffset + effectiveLimit < totalCount) "next" else null,
+                    previous = if (effectiveOffset > 0) "previous" else null,
                     results = cachedSessions
                 )
-            )
-        } else {
-            return networkResult
+
+                Result.success(response)
+            } catch (innerEx: Exception) {
+                Result.failure(innerEx)
+            }
         }
     }
 
     override suspend fun getSessionByUniqueId(uniqueId: String): Result<Session> {
-        val networkResult = sessionApiService.getSessionByUniqueId(uniqueId)
+        return try {
+            val cachedSession = sessionDao.getByUniqueId(uniqueId)?.toDomainModel()
 
-        if (networkResult.isSuccess) {
-            networkResult.getOrNull()?.let { session ->
+            if (cachedSession != null) {
+                Result.success(cachedSession)
+            } else {
+                val apiSession = sessionApiService.getSessionByUniqueId(uniqueId)
+
                 withContext(dispatcherProvider) {
-                    sessionDao.insert(session.toEntity())
+                    sessionDao.insert(apiSession.toEntity())
                 }
+
+                Result.success(apiSession)
             }
-            return networkResult
-        }
-
-        val cachedSession = withContext(dispatcherProvider) {
-            sessionDao.getByUniqueId(uniqueId)
-        }
-
-        return if (cachedSession != null) {
-            Result.success(cachedSession.toDomainModel())
-        } else {
-            networkResult
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 
-    override suspend fun createSession(requestBody: Map<String, List<Int>>): Result<Session> {
-        val result = sessionApiService.createSession(requestBody)
+    override suspend fun createSession(requestBody: SessionCreateRequest): Result<Session> {
+        return try {
+            val session = sessionApiService.createSession(requestBody)
 
-        result.onSuccess { session ->
             withContext(dispatcherProvider) {
                 sessionDao.insert(session.toEntity())
             }
-        }
 
-        return result
+            Result.success(session)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     override suspend fun updateSession(uniqueId: String, session: Session): Result<Session> {
-        val result = sessionApiService.updateSession(uniqueId, session)
+        return try {
+            val updatedSession = sessionApiService.updateSession(uniqueId, session)
 
-        // Update cache with new data on success
-        result.onSuccess { updatedSession ->
+            // Update cache
             withContext(dispatcherProvider) {
                 sessionDao.insert(updatedSession.toEntity())
             }
-        }
 
-        return result
+            Result.success(updatedSession)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
-    override suspend fun deleteSession(uniqueId: String): Result<Unit> {
-        val result = sessionApiService.deleteSession(uniqueId)
+    // Fix return type to match interface
+    override suspend fun deleteSession(uniqueId: String): Response<Unit> {
+        return try {
+            val response = sessionApiService.deleteSession(uniqueId)
 
-        // Remove from cache if network delete was successful
-        result.onSuccess {
+            // Remove from cache
             withContext(dispatcherProvider) {
-                sessionDao.getByUniqueId(uniqueId)?.let {
-                    sessionDao.delete(it)
+                val entity = sessionDao.getByUniqueId(uniqueId)
+                if (entity != null) {
+                    sessionDao.delete(entity)
                 }
             }
-        }
 
-        return result
+            response
+        } catch (e: Exception) {
+            throw e
+        }
     }
 
     override suspend fun getUserSessions(
@@ -233,101 +239,72 @@ class SessionServiceImpl @Inject constructor(
         offset: Int?,
         search: String?
     ): Result<LimitOffsetResponse<Session>> {
-        val networkResult = sessionApiService.getUserSessions(limit, offset, search)
+        return try {
+            val response = sessionApiService.getUserSessions(limit, offset, search)
 
-        if (networkResult.isSuccess) {
-            networkResult.getOrNull()?.let { response ->
-                withContext(dispatcherProvider) {
-                    response.results.forEach { session ->
-                        sessionDao.insert(session.toEntity())
-                    }
-                }
-            }
-            return networkResult
-        }
-
-        if (search.isNullOrEmpty() && offset == 0) {
-            val user = userRepository.getUserFromActivePreference() ?: return networkResult
-            val userId = user.id
-            val cachedSessions = withContext(dispatcherProvider) {
-                try {
-                    sessionDao.getByUser(userId)
-                        .first()
-                        .map { it.toDomainModel() }
-                } catch (e: Exception) {
-                    emptyList()
+            withContext(dispatcherProvider) {
+                response.results.forEach { session ->
+                    sessionDao.insert(session.toEntity())
                 }
             }
 
-            if (cachedSessions.isNotEmpty()) {
-                val response = LimitOffsetResponse(
-                    count = cachedSessions.size,
-                    next = null,
-                    previous = null,
-                    results = cachedSessions
-                )
-                return Result.success(response)
-            }
+            Result.success(response)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-
-        return networkResult
     }
 
     override suspend fun getAssociatedProtocolTitles(uniqueId: String): Result<List<ProtocolModel>> {
-        return sessionApiService.getAssociatedProtocolTitles(uniqueId)
+        return try {
+            val protocols = sessionApiService.getAssociatedProtocolTitles(uniqueId)
+            Result.success(protocols)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     override suspend fun addProtocol(uniqueId: String, request: Map<String, Int>): Result<Session> {
-        val result = sessionApiService.addProtocol(uniqueId, request)
+        return try {
+            val updatedSession = sessionApiService.addProtocol(uniqueId, request)
 
-        result.onSuccess { updatedSession ->
+            // Update cache
             withContext(dispatcherProvider) {
                 sessionDao.insert(updatedSession.toEntity())
             }
-        }
 
-        return result
+            Result.success(updatedSession)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     override suspend fun removeProtocol(uniqueId: String, request: Map<String, Int>): Result<Session> {
-        val result = sessionApiService.removeProtocol(uniqueId, request)
+        return try {
+            val updatedSession = sessionApiService.removeProtocol(uniqueId, request)
 
-        result.onSuccess { updatedSession ->
             withContext(dispatcherProvider) {
                 sessionDao.insert(updatedSession.toEntity())
             }
-        }
 
-        return result
+            Result.success(updatedSession)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     override suspend fun calendarGetSessions(startDate: String, endDate: String): Result<List<Session>> {
-        val networkResult = sessionApiService.calendarGetSessions(startDate, endDate)
+        return try {
+            val sessions = sessionApiService.calendarGetSessions(startDate, endDate)
 
-        if (networkResult.isSuccess) {
-            networkResult.getOrNull()?.let { sessions ->
-                withContext(dispatcherProvider) {
-                    sessions.forEach { session ->
-                        sessionDao.insert(session.toEntity())
-                    }
+            withContext(dispatcherProvider) {
+                sessions.forEach { session ->
+                    sessionDao.insert(session.toEntity())
                 }
             }
-            return networkResult
-        }
 
-        val cachedSessions = withContext(dispatcherProvider) {
-            try {
-                sessionDao.getSessionsByDateRange(startDate, endDate).firstOrNull()?.map { it.toDomainModel() }
-                    ?: emptyList()
-            } catch (e: Exception) {
-                emptyList()
-            }
-        }
-
-        return if (cachedSessions.isNotEmpty()) {
-            Result.success(cachedSessions)
-        } else {
-            networkResult
+            Result.success(sessions)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 
@@ -341,7 +318,7 @@ class SessionServiceImpl @Inject constructor(
             updatedAt = updatedAt,
             name = name,
             startedAt = startedAt,
-            endedAt = endedAt
+            endedAt = endedAt,
         )
     }
 
@@ -356,7 +333,6 @@ class SessionServiceImpl @Inject constructor(
             name = name,
             startedAt = startedAt,
             endedAt = endedAt,
-            protocols = emptyList(),
             timeKeeper = emptyList(),
             projects = emptyList()
         )

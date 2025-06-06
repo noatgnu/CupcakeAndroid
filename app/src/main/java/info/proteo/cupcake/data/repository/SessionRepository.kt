@@ -1,11 +1,17 @@
 package info.proteo.cupcake.data.repository
 
+import com.squareup.moshi.Json
 import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolModel
 import info.proteo.cupcake.data.remote.model.protocol.Session
+import info.proteo.cupcake.data.remote.service.SessionCreateRequest
 import info.proteo.cupcake.data.remote.service.SessionService
+import retrofit2.Response
 import javax.inject.Inject
 import javax.inject.Singleton
+
+
+
 
 @Singleton
 class SessionRepository @Inject constructor(
@@ -23,7 +29,7 @@ class SessionRepository @Inject constructor(
         return sessionService.getSessionByUniqueId(uniqueId)
     }
 
-    suspend fun createSession(requestBody: Map<String, List<Int>> = emptyMap()): Result<Session> {
+    suspend fun createSession(requestBody: SessionCreateRequest): Result<Session> {
         return sessionService.createSession(requestBody)
     }
 
@@ -31,7 +37,7 @@ class SessionRepository @Inject constructor(
         return sessionService.updateSession(uniqueId, session)
     }
 
-    suspend fun deleteSession(uniqueId: String): Result<Unit> {
+    suspend fun deleteSession(uniqueId: String): Response<Unit> {
         return sessionService.deleteSession(uniqueId)
     }
 

@@ -98,4 +98,17 @@
     <string name="edit_session">Edit session</string>
     <string name="delete_session">Delete session</string>
     <string name="session_status">Session status</string>
+    <string name="protocol_title">Protocol Title</string>
+    <string name="protocol_description">Protocol Description</string>
+    <string name="viewers">Viewers</string>
+    <string name="editors">Editors</string>
+    <string name="search_for_users">Search for users</string>
+    <string name="new_tag">New tag</string>
+    <string name="current_tags">Current Tags</string>
+    <string name="remove_user">Remove user</string>
+    <string name="add_user">Add user</string>
+    <string name="search_existing_tags">Search existing tags</string>
+    <string name="expand_or_collapse_section">Expand or collapse section</string>
+    <string name="required_reagents">Required Reagents</string>
+    <string name="start_session">Start session</string>
 </resources>

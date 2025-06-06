@@ -3,11 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginStart="8dp"
-    android:layout_marginEnd="8dp"
-    android:layout_marginTop="4dp"
-    android:layout_marginBottom="4dp"
-    app:cardElevation="2dp"
+    android:layout_margin="8dp"
+    app:cardElevation="4dp"
     app:cardCornerRadius="8dp">
 
     <LinearLayout
@@ -15,29 +12,40 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="16dp">
+        <TextView
+            android:id="@+id/textViewStartTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Start time: Not started"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:textColor="?attr/colorOnSurface" />
 
         <TextView
             android:id="@+id/textViewSession"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAppearance="?attr/textAppearanceListItemSecondary"
-            android:text="Session: 1" />
+            android:text="Session: 1"
+            android:textAppearance="?attr/textAppearanceBody1"
+            android:textColor="?attr/colorOnSurface" />
 
         <TextView
             android:id="@+id/textViewStep"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:textAppearance="?attr/textAppearanceListItemSecondary"
-            android:text="Step: 1" />
+            android:text="Step: 1"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:textColor="?attr/colorOnSurface" />
 
         <TextView
             android:id="@+id/textViewDuration"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:text="Duration: 00:00:00"
             android:textAppearance="?attr/textAppearanceHeadline6"
-            android:text="Duration: 00:00:00" />
+            android:textColor="?attr/colorPrimary" />
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

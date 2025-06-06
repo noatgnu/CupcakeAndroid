@@ -4,10 +4,13 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolModel
+import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
+import info.proteo.cupcake.data.remote.model.protocol.ProtocolTag
 import info.proteo.cupcake.data.remote.model.protocol.Session
-import info.proteo.cupcake.data.remote.service.SessionMinimal
 import info.proteo.cupcake.data.repository.ProtocolRepository
+import info.proteo.cupcake.data.repository.TagRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,7 +19,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProtocolDetailViewModel @Inject constructor(
-    private val protocolRepository: ProtocolRepository
+    private val protocolRepository: ProtocolRepository,
+    private val tagRepository: TagRepository
 ) : ViewModel() {
 
     private val _protocol = MutableStateFlow<ProtocolModel?>(null)
@@ -28,17 +32,31 @@ class ProtocolDetailViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _sectionStepsMap = MutableStateFlow<Map<Int, List<ProtocolStep>>>(emptyMap())
+    val sectionStepsMap = _sectionStepsMap.asStateFlow()
+
     fun loadProtocolDetails(protocolId: Int) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // Load protocol details
                 protocolRepository.getProtocolById(protocolId).onSuccess { protocol ->
-                    Log.d("ProtocolDetailViewModel", "Loaded protocol: ${protocol.reagents}")
                     _protocol.value = protocol
+
+                    val stepsMap = mutableMapOf<Int, MutableList<ProtocolStep>>()
+                    protocol.steps?.forEach { step ->
+                        if (step.stepSection != null) {
+                            val sectionSteps = stepsMap.getOrPut(step.stepSection) { mutableListOf() }
+                            sectionSteps.add(step)
+                        }
+                    }
+
+                    stepsMap.forEach { (_, steps) ->
+                        steps.sortBy { it.stepId }
+                    }
+
+                    _sectionStepsMap.value = stepsMap
                 }
 
-                // Load associated sessions
                 protocolRepository.getAssociatedSessions(protocolId).onSuccess { sessionsList ->
                     _sessions.value = sessionsList
                 }
@@ -47,6 +65,22 @@ class ProtocolDetailViewModel @Inject constructor(
             } finally {
                 _isLoading.value = false
             }
+        }
+    }
+
+    suspend fun searchTags(query: String): Result<LimitOffsetResponse<ProtocolTag>> {
+        return try {
+            tagRepository.getProtocolTags(search = query)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getTagById(id: Int): Result<ProtocolTag> {
+        return try {
+            tagRepository.getProtocolTagById(id)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }

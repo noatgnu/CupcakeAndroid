@@ -122,6 +122,28 @@
                     android:visibility="gone" />
             </LinearLayout>
 
+            <TextView
+                android:id="@+id/sectionsHeader"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Protocol Sections"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/protocolStatsContainer" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/sectionsRecyclerView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/sectionsHeader" />
+
             <View
                 android:id="@+id/divider"
                 android:layout_width="0dp"
@@ -130,7 +152,7 @@
                 android:background="?android:attr/listDivider"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/protocolStatsContainer" />
+                app:layout_constraintTop_toBottomOf="@id/sectionsRecyclerView" />
 
             <TextView
                 android:id="@+id/sessionsHeader"
@@ -170,7 +192,14 @@
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.core.widget.NestedScrollView>
-
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_session"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:contentDescription="@string/start_session"
+        app:srcCompat="@drawable/ic_play_arrow" />
     <ProgressBar
         android:id="@+id/progressBar"
         android:layout_width="wrap_content"

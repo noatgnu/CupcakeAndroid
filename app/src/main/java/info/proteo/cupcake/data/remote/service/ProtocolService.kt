@@ -63,8 +63,8 @@ data class CreateProtocolRequest(
 
 @JsonClass(generateAdapter = true)
 data class UpdateProtocolRequest(
-    @Json(name = "protocol_title") val protocolTitle: String,
-    @Json(name = "protocol_description") val protocolDescription: String,
+    @Json(name = "protocol_title") val protocolTitle: String?,
+    @Json(name = "protocol_description") val protocolDescription: String?,
     val enabled: Boolean? = null
 )
 

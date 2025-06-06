@@ -7,6 +7,9 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import info.proteo.cupcake.data.remote.model.protocol.TimeKeeper
 import info.proteo.cupcake.databinding.ItemActiveTimeKeeperPreviewBinding
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 
 class ActiveTimeKeeperPreviewAdapter(
     private val onItemClick: (TimeKeeper) -> Unit
@@ -18,7 +21,6 @@ class ActiveTimeKeeperPreviewAdapter(
         activeTimers = timers
         notifyDataSetChanged()
     }
-
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemActiveTimeKeeperPreviewBinding.inflate(
@@ -40,27 +42,61 @@ class ActiveTimeKeeperPreviewAdapter(
 
         fun bind(timeKeeper: TimeKeeper, timerState: TimeKeeperViewModel.TimerState?) {
             binding.apply {
-                textViewSession.text = "Session: ${timeKeeper.session ?: "N/A"}"
-                textViewStep.text = timeKeeper.step?.let { "Step: $it" } ?: "No step"
-
-                textViewDuration.text = if (timerState != null) {
-                    val totalSeconds = timerState.currentDuration.toInt()
-                    val hours = totalSeconds / 3600
-                    val mins = (totalSeconds % 3600) / 60
-                    val secs = totalSeconds % 60
-                    "Duration: ${String.format("%02d:%02d:%02d", hours, mins, secs)}"
-                } else {
-                    timeKeeper.currentDuration?.let {
-                        val totalSeconds = it.toInt()
-                        val hours = totalSeconds / 3600
-                        val mins = (totalSeconds % 3600) / 60
-                        val secs = totalSeconds % 60
-                        "Duration: ${String.format("%02d:%02d:%02d", hours, mins, secs)}"
-                    } ?: "No duration"
+                // Handle start time display
+                timeKeeper.startTime?.let {
+                    try {
+                        val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.getDefault())
+                        inputFormat.timeZone = TimeZone.getTimeZone("UTC")
+                        val outputFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+                        val date = inputFormat.parse(it)
+                        textViewStartTime.text = date?.let { it1 -> outputFormat.format(it1) } ?: it
+                    } catch (e: Exception) {
+                        textViewStartTime.text = it
+                    }
+                } ?: run {
+                    textViewStartTime.text = "Not started"
                 }
 
-                root.setOnClickListener { onItemClick(timeKeeper) }
+                // Display session and step info
+                textViewSession.text = "Session: ${timeKeeper.session}"
+                textViewStep.text = if (timeKeeper.step != null) "Step: ${timeKeeper.step}" else "No step"
+
+                // Calculate and display the correct duration
+                if (timerState != null) {
+                    // Use the timer state from the view model
+                    textViewDuration.text = "Duration: ${formatDuration(timerState.currentDuration)}"
+                } else if (timeKeeper.started == true && timeKeeper.startTime != null) {
+                    // Calculate remaining time based on start time
+                    try {
+                        val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.getDefault())
+                        formatter.timeZone = TimeZone.getTimeZone("UTC")
+                        val startTime = formatter.parse(timeKeeper.startTime)?.time ?: 0L
+
+                        val elapsedSeconds = ((System.currentTimeMillis() - startTime) / 1000).toInt()
+                        val initialDuration = timeKeeper.currentDuration ?: 0
+                        val remainingDuration = (initialDuration - elapsedSeconds).coerceAtLeast(0)
+
+                        textViewDuration.text = "Duration: ${formatDuration(remainingDuration)}"
+                    } catch (e: Exception) {
+                        textViewDuration.text = "Duration: ${formatDuration(timeKeeper.currentDuration ?: 0)}"
+                    }
+                } else {
+                    // Not active, show the current duration
+                    textViewDuration.text = "Duration: ${formatDuration(timeKeeper.currentDuration ?: 0)}"
+                }
+
+                // Set click listener
+                root.setOnClickListener {
+                    onItemClick(timeKeeper)
+                }
             }
+        }
+
+        private fun formatDuration(seconds: Int): String {
+            val hours = seconds / 3600
+            val mins = (seconds % 3600) / 60
+            val secs = seconds % 60
+            return String.format("%02d:%02d:%02d", hours, mins, secs)
         }
     }
 

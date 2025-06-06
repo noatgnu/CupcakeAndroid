@@ -164,32 +164,43 @@ class MainViewModel @Inject constructor(
     }
 
     private fun updateTimerStates() {
-        val newActiveTimerStates = _activeTimerStates.value.toMutableMap()
-        var listModifiedDueToLocalStop = false
+        val currentActiveTimekeepers = _activeTimekeepers.value
+        val newActiveTimerStates = mutableMapOf<Int, TimerState>()
 
-        val timerIdsBeingTracked = _activeTimerStates.value.keys.toList()
+        currentActiveTimekeepers.forEach { timeKeeper ->
+            if (timeKeeper.started == true && timeKeeper.startTime != null) {
+                try {
+                    val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.getDefault())
+                    formatter.timeZone = TimeZone.getTimeZone("UTC")
+                    val startTime = formatter.parse(timeKeeper.startTime)?.time ?: 0L
 
-        for (timerId in timerIdsBeingTracked) {
-            val currentState = _activeTimerStates.value[timerId]
-            if (currentState != null && currentState.started) {
-                val newDuration = max(0, currentState.currentDuration - 1)
-                val newStartedState = newDuration > 0
-                newActiveTimerStates[timerId] = currentState.copy(currentDuration = newDuration, started = newStartedState)
+                    val elapsedSeconds = ((System.currentTimeMillis() - startTime) / 1000).toInt()
 
-                if (!newStartedState) {
-                    Log.d("MainViewModel", "Local Countdown: Timer ID $timerId reached zero.")
-                    if (_activeTimekeepers.value.any { it.id == timerId && it.started == true }) {
-                        listModifiedDueToLocalStop = true
+                    val initialDuration = timeKeeper.currentDuration ?: 0
+
+                    val remainingDuration = (initialDuration - elapsedSeconds).coerceAtLeast(0)
+
+                    newActiveTimerStates[timeKeeper.id] = TimerState(
+                        id = timeKeeper.id,
+                        currentDuration = remainingDuration,
+                        started = remainingDuration > 0
+                    )
+                } catch (e: Exception) {
+                    Log.e("MainViewModel", "Error calculating timer duration for ID ${timeKeeper.id}", e)
+                    _activeTimerStates.value[timeKeeper.id]?.let {
+                        newActiveTimerStates[timeKeeper.id] = it
                     }
                 }
+            } else {
+                newActiveTimerStates[timeKeeper.id] = TimerState(
+                    id = timeKeeper.id,
+                    currentDuration = timeKeeper.currentDuration ?: 0,
+                    started = false
+                )
             }
         }
-        _activeTimerStates.value = newActiveTimerStates
 
-        if (listModifiedDueToLocalStop) {
-            Log.d("MainViewModel", "Local Countdown: Refreshing active timekeepers as a timer stopped.")
-            fetchActiveTimekeepers()
-        }
+        _activeTimerStates.value = newActiveTimerStates
     }
 
 

@@ -102,6 +102,8 @@ import info.proteo.cupcake.data.repository.SupportInformationRepository
 import info.proteo.cupcake.data.repository.TagRepository
 import info.proteo.cupcake.data.repository.TimeKeeperRepository
 import info.proteo.cupcake.data.repository.UserRepository
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
@@ -779,6 +781,11 @@ object NetworkModule {
     ): SessionRepository {
         return SessionRepository(sessionService)
     }
+
+    @Provides
+    @Singleton
+    fun provideIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
+
 }
 
 class JsonResponseInterceptor : Interceptor {
