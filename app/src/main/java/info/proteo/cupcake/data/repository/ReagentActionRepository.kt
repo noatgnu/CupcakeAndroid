@@ -28,9 +28,11 @@ class ReagentActionRepository @Inject constructor(
         reagentId: Int,
         actionType: String,
         quantity: Float,
-        notes: String?
+        notes: String?,
+        stepReagent: Int? = null,
+        session: String? = null
     ): Result<ReagentAction> {
-        return reagentActionService.createReagentAction(reagentId, actionType, quantity, notes)
+        return reagentActionService.createReagentAction(reagentId, actionType, quantity, notes, stepReagent, session)
     }
 
     suspend fun deleteReagentAction(id: Int): Result<Unit> {

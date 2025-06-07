@@ -1,18 +1,17 @@
 package info.proteo.cupcake.ui.session
 
-import android.text.Html
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import info.proteo.cupcake.R
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolSection
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
+import info.proteo.cupcake.util.ProtocolHtmlRenderer.htmlToPlainText
 
-class SessionSidebarAdapter(private val onStepClick: (ProtocolStep) -> Unit) :
+class SessionSidebarAdapter(private val onStepClick: (ProtocolStep, ProtocolSection) -> Unit) : // Changed lambda
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var sections: List<ProtocolSection> = emptyList()
@@ -29,6 +28,9 @@ class SessionSidebarAdapter(private val onStepClick: (ProtocolStep) -> Unit) :
 
         if (expandedSections.isEmpty() && sections.isNotEmpty()) {
             expandedSections.add(sections[0].id)
+        } else {
+            val currentSectionIds = sections.map { it.id }.toSet()
+            expandedSections.retainAll(currentSectionIds)
         }
 
         refreshItems()
@@ -37,18 +39,15 @@ class SessionSidebarAdapter(private val onStepClick: (ProtocolStep) -> Unit) :
 
     private fun refreshItems() {
         val newItems = mutableListOf<SidebarItem>()
-
         sections.forEach { section ->
-            newItems.add(SidebarItem.Section(section))
-
+            newItems.add(SidebarItem.SectionItem(section)) // Renamed for clarity
             if (expandedSections.contains(section.id)) {
                 val steps = stepsMap[section.id] ?: emptyList()
                 steps.forEach { step ->
-                    newItems.add(SidebarItem.Step(step, section.id))
+                    newItems.add(SidebarItem.StepItem(step, section)) // Pass section object
                 }
             }
         }
-
         items = newItems
     }
 
@@ -65,13 +64,22 @@ class SessionSidebarAdapter(private val onStepClick: (ProtocolStep) -> Unit) :
     fun setSelectedStep(stepId: Int, sectionId: Int) {
         selectedStepId = stepId
         selectedSectionId = sectionId
+        var needsRefresh = false
+        if (!expandedSections.contains(sectionId)) {
+            expandedSections.add(sectionId)
+            needsRefresh = true
+        }
+
+        if (needsRefresh) {
+            refreshItems()
+        }
         notifyDataSetChanged()
     }
 
     override fun getItemViewType(position: Int): Int {
         return when (items[position]) {
-            is SidebarItem.Section -> VIEW_TYPE_SECTION
-            is SidebarItem.Step -> VIEW_TYPE_STEP
+            is SidebarItem.SectionItem -> VIEW_TYPE_SECTION
+            is SidebarItem.StepItem -> VIEW_TYPE_STEP
         }
     }
 
@@ -82,7 +90,7 @@ class SessionSidebarAdapter(private val onStepClick: (ProtocolStep) -> Unit) :
                     .inflate(R.layout.item_session_sidebar_section, parent, false)
                 SectionViewHolder(view)
             }
-            else -> {
+            else -> { // VIEW_TYPE_STEP
                 val view = LayoutInflater.from(parent.context)
                     .inflate(R.layout.item_session_sidebar_step, parent, false)
                 StepViewHolder(view)
@@ -92,8 +100,8 @@ class SessionSidebarAdapter(private val onStepClick: (ProtocolStep) -> Unit) :
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val item = items[position]) {
-            is SidebarItem.Section -> (holder as SectionViewHolder).bind(item.section)
-            is SidebarItem.Step -> (holder as StepViewHolder).bind(item.step)
+            is SidebarItem.SectionItem -> (holder as SectionViewHolder).bind(item.section)
+            is SidebarItem.StepItem -> (holder as StepViewHolder).bind(item.step)
         }
     }
 
@@ -106,25 +114,21 @@ class SessionSidebarAdapter(private val onStepClick: (ProtocolStep) -> Unit) :
 
         init {
             itemView.setOnClickListener {
-                val position = bindingAdapterPosition
-                if (position != RecyclerView.NO_POSITION) {
-                    val item = items[position] as SidebarItem.Section
-                    toggleSection(item.section.id)
+                bindingAdapterPosition.takeIf { it != RecyclerView.NO_POSITION }?.let { pos ->
+                    (items[pos] as? SidebarItem.SectionItem)?.let {
+                        toggleSection(it.section.id)
+                    }
                 }
             }
         }
 
         fun bind(section: ProtocolSection) {
             sectionTitle.text = section.sectionDescription ?: "Section ${section.id}"
-
             expandIcon.setImageResource(
-                if (expandedSections.contains(section.id))
-                    R.drawable.ic_expand_less
-                else
-                    R.drawable.ic_expand_more
+                if (expandedSections.contains(section.id)) R.drawable.ic_expand_less
+                else R.drawable.ic_expand_more
             )
-
-            sectionIndicator.visibility = if (selectedSectionId == section.id) View.VISIBLE else View.GONE
+            sectionIndicator.visibility = if (selectedSectionId == section.id && expandedSections.contains(section.id)) View.VISIBLE else View.INVISIBLE
         }
     }
 
@@ -134,28 +138,25 @@ class SessionSidebarAdapter(private val onStepClick: (ProtocolStep) -> Unit) :
 
         init {
             itemView.setOnClickListener {
-                val position = bindingAdapterPosition
-                if (position != RecyclerView.NO_POSITION) {
-                    val item = items[position] as SidebarItem.Step
-                    onStepClick(item.step)
-                    setSelectedStep(item.step.id, item.sectionId)
+                bindingAdapterPosition.takeIf { it != RecyclerView.NO_POSITION }?.let { pos ->
+                    (items[pos] as? SidebarItem.StepItem)?.let { item ->
+                        onStepClick(item.step, item.section) // Pass section here
+                        setSelectedStep(item.step.id, item.section.id)
+                    }
                 }
             }
         }
 
         fun bind(step: ProtocolStep) {
-            val plainText = Html.fromHtml(step.stepDescription, Html.FROM_HTML_MODE_COMPACT)
-                .toString()
-                .take(30)
-            stepTitle.text = "$plainText..."
-
-            stepIndicator.visibility = if (selectedStepId == step.id) View.VISIBLE else View.GONE
+            val plainTextDescription = step.htmlToPlainText()
+            stepTitle.text = "${plainTextDescription.take(50)}${if (plainTextDescription.length > 50) "..." else ""}"
+            stepIndicator.visibility = if (selectedStepId == step.id) View.VISIBLE else View.INVISIBLE
         }
     }
 
     sealed class SidebarItem {
-        data class Section(val section: ProtocolSection) : SidebarItem()
-        data class Step(val step: ProtocolStep, val sectionId: Int) : SidebarItem()
+        data class SectionItem(val section: ProtocolSection) : SidebarItem() // Renamed
+        data class StepItem(val step: ProtocolStep, val section: ProtocolSection) : SidebarItem() // Changed to include section
     }
 
     companion object {

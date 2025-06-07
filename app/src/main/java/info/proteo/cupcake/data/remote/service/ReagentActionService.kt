@@ -19,7 +19,9 @@ data class ReagentActionRequest(
     val reagent: Int,
     @Json(name = "action_type") val actionType: String,
     val quantity: Float,
-    val notes: String
+    val notes: String,
+    @Json(name = "step_reagent") val stepReagent: Int? = null,
+    val session: String? = null
 )
 
 interface ReagentActionApiService {
@@ -51,7 +53,7 @@ interface ReagentActionApiService {
 interface ReagentActionService {
     suspend fun getReagentActions(offset: Int, limit: Int, reagentId: Int? = null, ordering: String = "-created_at"): Result<LimitOffsetResponse<ReagentAction>>
     suspend fun getReagentActionById(id: Int): Result<ReagentAction>
-    suspend fun createReagentAction(reagentId: Int, actionType: String, quantity: Float, notes: String?): Result<ReagentAction>
+    suspend fun createReagentAction(reagentId: Int, actionType: String, quantity: Float, notes: String?, stepReagent: Int?, session: String?): Result<ReagentAction>
     suspend fun deleteReagentAction(id: Int): Result<Unit>
     suspend fun getReagentActionRange(reagentId: Int, startDate: String? = null, endDate: String? = null): Result<List<ReagentAction>>
 }
@@ -109,14 +111,18 @@ class ReagentActionServiceImpl @Inject constructor(
         reagentId: Int,
         actionType: String,
         quantity: Float,
-        notes: String?
+        notes: String?,
+        stepReagent: Int?,
+        session: String?
     ): Result<ReagentAction> {
         return try {
             val request = ReagentActionRequest(
                 reagent = reagentId,
                 actionType = actionType,
                 quantity = quantity,
-                notes = notes ?: ""
+                notes = notes ?: "",
+                stepReagent = stepReagent,
+                session = session
             )
             val response = apiService.createReagentAction(request)
             cacheReagentAction(response)

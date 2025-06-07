@@ -175,7 +175,6 @@ class AddEditContactDialogFragment : DialogFragment() {
                 it.fold(
                     onSuccess = { message ->
                         Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
-                        // Notify parent ViewModel to refresh data
                         if (supportInfoIdArg != -1) {
                             parentViewModel.loadSupportInformation(supportInfoIdArg)
                             Log.d(TAG, "Successfully saved. Requested parent refresh for supportInfoId: $supportInfoIdArg")
