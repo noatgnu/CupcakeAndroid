@@ -241,7 +241,7 @@ class SessionAnnotationAdapter(
                 }
             }
 
-            itemView.setOnClickListener { onItemClick(annotation) }
+            //itemView.setOnClickListener { onItemClick(annotation) }
         }
 
 
@@ -714,7 +714,7 @@ class SessionAnnotationAdapter(
                             val editText = EditText(container.context).apply {
                                 setText(cellContent)
                                 gravity = android.view.Gravity.CENTER
-                                layoutParams = LinearLayout.LayoutParams(100, 50).apply {
+                                layoutParams = LinearLayout.LayoutParams(200, 100).apply {
                                     setMargins(1, 1, 1, 1)
                                 }
                                 background = getTableCellBackground(isHighlighted)
@@ -728,7 +728,7 @@ class SessionAnnotationAdapter(
 
                                 if (isTrackingMode) {
                                     setOnClickListener {
-                                        updateTableCellState(annotation, i, j, !isHighlighted)
+                                        updateTableCellState(annotation, i, j, !isHighlighted, this)
                                     }
                                 }
                             }
@@ -737,15 +737,18 @@ class SessionAnnotationAdapter(
                             val cell = TextView(container.context).apply {
                                 text = cellContent
                                 gravity = android.view.Gravity.CENTER
-                                layoutParams = LinearLayout.LayoutParams(100, 50).apply {
+                                layoutParams = LinearLayout.LayoutParams(200, 100).apply {
                                     setMargins(1, 1, 1, 1)
                                 }
                                 background = getTableCellBackground(isHighlighted)
                                 setTextColor(if (isHighlighted) Color.WHITE else Color.BLACK)
 
                                 if (isTrackingMode) {
+                                    tag = isHighlighted
+
                                     setOnClickListener {
-                                        updateTableCellState(annotation, i, j, !isHighlighted)
+                                        val currentHighlightState = (tag as? Boolean) ?: isHighlighted
+                                        updateTableCellState(annotation, i, j, !currentHighlightState, this)
                                     }
                                 }
                             }
@@ -799,11 +802,42 @@ class SessionAnnotationAdapter(
                     return
                 }
 
+                // Get current cell highlighting state
                 val json = org.json.JSONObject(annotation.annotation)
                 val contentArray = json.getJSONArray("content")
                 val rowArray = contentArray.getJSONArray(row)
                 rowArray.put(col, newContent)
 
+                // Check if this cell is highlighted
+                val cellKey = "$row,$col"
+                val trackingMapJson = json.getJSONObject("trackingMap")
+                val isHighlighted = trackingMapJson.optBoolean(cellKey, false)
+
+                // Update UI immediately for this specific cell
+                val tableContainer = itemView.findViewById<ViewGroup>(R.id.table_container)
+                val contentContainer = tableContainer.findViewWithTag<ViewGroup>("table_content")
+
+                if (contentContainer != null) {
+                    // Get the row layout (horizontal LinearLayout)
+                    if (row < contentContainer.childCount) {
+                        val rowLayout = contentContainer.getChildAt(row) as? LinearLayout
+                        if (rowLayout != null && col < rowLayout.childCount) {
+                            // Get and update the cell
+                            val cell = rowLayout.getChildAt(col)
+                            if (cell is EditText) {
+                                cell.setText(newContent)
+                                cell.background = getTableCellBackground(isHighlighted)
+                                cell.setTextColor(if (isHighlighted) Color.WHITE else Color.BLACK)
+                            } else if (cell is TextView) {
+                                cell.text = newContent
+                                cell.background = getTableCellBackground(isHighlighted)
+                                cell.setTextColor(if (isHighlighted) Color.WHITE else Color.BLACK)
+                            }
+                        }
+                    }
+                }
+
+                // Send update to backend
                 val updatedAnnotation = annotation.copy(annotation = json.toString())
                 onAnnotationUpdate(updatedAnnotation, null, null)
             } catch (e: Exception) {
@@ -823,7 +857,7 @@ class SessionAnnotationAdapter(
             }
         }
 
-        private fun updateTableCellState(annotation: Annotation, row: Int, col: Int, highlighted: Boolean) {
+        private fun updateTableCellState(annotation: Annotation, row: Int, col: Int, highlighted: Boolean, view: View) {
             try {
                 if (annotation.annotation == null || annotation.annotation.isBlank()) {
                     Toast.makeText(
@@ -840,7 +874,16 @@ class SessionAnnotationAdapter(
                 val trackingMapJson = json.getJSONObject("trackingMap")
                 trackingMapJson.put(cellKey, highlighted)
 
-                val updatedAnnotation = annotation.copy(annotation = json.toString())
+                val updatedJsonString = json.toString()
+
+                val cell = view as TextView
+                cell.background = getTableCellBackground(highlighted)
+                cell.setTextColor(if (highlighted) Color.WHITE else Color.BLACK)
+
+                val updatedAnnotation = annotation.copy(annotation = updatedJsonString)
+
+                view.tag = highlighted
+
                 onAnnotationUpdate(updatedAnnotation, null, null)
             } catch (e: Exception) {
                 Toast.makeText(
