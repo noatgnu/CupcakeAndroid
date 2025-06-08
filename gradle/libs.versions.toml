@@ -5,6 +5,8 @@ cameraCore = "1.4.2"
 coil = "2.5.0"
 coreVersion = "3.5.2"
 firebaseBom = "33.14.0"
+glide = "4.15.1"
+guavaVersion = "31.1-android"
 javapoet = "1.13.0"
 kotlin = "2.1.0"
 coreKtx = "1.16.0"
@@ -32,6 +34,7 @@ legacySupportV4 = "1.0.0"
 fragmentKtx = "1.8.6"
 activity = "1.8.0"
 uiAndroid = "1.8.2"
+scenecore = "1.0.0-alpha04"
 
 [libraries]
 androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "cameraCore" }
@@ -52,6 +55,8 @@ converter-moshi = { module = "com.squareup.retrofit2:converter-moshi", version.r
 firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-inappmessaging-display = { module = "com.google.firebase:firebase-inappmessaging-display" }
+glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
+google-guava = { module = "com.google.guava:guava", version.ref = "guavaVersion" }
 javapoet = { module = "com.squareup:javapoet", version.ref = "javapoet" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
@@ -78,6 +83,7 @@ androidx-activity = { group = "androidx.activity", name = "activity", version.re
 richeditor-android = { module = "jp.wasabeef:richeditor-android", version.ref = "richeditorAndroid" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "coreVersion" }
 androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "uiAndroid" }
+androidx-scenecore = { group = "androidx.xr.scenecore", name = "scenecore", version.ref = "scenecore" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

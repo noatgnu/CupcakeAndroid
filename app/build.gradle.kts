@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.moshi.kotlin)
     implementation(libs.converter.moshi)
     implementation(libs.androidx.ui.android)
+    implementation(libs.androidx.scenecore)
     ksp("com.squareup.moshi:moshi-kotlin-codegen:${libs.versions.moshi.get()}")
 
     // Reactive: LiveData
@@ -81,6 +82,7 @@ dependencies {
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
+    implementation(libs.google.guava)
 
     implementation(libs.barcode.scanning)
 
@@ -92,6 +94,8 @@ dependencies {
     implementation (libs.androidx.navigation.ui.ktx.v277)
 
     implementation(libs.androidx.lifecycle.process)
+
+    implementation(libs.glide)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

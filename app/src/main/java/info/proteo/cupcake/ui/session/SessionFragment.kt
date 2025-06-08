@@ -1,10 +1,16 @@
 package info.proteo.cupcake.ui.session
 
+import SessionAnnotationAdapter
+import android.app.Activity
+import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.util.Log
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -16,37 +22,49 @@ import android.webkit.WebView
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.RadioGroup
 import androidx.appcompat.widget.SearchView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.GravityCompat
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.card.MaterialCardView
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.R
-import info.proteo.cupcake.SessionActivity
+import info.proteo.cupcake.SessionManager
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolModel
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolSection
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
 import info.proteo.cupcake.data.remote.model.protocol.StepReagent
+import info.proteo.cupcake.data.remote.model.annotation.Annotation
+import info.proteo.cupcake.data.remote.service.CreateAnnotationRequest
 import info.proteo.cupcake.data.remote.service.SessionCreateRequest
 import info.proteo.cupcake.data.remote.service.SessionService
+import info.proteo.cupcake.data.remote.service.UpdateAnnotationRequest
+import info.proteo.cupcake.data.repository.AnnotationRepository
 import info.proteo.cupcake.data.repository.ProtocolStepRepository
 import info.proteo.cupcake.data.repository.StorageRepository
 import info.proteo.cupcake.data.repository.StoredReagentRepository
 import info.proteo.cupcake.data.repository.UserRepository
 import info.proteo.cupcake.databinding.FragmentSessionBinding
 import info.proteo.cupcake.util.ProtocolHtmlRenderer.renderAsHtml
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import javax.inject.Inject
-import kotlin.toString
 
 @AndroidEntryPoint
 class SessionFragment : Fragment() {
@@ -61,6 +79,8 @@ class SessionFragment : Fragment() {
     lateinit var storedReagentRepository: StoredReagentRepository
     @Inject
     lateinit var storageRepository: StorageRepository
+    @Inject
+    lateinit var sessionManager: SessionManager
 
     private var protocolId: Int = -1
     private var sessionId: String = ""
@@ -77,8 +97,15 @@ class SessionFragment : Fragment() {
     private lateinit var reagentAdapter: SessionStepReagentAdapter
     private var isReagentAdapterInitialized = false
 
+    private var annotationAdapter: SessionAnnotationAdapter? = null
+    private var currentAnnotationDialog: AlertDialog? = null
+    private var dialogView: View? = null
+
+    private var selectedFileUri: Uri? = null
+
     @Inject lateinit var protocolStepRepository: ProtocolStepRepository
     @Inject lateinit var userRepository: UserRepository
+    @Inject lateinit var annotationRepository: AnnotationRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -143,9 +170,13 @@ class SessionFragment : Fragment() {
         }
 
         observeViewModel()
+        setupAnnotationsSection()
 
         binding.reagentsSectionHeader.setOnClickListener {
             toggleReagentsSection()
+        }
+        binding.fabAddAnnotation.setOnClickListener {
+            showAnnotationDialog()
         }
     }
 
@@ -326,6 +357,14 @@ class SessionFragment : Fragment() {
                 updateReagentViews(reagentInfoList)
             }
         }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.hasEditPermission.collect { hasPermission ->
+                    binding.fabAddAnnotation.visibility = if (hasPermission) View.VISIBLE else View.GONE
+                }
+            }
+        }
     }
 
 
@@ -379,6 +418,8 @@ class SessionFragment : Fragment() {
 
         binding.webView.visibility = View.VISIBLE
         binding.viewPager.visibility = View.GONE
+
+        loadAnnotationsForCurrentStep()
     }
 
     private fun showError(message: String) {
@@ -491,19 +532,14 @@ class SessionFragment : Fragment() {
         return null
     }
 
-    private fun loadReagentInfo(step: ProtocolStep) { // This seems unused, viewModel.loadReagentInfoForStep is used
-        viewModel.loadReagentInfoForStep(step, sessionId)
-    }
 
     private fun updateReagentViews(reagentInfoList: List<DisplayableStepReagent>) {
-        // Ensure adapter is set up if it wasn't and there's data
         if (!isReagentAdapterInitialized && reagentInfoList.isNotEmpty()) {
             setupReagentAdapter()
         }
 
         if (reagentInfoList.isEmpty()) {
             binding.reagentsSectionCard.visibility = View.GONE
-            // stepMetadataContainer is inside the card, its visibility is implicitly handled.
         } else {
             binding.reagentsSectionCard.visibility = View.VISIBLE
             // The visibility of stepMetadataContainer (expanded/collapsed) is managed by
@@ -666,5 +702,347 @@ class SessionFragment : Fragment() {
                 }
             }
         }
+    }
+
+    private fun loadAnnotationsForCurrentStep() {
+        currentStep?.id?.let { stepId ->
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    binding.progressBar.visibility = View.VISIBLE
+                    viewModel.loadAnnotationsForStep(stepId, sessionId)
+                    binding.progressBar.visibility = View.GONE
+                } catch (e: Exception) {
+                    showError("Failed to load annotations: ${e.message}")
+                    binding.progressBar.visibility = View.GONE
+                }
+            }
+        }
+    }
+
+    private fun observeAnnotations() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.stepAnnotations.collectLatest { annotations ->
+                if (annotations.isEmpty()) {
+                    binding.annotationsRecyclerView?.visibility = View.GONE
+                    binding.annotationsEmptyState?.visibility = View.VISIBLE
+                } else {
+                    binding.annotationsRecyclerView?.visibility = View.VISIBLE
+                    binding.annotationsEmptyState?.visibility = View.GONE
+                    annotationAdapter?.submitList(annotations)
+                }
+            }
+        }
+    }
+
+    private fun showAnnotationDialog() {
+        dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_create_annotation, null)
+
+
+        // Setup the UI components
+        val radioGroup = dialogView?.findViewById<RadioGroup>(R.id.radioGroupAnnotationType)
+        val textContainer = dialogView?.findViewById<LinearLayout>(R.id.textAnnotationContainer)
+        val fileContainer = dialogView?.findViewById<LinearLayout>(R.id.fileAnnotationContainer)
+        val audioContainer = dialogView?.findViewById<LinearLayout>(R.id.audioAnnotationContainer)
+        val videoContainer = dialogView?.findViewById<LinearLayout>(R.id.videoAnnotationContainer)
+        val notesContainer = dialogView?.findViewById<LinearLayout>(R.id.notesContainer)
+
+        val annotationEditText = dialogView?.findViewById<EditText>(R.id.editTextAnnotation)
+        val notesEditText = dialogView?.findViewById<EditText>(R.id.editTextNotes)
+        val attachFileButton = dialogView?.findViewById<Button>(R.id.buttonSelectFile)
+        val selectedFileText = dialogView?.findViewById<TextView>(R.id.textSelectedFileName)
+        val recordAudioButton = dialogView?.findViewById<Button>(R.id.buttonRecordAudio)
+        val recordVideoButton = dialogView?.findViewById<Button>(R.id.buttonRecordVideo)
+
+        var selectedFileUri: Uri? = null
+        var annotationType = "text"
+
+
+        textContainer?.visibility = View.VISIBLE
+        fileContainer?.visibility = View.GONE
+        audioContainer?.visibility = View.GONE
+        videoContainer?.visibility = View.GONE
+        notesContainer?.visibility = View.VISIBLE
+
+        radioGroup?.setOnCheckedChangeListener { _, checkedId ->
+            textContainer?.visibility = View.GONE
+            fileContainer?.visibility = View.GONE
+            audioContainer?.visibility = View.GONE
+            videoContainer?.visibility = View.GONE
+            notesContainer?.visibility = View.GONE
+
+            when (checkedId) {
+                R.id.radioButtonText -> {
+                    annotationType = "text"
+                    textContainer?.visibility = View.VISIBLE
+                    notesContainer?.visibility = View.VISIBLE
+                }
+                R.id.radioButtonFile -> {
+                    annotationType = "file"
+                    fileContainer?.visibility = View.VISIBLE
+                    notesContainer?.visibility = View.VISIBLE
+                }
+                R.id.radioButtonAudio -> {
+                    annotationType = "audio"
+                    audioContainer?.visibility = View.VISIBLE
+                }
+                R.id.radioButtonVideo -> {
+                    annotationType = "video"
+                    videoContainer?.visibility = View.VISIBLE
+                }
+            }
+        }
+
+        attachFileButton?.setOnClickListener {
+            val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                type = "*/*"
+                addCategory(Intent.CATEGORY_OPENABLE)
+            }
+            startActivityForResult(Intent.createChooser(intent, "Select File"), FILE_PICK_REQUEST_CODE)
+        }
+
+        // Audio recording
+        recordAudioButton?.setOnClickListener {
+            // Implementation for audio recording would go here
+            // This would typically launch an audio recording intent or use a custom recording UI
+            Toast.makeText(context, "Audio recording not implemented in this example", Toast.LENGTH_SHORT).show()
+        }
+
+        // Video recording
+        recordVideoButton?.setOnClickListener {
+            // Implementation for video recording would go here
+            // This would typically launch a video recording intent
+            Toast.makeText(context, "Video recording not implemented in this example", Toast.LENGTH_SHORT).show()
+        }
+
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle("Add Annotation")
+            .setView(dialogView)
+            .setPositiveButton("Save", null)
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        currentAnnotationDialog = dialog
+        currentAnnotationDialog?.show()
+
+        // Set the positive button listener manually to prevent automatic dismissal on validation failure
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val isValid = when (annotationType) {
+                "text" -> annotationEditText?.text?.isNotEmpty()
+                "file" -> selectedFileUri != null
+                "audio", "video" -> true // For now, always allow these (would check for recordings in real implementation)
+                else -> false
+            }
+
+            if (isValid == true) {
+                val notes = if (notesContainer?.visibility == View.VISIBLE) notesEditText?.text.toString() else ""
+                val annotationText = when (annotationType) {
+                    "text" -> annotationEditText?.text.toString()
+                    "file", "audio", "video" -> notes
+                    else -> ""
+                }
+
+                createAnnotation(annotationText, selectedFileUri, annotationType)
+                dialog.dismiss()
+            } else {
+                if (annotationType == "text" && annotationEditText?.text?.isEmpty() == true) {
+                    Toast.makeText(context, "Please enter text for the annotation", Toast.LENGTH_SHORT).show()
+                } else if (annotationType == "file" && selectedFileUri == null) {
+                    Toast.makeText(context, "Please select a file", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == FILE_PICK_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+            selectedFileUri = data?.data
+
+            dialogView?.findViewById<TextView>(R.id.textSelectedFileName)?.let { textView ->
+                selectedFileUri?.let { uri ->
+                    val fileName = getFileNameFromUri(uri) ?: "Selected file"
+                    textView.text = fileName
+                    textView.visibility = View.VISIBLE
+                }
+            }
+        }
+    }
+
+    private fun getFileNameFromUri(uri: Uri): String? {
+        val contentResolver = requireContext().contentResolver
+        val cursor = contentResolver.query(uri, null, null, null, null)
+
+        return cursor?.use {
+            val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            it.moveToFirst()
+            if (nameIndex != -1) it.getString(nameIndex) else null
+        }
+    }
+
+    private fun createAnnotation(text: String, fileUri: Uri?, type: String = "text") {
+        viewLifecycleOwner.lifecycleScope.launch {
+            binding.progressBar.visibility = View.VISIBLE
+
+            try {
+                // Prepare the file if present
+                val filePart = fileUri?.let { uri ->
+                    val contentResolver = requireContext().contentResolver
+                    val mimeType = contentResolver.getType(uri) ?: "application/octet-stream"
+                    val inputStream = contentResolver.openInputStream(uri)
+                    val fileName = getFileNameFromUri(uri) ?: "attachment"
+
+                    val byteArray = inputStream?.readBytes()
+                    inputStream?.close()
+
+                    if (byteArray != null) {
+                        val requestFile = byteArray.toRequestBody(mimeType.toMediaTypeOrNull())
+                        MultipartBody.Part.createFormData("file", fileName, requestFile)
+                    } else null
+                }
+
+                // Create the annotation request
+                val request = CreateAnnotationRequest(
+                    annotation = text,
+                    annotationType = type,
+                    step = currentStep?.id,
+                    session = sessionId
+                )
+
+                val result = annotationRepository.createAnnotationInRepository(request, filePart)
+
+                if (result.isSuccess) {
+                    // Refresh annotations list
+                    loadAnnotationsForCurrentStep()
+                    Toast.makeText(context, "Annotation added successfully", Toast.LENGTH_SHORT).show()
+                } else {
+                    showError("Failed to create annotation: ${result.exceptionOrNull()?.message}")
+                }
+            } catch (e: Exception) {
+                showError("Error creating annotation: ${e.message}")
+            } finally {
+                binding.progressBar.visibility = View.GONE
+            }
+        }
+    }
+
+
+
+    private fun setupAnnotationsSection() {
+        if (_binding == null) return
+
+        val baseUrl = sessionManager.getBaseUrl()
+
+        if (annotationAdapter == null) {
+            annotationAdapter = SessionAnnotationAdapter(
+                onItemClick = { annotation -> handleAnnotationClick(annotation) },
+                onRetranscribeClick = { annotation -> handleRetranscribeClick(annotation) },
+                onAnnotationUpdate = { updatedAnnotation, translation, transcription ->
+                    updateAnnotation(updatedAnnotation, translation, transcription)
+                },
+                annotationRepository = annotationRepository,
+                baseUrl
+
+            )
+            binding.annotationsRecyclerView.adapter = annotationAdapter
+        }
+
+        observeAnnotations()
+    }
+
+    private fun updateAnnotation(updatedAnnotation: Annotation, translation: String?, transcription: String?) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val request = UpdateAnnotationRequest(
+                    annotation = updatedAnnotation.annotation,
+                    translation = translation,
+                    transcription = transcription
+                )
+                val result = annotationRepository.updateAnnotationInRepository(updatedAnnotation.id, request, null)
+
+                if (!result.isSuccess) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            requireContext(),
+                            "Failed to save changes: ${result.exceptionOrNull()?.message}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        requireContext(),
+                        "Error saving changes: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
+    private fun handleAnnotationClick(annotation: Annotation) {
+        if (annotation.file != null) {
+            // Show options to view or download the file
+            val options = arrayOf("View", "Download")
+            AlertDialog.Builder(requireContext())
+                .setTitle("Annotation File")
+                .setItems(options) { _, which ->
+                    when (which) {
+                        0 -> viewAnnotationFile(annotation)
+                        1 -> downloadAnnotationFile(annotation)
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        } else {
+            // Show the annotation text in a dialog
+            AlertDialog.Builder(requireContext())
+                .setTitle("Annotation")
+                .setMessage(annotation.annotation)
+                .setPositiveButton("OK", null)
+                .show()
+        }
+    }
+
+    private fun viewAnnotationFile(annotation: Annotation) {
+        // Implementation would download and open the file
+        Toast.makeText(context, "Viewing file not implemented in this example", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun downloadAnnotationFile(annotation: Annotation) {
+        Toast.makeText(context, "Downloading file not implemented in this example", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun handleRetranscribeClick(annotation: Annotation) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                binding.progressBar.visibility = View.VISIBLE
+                val result = annotationRepository.retranscribe(annotation.id, null)
+                if (result.isSuccess) {
+                    Toast.makeText(context, "Retranscription requested", Toast.LENGTH_SHORT).show()
+                } else {
+                    showError("Failed to retranscribe: ${result.exceptionOrNull()?.message}")
+                }
+            } catch (e: Exception) {
+                showError("Error requesting retranscription: ${e.message}")
+            } finally {
+                binding.progressBar.visibility = View.GONE
+            }
+        }
+    }
+
+
+    private fun Int.dpToPx(): Int {
+        return (this * resources.displayMetrics.density).toInt()
+    }
+    private fun Float.dpToPx(): Int {
+        return (this * resources.displayMetrics.density).toInt()
+    }
+
+
+    companion object {
+        private const val FILE_PICK_REQUEST_CODE = 1001
     }
 }

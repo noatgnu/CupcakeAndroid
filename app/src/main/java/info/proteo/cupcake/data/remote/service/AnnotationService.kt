@@ -55,6 +55,49 @@ data class BindUploadedFileRequest(
     @Json(name = "stored_reagent") val storedReagent: Int? = null
 )
 
+@JsonClass(generateAdapter = true)
+data class CreateAnnotationRequest(
+    @Json(name = "annotation")
+    val annotation: String,
+
+    @Json(name = "annotation_type")
+    val annotationType: String,
+
+    @Json(name = "stored_reagent")
+    val storedReagent: Int? = null,
+
+    @Json(name = "step")
+    val step: Int? = null,
+
+    @Json(name = "session")
+    val session: String? = null, // session unique_id
+
+    @Json(name = "maintenance")
+    val maintenance: Boolean? = null,
+
+    @Json(name = "instrument")
+    val instrument: Int? = null,
+
+    @Json(name = "time_started")
+    val timeStarted: String? = null, // ISO 8601 datetime string
+
+    @Json(name = "time_ended")
+    val timeEnded: String? = null, // ISO 8601 datetime string
+
+    @Json(name = "instrument_job")
+    val instrumentJob: Int? = null,
+
+    @Json(name = "instrument_user_type")
+    val instrumentUserType: String? = null // e.g., "staff_annotation" or "user_annotation"
+)
+
+@JsonClass(generateAdapter = true)
+data class UpdateAnnotationRequest(
+    @Json(name = "annotation") val annotation: String? = null,
+    @Json(name = "translation") val translation: String? = null,
+    @Json(name = "transcription") val transcription: String? = null
+)
+
 interface AnnotationApiService {
 
     @GET("api/annotation/get_annotation_in_folder/")

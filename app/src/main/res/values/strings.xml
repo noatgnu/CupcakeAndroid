@@ -129,4 +129,22 @@
     <string name="expiration_date_label">Expires:</string>
     <string name="expand_reagents_section">Expand reagents section</string>
     <string name="reagents_for_step_header">Reagents</string>
+    <string name="add_annotation">Add annotation to step</string>
+    <string name="annotations">Comment annotations</string>
+    <string name="no_annotations_available">No annotations available</string>
+    <string name="create_annotation">Create annotation</string>
+    <string name="text">Text</string>
+    <string name="file">File</string>
+    <string name="audio">Voice</string>
+    <string name="video">Video</string>
+    <string name="enter_text">Enter text</string>
+    <string name="select_file">Select file</string>
+    <string name="record_audio">Record voice note</string>
+    <string name="record_video">Record video note</string>
+    <string name="notes">File note</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="view">View</string>
+    <string name="delete">Delete</string>
+    <string name="annotation_image">Annotation image</string>
 </resources>

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/create_annotation"
+            android:textAppearance="?attr/textAppearanceHeadline6"
+            android:layout_marginBottom="16dp" />
+
+        <RadioGroup
+            android:id="@+id/radioGroupAnnotationType"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <RadioButton
+                android:id="@+id/radioButtonText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/text"
+                android:checked="true" />
+
+            <RadioButton
+                android:id="@+id/radioButtonFile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/file"
+                android:layout_marginStart="8dp" />
+
+            <RadioButton
+                android:id="@+id/radioButtonAudio"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/audio"
+                android:layout_marginStart="8dp" />
+
+            <RadioButton
+                android:id="@+id/radioButtonVideo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/video"
+                android:layout_marginStart="8dp" />
+        </RadioGroup>
+
+        <!-- Text annotation container -->
+        <LinearLayout
+            android:id="@+id/textAnnotationContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/enter_text"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editTextAnnotation"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textMultiLine"
+                    android:minLines="3"
+                    android:gravity="top|start" />
+            </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
+
+        <!-- File annotation container -->
+        <LinearLayout
+            android:id="@+id/fileAnnotationContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <Button
+                android:id="@+id/buttonSelectFile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/select_file" />
+
+            <TextView
+                android:id="@+id/textSelectedFileName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- Audio annotation container -->
+        <LinearLayout
+            android:id="@+id/audioAnnotationContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <Button
+                android:id="@+id/buttonRecordAudio"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/record_audio" />
+
+            <TextView
+                android:id="@+id/textAudioStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- Video annotation container -->
+        <LinearLayout
+            android:id="@+id/videoAnnotationContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <Button
+                android:id="@+id/buttonRecordVideo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/record_video" />
+
+            <TextView
+                android:id="@+id/textVideoStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- Notes container - for Text and File annotations -->
+        <LinearLayout
+            android:id="@+id/notesContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="16dp">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/notes"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editTextNotes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textMultiLine"
+                    android:minLines="2"
+                    android:gravity="top|start" />
+            </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

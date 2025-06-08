@@ -10,12 +10,15 @@ import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
 import info.proteo.cupcake.data.remote.model.protocol.Session
 import info.proteo.cupcake.data.remote.model.protocol.StepReagent
 import info.proteo.cupcake.data.remote.model.reagent.ReagentAction
+import info.proteo.cupcake.data.remote.model.annotation.Annotation
 import info.proteo.cupcake.data.remote.model.reagent.StoredReagent
 import info.proteo.cupcake.data.remote.service.SessionService
+import info.proteo.cupcake.data.repository.AnnotationRepository
 import info.proteo.cupcake.data.repository.ProtocolRepository
 import info.proteo.cupcake.data.repository.ProtocolStepRepository
 import info.proteo.cupcake.data.repository.ReagentActionRepository
 import info.proteo.cupcake.data.repository.StoredReagentRepository
+import info.proteo.cupcake.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,7 +37,9 @@ class SessionViewModel @Inject constructor(
     private val protocolRepository: ProtocolRepository,
     private val protocolStepRepository: ProtocolStepRepository,
     private val storedReagentRepository: StoredReagentRepository,
-    private val reagentActionRepository: ReagentActionRepository
+    private val reagentActionRepository: ReagentActionRepository,
+    private val annotationRepository: AnnotationRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _session = MutableStateFlow<Session?>(null)
@@ -48,6 +53,39 @@ class SessionViewModel @Inject constructor(
 
     private val _currentStepReagentInfo = MutableStateFlow<List<DisplayableStepReagent>>(emptyList())
     val currentStepReagentInfo: StateFlow<List<DisplayableStepReagent>> = _currentStepReagentInfo.asStateFlow()
+
+    private val _stepAnnotations = MutableStateFlow<List<Annotation>>(emptyList())
+    val stepAnnotations: StateFlow<List<Annotation>> = _stepAnnotations.asStateFlow()
+
+    private val _hasEditPermission = MutableStateFlow(false)
+    val hasEditPermission: StateFlow<Boolean> = _hasEditPermission.asStateFlow()
+
+
+    fun loadAnnotationsForStep(stepId: Int, sessionId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                annotationRepository.getAnnotations(
+                    stepId = stepId,
+                    sessionUniqueId = sessionId,
+                    limit = 10,
+                    offset = 0
+                ).collect { result ->
+                    result.onSuccess { response ->
+                        _stepAnnotations.value = response.results
+                        Log.d("SessionViewModel", "Annotations loaded successfully: ${response.results.size} annotations")
+                    }
+                    result.onFailure { error ->
+                        Log.e("SessionViewModel", "Error loading annotations: ${error.message}")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("SessionViewModel", "Exception loading annotations", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
 
     fun loadReagentInfoForStep(step: ProtocolStep, sessionId: String) {
        viewModelScope.launch {
@@ -78,6 +116,7 @@ class SessionViewModel @Inject constructor(
                 sessionService.getSessionByUniqueId(sessionId)
                     .onSuccess { loadedSession ->
                         _session.value = loadedSession
+                        checkSessionPermission(sessionId)
                     }
                     .onFailure { error ->
                         Log.e("SessionViewModel", "Error loading session: ${error.message}")
@@ -172,6 +211,25 @@ class SessionViewModel @Inject constructor(
         } catch (e: Exception) {
             Log.e("SessionViewModel", "Error fetching stored reagents: ${e.message}")
             return Pair(emptyList(), false)
+        }
+    }
+
+    fun checkSessionPermission(sessionId: String) {
+        viewModelScope.launch {
+            try {
+                userRepository.checkSessionPermission(sessionId)
+                    .onSuccess { response ->
+                        _hasEditPermission.value = response.edit
+                        Log.d("SessionViewModel", "Edit permission: ${_hasEditPermission.value}")
+                    }
+                    .onFailure { error ->
+                        _hasEditPermission.value = false
+                        Log.e("SessionViewModel", "Failed to check permissions: ${error.message}")
+                    }
+            } catch (e: Exception) {
+                _hasEditPermission.value = false
+                Log.e("SessionViewModel", "Exception checking permissions", e)
+            }
         }
     }
 }

@@ -4,14 +4,21 @@ import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
 import info.proteo.cupcake.data.remote.model.annotation.Annotation
 import info.proteo.cupcake.data.remote.service.AnnotationService
 import info.proteo.cupcake.data.remote.service.BindUploadedFileRequest
+import info.proteo.cupcake.data.remote.service.CreateAnnotationRequest
 import info.proteo.cupcake.data.remote.service.SignedTokenResponse
+import info.proteo.cupcake.data.remote.service.UpdateAnnotationRequest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.ResponseBody
 import javax.inject.Inject
 import javax.inject.Singleton
+
+fun String.toTextRequestBody(): RequestBody = this.toRequestBody("text/plain".toMediaTypeOrNull())
+
 
 @Singleton
 class AnnotationRepository @Inject constructor(
@@ -43,21 +50,40 @@ class AnnotationRepository @Inject constructor(
         emit(annotationService.getAnnotationById(id))
     }
 
-    suspend fun createAnnotation(
-        partMap: Map<String, RequestBody>,
-        file: MultipartBody.Part?
+
+
+    suspend fun createAnnotationInRepository(
+        requestData: CreateAnnotationRequest,
+        filePart: MultipartBody.Part?
     ): Result<Annotation> {
-        return annotationService.createAnnotation(partMap, file)
+        val params = mutableMapOf<String, RequestBody>()
+        params["annotation"] = requestData.annotation.toTextRequestBody()
+        params["annotation_type"] = requestData.annotationType.toTextRequestBody()
+        requestData.storedReagent?.let { params["stored_reagent"] = it.toString().toTextRequestBody() }
+        requestData.step?.let { params["step"] = it.toString().toTextRequestBody() }
+        requestData.session?.let { params["session"] = it.toTextRequestBody() }
+        requestData.maintenance?.let { params["maintenance"] = it.toString().toTextRequestBody() }
+        requestData.instrument?.let { params["instrument"] = it.toString().toTextRequestBody() }
+        requestData.timeStarted?.let { params["time_started"] = it.toTextRequestBody() }
+        requestData.timeEnded?.let { params["time_ended"] = it.toTextRequestBody() }
+        requestData.instrumentJob?.let { params["instrument_job"] = it.toString().toTextRequestBody() }
+        requestData.instrumentUserType?.let { params["instrument_user_type"] = it.toTextRequestBody() }
+
+        return annotationService.createAnnotation(params, filePart)
     }
 
-    suspend fun updateAnnotation(
+    suspend fun updateAnnotationInRepository(
         id: Int,
-        partMap: Map<String, RequestBody>,
-        file: MultipartBody.Part?
+        requestData: UpdateAnnotationRequest,
+        filePart: MultipartBody.Part?
     ): Result<Annotation> {
-        return annotationService.updateAnnotation(id, partMap, file)
-    }
+        val params = mutableMapOf<String, RequestBody>()
+        requestData.annotation?.let { params["annotation"] = it.toTextRequestBody() }
+        requestData.translation?.let { params["translation"] = it.toTextRequestBody() }
+        requestData.transcription?.let { params["transcription"] = it.toTextRequestBody() }
 
+        return annotationService.updateAnnotation(id, params, filePart)
+    }
     suspend fun deleteAnnotation(id: Int): Result<Unit> {
         return annotationService.deleteAnnotation(id)
     }
