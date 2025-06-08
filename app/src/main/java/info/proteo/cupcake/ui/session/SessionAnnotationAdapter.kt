@@ -1,4 +1,5 @@
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
@@ -47,6 +48,9 @@ import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.target.Target
 import com.bumptech.glide.request.RequestListener
+import info.proteo.cupcake.ui.session.CounterAnnotationHandler
+import info.proteo.cupcake.ui.session.TableAnnotationHandler
+import kotlin.toString
 
 
 data class VttCue(
@@ -96,6 +100,23 @@ class SessionAnnotationAdapter(
     private var mediaPlayerUpdateHandler: android.os.Handler? = null
     private var mediaPlayerUpdateRunnable: Runnable? = null
 
+    private var tableAnnotationHandler: TableAnnotationHandler? = null
+    private var counterAnnotationHandler: CounterAnnotationHandler? = null
+
+    private fun getTableAnnotationHandler(context: Context): TableAnnotationHandler {
+        if (tableAnnotationHandler == null) {
+            tableAnnotationHandler = TableAnnotationHandler(context, onAnnotationUpdate)
+        }
+        return tableAnnotationHandler!!
+    }
+
+    private fun getCounterAnnotationHandler(context: Context): CounterAnnotationHandler {
+        if (counterAnnotationHandler == null) {
+            counterAnnotationHandler = CounterAnnotationHandler(context, onAnnotationUpdate)
+        }
+        return counterAnnotationHandler!!
+    }
+
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -107,6 +128,8 @@ class SessionAnnotationAdapter(
         val annotation = getItem(position)
         holder.bind(annotation)
     }
+
+
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val textAnnotation: TextView = itemView.findViewById(R.id.annotation_text)
@@ -159,11 +182,13 @@ class SessionAnnotationAdapter(
             when (annotation.annotationType) {
                 "table" -> {
                     tableContainer.visibility = View.VISIBLE
-                    displayTable(annotation, tableContainer)
+                    getTableAnnotationHandler(itemView.context)
+                        .displayTable(annotation, tableContainer)
                 }
                 "counter" -> {
                     counterContainer.visibility = View.VISIBLE
-                    displayCounter(annotation, counterContainer)
+                    getCounterAnnotationHandler(itemView.context)
+                        .displayCounter(annotation, counterContainer)
                 }
                 "checklist" -> {
                     checklistContainer.visibility = View.VISIBLE
@@ -243,9 +268,6 @@ class SessionAnnotationAdapter(
 
             //itemView.setOnClickListener { onItemClick(annotation) }
         }
-
-
-
 
 
         private fun buildFullTranscriptText(): SpannableString {
@@ -435,520 +457,8 @@ class SessionAnnotationAdapter(
             }
         }
 
-        private fun displayCounter(annotation: Annotation, container: ViewGroup) {
-            container.removeAllViews()
-
-            try {
-                if (annotation.annotation == null || annotation.annotation.isBlank()) {
-                    val errorText = TextView(container.context).apply {
-                        text = "No counter data available"
-                        setTextColor(Color.RED)
-                    }
-                    container.addView(errorText)
-                    return
-                }
-
-                val counterData = parseCounterData(annotation.annotation)
-                // Create mutable variable to track current value
-                var currentValue = counterData.current
-
-                // Add title/name
-                val titleView = TextView(container.context).apply {
-                    text = counterData.name
-                    setTypeface(null, Typeface.BOLD)
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).apply {
-                        bottomMargin = 8
-                    }
-                }
-                container.addView(titleView)
-
-                val counterLayout = LinearLayout(container.context).apply {
-                    orientation = LinearLayout.HORIZONTAL
-                    gravity = android.view.Gravity.CENTER_VERTICAL
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    )
-                }
-
-                val counterText = TextView(container.context).apply {
-                    text = "${currentValue}/${counterData.total}"
-                    textSize = 16f
-                    gravity = android.view.Gravity.CENTER
-                    layoutParams = LinearLayout.LayoutParams(
-                        0,
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        1f
-                    )
-                }
-
-                val decreaseButton = Button(container.context).apply {
-                    text = "-"
-                    isEnabled = currentValue > 0
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    )
-                    setOnClickListener {
-                        val newValue = currentValue - 1
-                        if (newValue >= 0) {
-                            // Update tracked value
-                            currentValue = newValue
-                            // Update UI
-                            counterText.text = "${currentValue}/${counterData.total}"
-                            // Update button state
-                            isEnabled = currentValue > 0
-                            // Update backend
-                            updateCounterValue(annotation, currentValue, counterData.total)
-                        }
-                    }
-                }
-
-                val increaseButton = Button(container.context).apply {
-                    text = "+"
-                    isEnabled = currentValue < counterData.total
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    )
-                    setOnClickListener {
-                        val newValue = currentValue + 1
-                        if (newValue <= counterData.total) {
-                            // Update tracked value
-                            currentValue = newValue
-                            // Update UI
-                            counterText.text = "${currentValue}/${counterData.total}"
-                            // Update button states
-                            isEnabled = currentValue < counterData.total
-                            decreaseButton.isEnabled = true
-                            // Update backend
-                            updateCounterValue(annotation, currentValue, counterData.total)
-                        }
-                    }
-                }
-
-                counterLayout.addView(decreaseButton)
-                counterLayout.addView(counterText)
-                counterLayout.addView(increaseButton)
-
-                container.addView(counterLayout)
-
-            } catch (e: Exception) {
-                val errorText = TextView(container.context).apply {
-                    text = "Error loading counter: ${e.message}"
-                    setTextColor(Color.RED)
-                }
-                container.addView(errorText)
-            }
-        }
-
-        private fun updateCounterValue(annotation: Annotation, newValue: Int, total: Int) {
-            try {
-                if (annotation.annotation == null || annotation.annotation.isBlank()) {
-                    Toast.makeText(
-                        itemView.context,
-                        "No counter data available to update",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    return
-                }
-
-                val counterData = parseCounterData(annotation.annotation)
-
-                // Create updated JSON
-                val json = org.json.JSONObject().apply {
-                    put("name", counterData.name)
-                    put("total", total)
-                    put("current", newValue)
-                }
-
-                // Create updated annotation and use callback
-                val updatedAnnotation = annotation.copy(annotation = json.toString())
-                onAnnotationUpdate(updatedAnnotation, null, null)
-            } catch (e: Exception) {
-                Toast.makeText(
-                    itemView.context,
-                    "Error updating counter: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-        private fun displayTable(annotation: Annotation, container: ViewGroup) {
-            container.removeAllViews()
-
-            try {
-                if (annotation.annotation == null || annotation.annotation.isBlank()) {
-                    val errorText = TextView(container.context).apply {
-                        text = "No table data available"
-                        setTextColor(Color.RED)
-                    }
-                    container.addView(errorText)
-                    return
-                }
-
-                val tableData = parseTableData(annotation.annotation)
-                var isEditMode = false
-
-                // Create a container for the entire table including header
-                val mainLayout = LinearLayout(container.context).apply {
-                    orientation = LinearLayout.VERTICAL
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    )
-                }
-                container.addView(mainLayout)
-
-                // Header layout with switches
-                val headerLayout = LinearLayout(container.context).apply {
-                    orientation = LinearLayout.HORIZONTAL
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).apply {
-                        bottomMargin = 8
-                    }
-                }
-
-                val titleView = TextView(container.context).apply {
-                    text = tableData.name
-                    setTypeface(null, Typeface.BOLD)
-                    layoutParams = LinearLayout.LayoutParams(
-                        0,
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        1f
-                    )
-                }
-
-                val editToggle = androidx.appcompat.widget.SwitchCompat(container.context).apply {
-                    text = "Edit"
-                    isChecked = isEditMode
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).apply {
-                        marginEnd = 8
-                    }
-
-                    setOnCheckedChangeListener { _, isChecked ->
-                        isEditMode = isChecked
-                        // Reference only the table content container
-                        val contentContainer = mainLayout.findViewWithTag<ViewGroup>("table_content")
-                        refreshTableContent(contentContainer, annotation, isChecked, tableData.tracking)
-                    }
-                }
-
-                val trackingToggle = androidx.appcompat.widget.SwitchCompat(container.context).apply {
-                    text = "Track"
-                    isChecked = tableData.tracking
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    )
-
-                    setOnCheckedChangeListener { _, isChecked ->
-                        updateTableTracking(annotation, isChecked)
-                    }
-                }
-
-                headerLayout.addView(titleView)
-                headerLayout.addView(editToggle)
-                headerLayout.addView(trackingToggle)
-                mainLayout.addView(headerLayout)
-
-                // Table content container - this is what we'll refresh
-                val tableContainer = LinearLayout(container.context).apply {
-                    orientation = LinearLayout.VERTICAL
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    )
-                    tag = "table_content"
-                }
-                mainLayout.addView(tableContainer)
-
-                refreshTableContent(tableContainer, annotation, isEditMode, tableData.tracking)
-
-            } catch (e: Exception) {
-                val errorText = TextView(container.context).apply {
-                    text = "Error loading table: ${e.message}"
-                    setTextColor(Color.RED)
-                }
-                container.addView(errorText)
-            }
-        }
-
-        private fun refreshTableContent(container: ViewGroup, annotation: Annotation, isEditMode: Boolean, isTrackingMode: Boolean) {
-
-            container.removeAllViews()
-
-            try {
-                if (annotation.annotation == null || annotation.annotation.isBlank()) {
-                    val errorText = TextView(container.context).apply {
-                        text = "No table data available"
-                        setTextColor(Color.RED)
-                    }
-                    container.addView(errorText)
-                    return
-                }
-                val tableData = parseTableData(annotation.annotation)
-
-                for (i in 0 until tableData.nRow) {
-                    val rowLayout = LinearLayout(container.context).apply {
-                        orientation = LinearLayout.HORIZONTAL
-                        layoutParams = LinearLayout.LayoutParams(
-                            LinearLayout.LayoutParams.MATCH_PARENT,
-                            LinearLayout.LayoutParams.WRAP_CONTENT
-                        )
-                    }
-
-                    for (j in 0 until tableData.nCol) {
-                        val cellKey = "$i,$j"
-                        val isHighlighted = tableData.trackingMap[cellKey] == true
-                        val cellContent = tableData.content[i][j]
-
-                        if (isEditMode) {
-                            val editText = EditText(container.context).apply {
-                                setText(cellContent)
-                                gravity = android.view.Gravity.CENTER
-                                layoutParams = LinearLayout.LayoutParams(200, 100).apply {
-                                    setMargins(1, 1, 1, 1)
-                                }
-                                background = getTableCellBackground(isHighlighted)
-                                setTextColor(if (isHighlighted) Color.WHITE else Color.BLACK)
-
-                                setOnFocusChangeListener { _, hasFocus ->
-                                    if (!hasFocus) {
-                                        updateTableCellContent(annotation, i, j, text.toString())
-                                    }
-                                }
-
-                                if (isTrackingMode) {
-                                    setOnClickListener {
-                                        updateTableCellState(annotation, i, j, !isHighlighted, this)
-                                    }
-                                }
-                            }
-                            rowLayout.addView(editText)
-                        } else {
-                            val cell = TextView(container.context).apply {
-                                text = cellContent
-                                gravity = android.view.Gravity.CENTER
-                                layoutParams = LinearLayout.LayoutParams(200, 100).apply {
-                                    setMargins(1, 1, 1, 1)
-                                }
-                                background = getTableCellBackground(isHighlighted)
-                                setTextColor(if (isHighlighted) Color.WHITE else Color.BLACK)
-
-                                if (isTrackingMode) {
-                                    tag = isHighlighted
-
-                                    setOnClickListener {
-                                        val currentHighlightState = (tag as? Boolean) ?: isHighlighted
-                                        updateTableCellState(annotation, i, j, !currentHighlightState, this)
-                                    }
-                                }
-                            }
-                            rowLayout.addView(cell)
-                        }
-                    }
-                    container.addView(rowLayout)
-                }
-            } catch (e: Exception) {
-                val errorText = TextView(container.context).apply {
-                    text = "Error refreshing table: ${e.message}"
-                    setTextColor(Color.RED)
-                }
-                container.addView(errorText)
-            }
-        }
-
-        private fun updateTableTracking(annotation: Annotation, isTracking: Boolean) {
-            try {
-                if (annotation.annotation == null || annotation.annotation.isBlank()) {
-                    Toast.makeText(
-                        itemView.context,
-                        "No table data available to update",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    return
-                }
-
-                val json = org.json.JSONObject(annotation.annotation)
-                json.put("tracking", isTracking)
-
-                val updatedAnnotation = annotation.copy(annotation = json.toString())
-                onAnnotationUpdate(updatedAnnotation, null, null)
-            } catch (e: Exception) {
-                Toast.makeText(
-                    itemView.context,
-                    "Error updating table tracking: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-
-        private fun updateTableCellContent(annotation: Annotation, row: Int, col: Int, newContent: String) {
-            try {
-                if (annotation.annotation == null || annotation.annotation.isBlank()) {
-                    Toast.makeText(
-                        itemView.context,
-                        "No table data available to update",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    return
-                }
-
-                // Get current cell highlighting state
-                val json = org.json.JSONObject(annotation.annotation)
-                val contentArray = json.getJSONArray("content")
-                val rowArray = contentArray.getJSONArray(row)
-                rowArray.put(col, newContent)
-
-                // Check if this cell is highlighted
-                val cellKey = "$row,$col"
-                val trackingMapJson = json.getJSONObject("trackingMap")
-                val isHighlighted = trackingMapJson.optBoolean(cellKey, false)
-
-                // Update UI immediately for this specific cell
-                val tableContainer = itemView.findViewById<ViewGroup>(R.id.table_container)
-                val contentContainer = tableContainer.findViewWithTag<ViewGroup>("table_content")
-
-                if (contentContainer != null) {
-                    // Get the row layout (horizontal LinearLayout)
-                    if (row < contentContainer.childCount) {
-                        val rowLayout = contentContainer.getChildAt(row) as? LinearLayout
-                        if (rowLayout != null && col < rowLayout.childCount) {
-                            // Get and update the cell
-                            val cell = rowLayout.getChildAt(col)
-                            if (cell is EditText) {
-                                cell.setText(newContent)
-                                cell.background = getTableCellBackground(isHighlighted)
-                                cell.setTextColor(if (isHighlighted) Color.WHITE else Color.BLACK)
-                            } else if (cell is TextView) {
-                                cell.text = newContent
-                                cell.background = getTableCellBackground(isHighlighted)
-                                cell.setTextColor(if (isHighlighted) Color.WHITE else Color.BLACK)
-                            }
-                        }
-                    }
-                }
-
-                // Send update to backend
-                val updatedAnnotation = annotation.copy(annotation = json.toString())
-                onAnnotationUpdate(updatedAnnotation, null, null)
-            } catch (e: Exception) {
-                Toast.makeText(
-                    itemView.context,
-                    "Error updating table content: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-
-        private fun getTableCellBackground(isHighlighted: Boolean): android.graphics.drawable.GradientDrawable {
-            return android.graphics.drawable.GradientDrawable().apply {
-                shape = android.graphics.drawable.GradientDrawable.RECTANGLE
-                setColor(if (isHighlighted) Color.parseColor("#0d6efd") else Color.WHITE)
-                setStroke(1, Color.GRAY)
-            }
-        }
-
-        private fun updateTableCellState(annotation: Annotation, row: Int, col: Int, highlighted: Boolean, view: View) {
-            try {
-                if (annotation.annotation == null || annotation.annotation.isBlank()) {
-                    Toast.makeText(
-                        itemView.context,
-                        "No table data available to update",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    return
-                }
-
-                val cellKey = "$row,$col"
-
-                val json = org.json.JSONObject(annotation.annotation)
-                val trackingMapJson = json.getJSONObject("trackingMap")
-                trackingMapJson.put(cellKey, highlighted)
-
-                val updatedJsonString = json.toString()
-
-                val cell = view as TextView
-                cell.background = getTableCellBackground(highlighted)
-                cell.setTextColor(if (highlighted) Color.WHITE else Color.BLACK)
-
-                val updatedAnnotation = annotation.copy(annotation = updatedJsonString)
-
-                view.tag = highlighted
-
-                onAnnotationUpdate(updatedAnnotation, null, null)
-            } catch (e: Exception) {
-                Toast.makeText(
-                    itemView.context,
-                    "Error updating table: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
     }
-
-    private fun parseTableData(jsonString: String): TableData {
-        return try {
-            val json = org.json.JSONObject(jsonString)
-            val name = json.getString("name")
-            val nRow = json.getInt("nRow")
-            val nCol = json.getInt("nCol")
-            val tracking = json.getBoolean("tracking")
-
-            // Parse content 2D array
-            val contentArray = json.getJSONArray("content")
-            val content = mutableListOf<List<String>>()
-
-            for (i in 0 until nRow) {
-                val row = mutableListOf<String>()
-                val jsonRow = contentArray.getJSONArray(i)
-
-                for (j in 0 until nCol) {
-                    val cellValue = jsonRow.getString(j)
-                    row.add(cellValue)
-                }
-
-                content.add(row)
-            }
-
-            // Parse tracking map
-            val trackingMapJson = json.getJSONObject("trackingMap")
-            val trackingMap = mutableMapOf<String, Boolean>()
-
-            trackingMapJson.keys().forEach { key ->
-                trackingMap[key] = trackingMapJson.getBoolean(key)
-            }
-
-            TableData(name, nRow, nCol, content, tracking, trackingMap)
-        } catch (e: Exception) {
-            throw Exception("Invalid table format: ${e.message}")
-        }
-    }
-
-
-
-    private fun parseCounterData(jsonString: String): CounterData {
-        return try {
-            val json = org.json.JSONObject(jsonString)
-            CounterData(
-                name = json.getString("name"),
-                total = json.getInt("total"),
-                current = json.getInt("current")
-            )
-        } catch (e: Exception) {
-            throw Exception("Invalid counter format: ${e.message}")
-        }
-    }
-
-
+    
     private fun showPopupMenu(view: View, annotation: Annotation) {
         val popup = PopupMenu(view.context, view)
         val inflater = popup.menuInflater

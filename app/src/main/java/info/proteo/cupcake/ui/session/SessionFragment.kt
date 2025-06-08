@@ -969,6 +969,15 @@ class SessionFragment : Fragment() {
                             Toast.LENGTH_SHORT
                         ).show()
                     }
+                } else {
+                    val ann = result.getOrNull()
+                    val updatedList = annotationAdapter?.currentList?.toMutableList()
+                    val position = updatedList?.indexOfFirst { it.id == updatedAnnotation.id } ?: -1
+                    if (position != -1 && updatedList != null && ann != null) {
+                        updatedList[position] = ann
+                        annotationAdapter?.submitList(updatedList)
+
+                    }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
