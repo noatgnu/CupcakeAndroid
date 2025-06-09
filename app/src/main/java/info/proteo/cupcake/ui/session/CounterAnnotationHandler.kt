@@ -3,8 +3,6 @@ package info.proteo.cupcake.ui.session
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Typeface
-import android.view.Gravity
-import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
@@ -38,6 +36,15 @@ class CounterAnnotationHandler(
 
             val counterData = parseCounterData(annotation.annotation)
 
+            val mainLayout = LinearLayout(container.context).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+            container.addView(mainLayout)
+
             // Title
             val titleView = TextView(container.context).apply {
                 text = counterData.name
@@ -49,106 +56,107 @@ class CounterAnnotationHandler(
                     bottomMargin = 8
                 }
             }
-            container.addView(titleView)
+            mainLayout.addView(titleView)
 
-            // Counter controls layout
-            val controlsLayout = LinearLayout(container.context).apply {
+            // Counter display row
+            val counterRow = LinearLayout(container.context).apply {
                 orientation = LinearLayout.HORIZONTAL
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-                gravity = Gravity.CENTER_VERTICAL
+                ).apply {
+                    bottomMargin = 8
+                }
             }
+            mainLayout.addView(counterRow)
 
             // Decrement button
             val decrementButton = Button(container.context).apply {
                 text = "-"
-                isEnabled = counterData.current > 0
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-                setOnClickListener {
-                    val newValue = (counterData.current - 1).coerceAtLeast(0)
-                    updateCounterValue(annotation, newValue, counterData.total)
-                }
-            }
-
-            // Counter display
-            val counterDisplay = TextView(container.context).apply {
-                text = "${counterData.current} / ${counterData.total}"
-                textSize = 18f
-                gravity = Gravity.CENTER
                 layoutParams = LinearLayout.LayoutParams(
                     0,
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     1f
-                ).apply {
-                    marginStart = 16
-                    marginEnd = 16
+                )
+                setOnClickListener {
+                    updateCounter(annotation, counterData.current - 1, counterData.total)
                 }
+                isEnabled = counterData.current > 0
             }
+            counterRow.addView(decrementButton)
+
+            // Counter display
+            val counterDisplay = TextView(container.context).apply {
+                text = "${counterData.current}/${counterData.total}"
+                setTypeface(null, Typeface.BOLD)
+                textSize = 18f
+                gravity = android.view.Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(
+                    0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    2f
+                )
+            }
+            counterRow.addView(counterDisplay)
 
             // Increment button
             val incrementButton = Button(container.context).apply {
                 text = "+"
-                isEnabled = counterData.current < counterData.total
                 layoutParams = LinearLayout.LayoutParams(
+                    0,
                     LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
+                    1f
                 )
                 setOnClickListener {
-                    val newValue = (counterData.current + 1).coerceAtMost(counterData.total)
-                    updateCounterValue(annotation, newValue, counterData.total)
+                    updateCounter(annotation, counterData.current + 1, counterData.total)
                 }
+                isEnabled = counterData.current < counterData.total
             }
+            counterRow.addView(incrementButton)
 
-            // Add views to layout
-            controlsLayout.addView(decrementButton)
-            controlsLayout.addView(counterDisplay)
-            controlsLayout.addView(incrementButton)
-            container.addView(controlsLayout)
-
-            // Progress indicator
+            // Progress bar
             val progressLayout = LinearLayout(container.context).apply {
                 orientation = LinearLayout.HORIZONTAL
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    topMargin = 8
-                    height = 24
+                    20 // Fixed height for progress bar
+                )
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    shape = android.graphics.drawable.GradientDrawable.RECTANGLE
+                    setColor(Color.LTGRAY)
+                    cornerRadius = 5f
                 }
             }
+            mainLayout.addView(progressLayout)
 
-            val progressPercent = if (counterData.total > 0) {
-                (counterData.current.toFloat() / counterData.total.toFloat()) * 100f
-            } else {
-                0f
+            if (counterData.total > 0) {
+                val progress = LinearLayout(container.context).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    val progressWidth = (counterData.current.toFloat() / counterData.total.toFloat() * 100).toInt()
+                    layoutParams = LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        progressWidth.toFloat()
+                    )
+                    background = android.graphics.drawable.GradientDrawable().apply {
+                        shape = android.graphics.drawable.GradientDrawable.RECTANGLE
+                        setColor(Color.parseColor("#0d6efd"))
+                        cornerRadius = 5f
+                    }
+                }
+                progressLayout.addView(progress)
+
+                // Add empty space for remaining progress
+                val remaining = LinearLayout(container.context).apply {
+                    val remainingWidth = 100 - (counterData.current.toFloat() / counterData.total.toFloat() * 100).toInt()
+                    layoutParams = LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        remainingWidth.toFloat()
+                    )
+                }
+                progressLayout.addView(remaining)
             }
-
-            val progressView = View(container.context).apply {
-                layoutParams = LinearLayout.LayoutParams(
-                    0,
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    progressPercent
-                )
-                setBackgroundColor(Color.parseColor("#0d6efd"))
-            }
-
-            val remainingView = View(container.context).apply {
-                layoutParams = LinearLayout.LayoutParams(
-                    0,
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    100f - progressPercent
-                )
-                setBackgroundColor(Color.LTGRAY)
-            }
-
-            progressLayout.addView(progressView)
-            progressLayout.addView(remainingView)
-            container.addView(progressLayout)
 
         } catch (e: Exception) {
             val errorText = TextView(container.context).apply {
@@ -159,7 +167,7 @@ class CounterAnnotationHandler(
         }
     }
 
-    private fun updateCounterValue(annotation: Annotation, newValue: Int, total: Int) {
+    private fun updateCounter(annotation: Annotation, newCurrent: Int, total: Int) {
         try {
             if (annotation.annotation == null || annotation.annotation.isBlank()) {
                 Toast.makeText(
@@ -170,9 +178,11 @@ class CounterAnnotationHandler(
                 return
             }
 
+            // Ensure the new current value is within bounds
+            val validatedCurrent = newCurrent.coerceIn(0, total)
+
             val json = JSONObject(annotation.annotation)
-            json.put("current", newValue)
-            json.put("total", total)
+            json.put("current", validatedCurrent)
 
             val updatedAnnotation = annotation.copy(annotation = json.toString())
             onCounterUpdate(updatedAnnotation, null, null)

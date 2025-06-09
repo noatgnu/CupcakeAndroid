@@ -48,6 +48,8 @@ import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.target.Target
 import com.bumptech.glide.request.RequestListener
+import info.proteo.cupcake.ui.session.CalculatorAnnotationHandler
+import info.proteo.cupcake.ui.session.ChecklistAnnotationHandler
 import info.proteo.cupcake.ui.session.CounterAnnotationHandler
 import info.proteo.cupcake.ui.session.TableAnnotationHandler
 import kotlin.toString
@@ -102,6 +104,23 @@ class SessionAnnotationAdapter(
 
     private var tableAnnotationHandler: TableAnnotationHandler? = null
     private var counterAnnotationHandler: CounterAnnotationHandler? = null
+    private var checklistAnnotationHandler: ChecklistAnnotationHandler? = null
+    private var mediaAnnotationHandler: MediaAnnotationHandler? = null
+    private var calculatorAnnotationHandler: CalculatorAnnotationHandler? = null
+
+    private fun getCalculatorAnnotationHandler(context: Context): CalculatorAnnotationHandler {
+        if (calculatorAnnotationHandler == null) {
+            calculatorAnnotationHandler = CalculatorAnnotationHandler(context, onAnnotationUpdate)
+        }
+        return calculatorAnnotationHandler!!
+    }
+
+    private fun getMediaAnnotationHandler(context: Context): MediaAnnotationHandler {
+        if (mediaAnnotationHandler == null) {
+            mediaAnnotationHandler = MediaAnnotationHandler(context, annotationRepository, baseUrl, onAnnotationUpdate)
+        }
+        return mediaAnnotationHandler!!
+    }
 
     private fun getTableAnnotationHandler(context: Context): TableAnnotationHandler {
         if (tableAnnotationHandler == null) {
@@ -115,6 +134,13 @@ class SessionAnnotationAdapter(
             counterAnnotationHandler = CounterAnnotationHandler(context, onAnnotationUpdate)
         }
         return counterAnnotationHandler!!
+    }
+
+    private fun getChecklistAnnotationHandler(context: Context): ChecklistAnnotationHandler {
+        if (checklistAnnotationHandler == null) {
+            checklistAnnotationHandler = ChecklistAnnotationHandler(context, onAnnotationUpdate)
+        }
+        return checklistAnnotationHandler!!
     }
 
 
@@ -141,6 +167,7 @@ class SessionAnnotationAdapter(
         private val checklistContainer = itemView.findViewById<ViewGroup>(R.id.checklist_container)
         private val counterContainer = itemView.findViewById<ViewGroup>(R.id.counter_container)
         private val tableContainer = itemView.findViewById<ViewGroup>(R.id.table_container)
+        private val calculatorContainer = itemView.findViewById<ViewGroup>(R.id.calculator_container) // Add this
 
 
 
@@ -180,6 +207,10 @@ class SessionAnnotationAdapter(
             tableContainer.visibility = View.GONE
 
             when (annotation.annotationType) {
+                "calculator" -> {
+                    calculatorContainer.visibility = View.VISIBLE
+                    getCalculatorAnnotationHandler(itemView.context).displayCalculator(annotation, calculatorContainer)
+                }
                 "table" -> {
                     tableContainer.visibility = View.VISIBLE
                     getTableAnnotationHandler(itemView.context)
@@ -192,7 +223,7 @@ class SessionAnnotationAdapter(
                 }
                 "checklist" -> {
                     checklistContainer.visibility = View.VISIBLE
-                    displayChecklist(annotation, checklistContainer)
+                    getChecklistAnnotationHandler(itemView.context).displayChecklist(annotation, checklistContainer)
                 }
                 "text", "file" -> {
                     textAnnotation.visibility = View.VISIBLE
@@ -208,55 +239,20 @@ class SessionAnnotationAdapter(
                     loadAnnotationImage(annotation, annotationImage)
                 }
                 "audio", "video" -> {
-                    if (!annotation.transcription.isNullOrBlank()) {
-                        transcriptionContainer.visibility = View.VISIBLE
-                        vttCues = parseVttContent(annotation.transcription)
-                        transcriptionText.text = buildFullTranscriptText()
-
-                        transcriptionText.text = annotation.transcription
-                    }
-
                     mediaPlayerContainer?.visibility = View.VISIBLE
 
                     val mediaSeekBar = itemView.findViewById<SeekBar>(R.id.mediaSeekBar)
                     val mediaTimerText = itemView.findViewById<TextView>(R.id.mediaTimerText)
 
-                    if (annotation.id == currentPlayingAnnotationId) {
-                        playButton?.setImageResource(R.drawable.ic_pause)
-                        mediaSeekBar.visibility = View.VISIBLE
-                        mediaTimerText.visibility = View.VISIBLE
-                    } else {
-                        playButton?.setImageResource(R.drawable.ic_play_arrow)
-                        mediaSeekBar.visibility = View.GONE
-                        mediaTimerText.visibility = View.GONE
-                        progressBar?.visibility = View.GONE
-                    }
-
-                    playButton?.setOnClickListener {
-                        if (annotation.id == currentPlayingAnnotationId && mediaPlayer?.isPlaying == true) {
-                            mediaPlayer?.pause()
-                            playButton.setImageResource(R.drawable.ic_play_arrow)
-                        } else if (annotation.id == currentPlayingAnnotationId && mediaPlayer?.isPlaying == false) {
-                            mediaPlayer?.start()
-                            playButton.setImageResource(R.drawable.ic_pause)
-                        } else {
-                            progressBar?.visibility = View.VISIBLE
-                            playButton.isEnabled = false
-                            requestSignedUrlAndPlay(annotation, mediaSeekBar, mediaTimerText)
-                        }
-                    }
-
-                    // Setup seekbar interaction
-                    mediaSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                        override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                            if (fromUser) {
-                                mediaPlayer?.seekTo(progress)
-                                updateTimerText(mediaTimerText)
-                            }
-                        }
-                        override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-                        override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-                    })
+                    getMediaAnnotationHandler(itemView.context).displayMedia(
+                        annotation,
+                        playButton,
+                        mediaSeekBar,
+                        mediaTimerText,
+                        progressBar,
+                        transcriptionContainer,
+                        transcriptionText
+                    )
                 }
                 else -> {
                     textAnnotation.visibility = View.GONE
@@ -268,197 +264,8 @@ class SessionAnnotationAdapter(
 
             //itemView.setOnClickListener { onItemClick(annotation) }
         }
-
-
-        private fun buildFullTranscriptText(): SpannableString {
-            val fullText = vttCues.joinToString("\n") { it.text }
-            return SpannableString(fullText)
-        }
-
-        fun highlightCurrentTranscriptSection(currentPositionMs: Int) {
-            if (vttCues.isEmpty()) return
-
-            val fullText = vttCues.joinToString("\n") { it.text }
-            val spannableString = SpannableString(fullText)
-
-            val currentCue = vttCues.find {
-                currentPositionMs >= it.startTime && currentPositionMs <= it.endTime
-            }
-
-            currentCue?.let { cue ->
-                val startIndex = fullText.indexOf(cue.text)
-                if (startIndex >= 0) {
-                    val endIndex = startIndex + cue.text.length
-
-                    spannableString.setSpan(
-                        BackgroundColorSpan("#1565C0".toColorInt()),
-                        startIndex,
-                        endIndex,
-                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                    )
-
-                    spannableString.setSpan(
-
-                        StyleSpan(Typeface.BOLD),
-                        startIndex,
-                        endIndex,
-                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                    )
-                }
-            }
-
-            transcriptionText.text = spannableString
-
-            currentCue?.let { cue ->
-                val layout = transcriptionText.layout ?: return
-                val startIndex = fullText.indexOf(cue.text)
-                if (startIndex >= 0) {
-                    val lineStart = layout.getLineForOffset(startIndex)
-                    transcriptionText.scrollTo(0, layout.getLineTop(lineStart))
-                }
-            }
-        }
-        private fun createChecklistContainer(itemView: View): ViewGroup {
-            val parent = (itemView as ViewGroup).getChildAt(0) as ViewGroup
-
-
-            val container = LinearLayout(itemView.context).apply {
-                id = View.generateViewId()
-                orientation = LinearLayout.VERTICAL
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-            }
-            parent.addView(container)
-            return container
-        }
-
-        private fun displayChecklist(annotation: Annotation, container: ViewGroup) {
-            container.removeAllViews()
-
-            try {
-                if (annotation.annotation == null || annotation.annotation.isBlank()) {
-                    val errorText = TextView(container.context).apply {
-                        text = "No checklist data available"
-                        setTextColor(Color.RED)
-                    }
-                    container.addView(errorText)
-                    return
-                }
-
-                val checklistData = parseChecklistData(annotation.annotation)
-
-                val titleView = TextView(container.context).apply {
-                    text = checklistData.name
-                    setTypeface(null, Typeface.BOLD)
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).apply {
-                        bottomMargin = 16
-                    }
-                }
-                container.addView(titleView)
-
-                val checkboxLayout = LinearLayout(container.context).apply {
-                    orientation = LinearLayout.VERTICAL
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    )
-                }
-
-                checklistData.checkList.forEachIndexed { index, item ->
-                    val checkbox = CheckBox(container.context).apply {
-                        text = item.content
-                        isChecked = item.checked
-                        id = View.generateViewId()
-
-                        setOnCheckedChangeListener { _, isChecked ->
-                            updateChecklistItemState(annotation, index, isChecked)
-                        }
-                    }
-                    checkboxLayout.addView(checkbox)
-                }
-
-                container.addView(checkboxLayout)
-            } catch (e: Exception) {
-                // Show error if JSON parsing fails
-                val errorText = TextView(container.context).apply {
-                    text = "Error loading checklist: ${e.message}"
-                    setTextColor(Color.RED)
-                }
-                container.addView(errorText)
-            }
-        }
-
-        private fun parseChecklistData(jsonString: String): ChecklistData {
-            return try {
-                val json = org.json.JSONObject(jsonString)
-                val name = json.getString("name")
-                val checklistArray = json.getJSONArray("checkList")
-
-                val items = mutableListOf<ChecklistItem>()
-                for (i in 0 until checklistArray.length()) {
-                    val item = checklistArray.getJSONObject(i)
-                    items.add(
-                        ChecklistItem(
-                            checked = item.getBoolean("checked"),
-                            content = item.getString("content")
-                        )
-                    )
-                }
-
-                ChecklistData(name, items)
-            } catch (e: Exception) {
-                throw Exception("Invalid checklist format: ${e.message}")
-            }
-        }
-
-        private fun updateChecklistItemState(annotation: Annotation, itemIndex: Int, isChecked: Boolean) {
-            try {
-                if (annotation.annotation == null || annotation.annotation.isBlank()) {
-                    Toast.makeText(
-                        itemView.context,
-                        "No checklist data available to update",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    return
-                }
-
-                val checklistData = parseChecklistData(annotation.annotation)
-
-                if (itemIndex >= 0 && itemIndex < checklistData.checkList.size) {
-                    checklistData.checkList[itemIndex].checked = isChecked
-                }
-
-                val json = org.json.JSONObject().apply {
-                    put("name", checklistData.name)
-                    put("checkList", org.json.JSONArray().apply {
-                        checklistData.checkList.forEach { item ->
-                            put(org.json.JSONObject().apply {
-                                put("checked", item.checked)
-                                put("content", item.content)
-                            })
-                        }
-                    })
-                }
-
-                // Create updated annotation and use callback
-                val updatedAnnotation = annotation.copy(annotation = json.toString())
-                onAnnotationUpdate(updatedAnnotation, null, null)
-            } catch (e: Exception) {
-                Toast.makeText(
-                    itemView.context,
-                    "Error updating checklist: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-
     }
-    
+
     private fun showPopupMenu(view: View, annotation: Annotation) {
         val popup = PopupMenu(view.context, view)
         val inflater = popup.menuInflater
@@ -473,7 +280,7 @@ class SessionAnnotationAdapter(
         popup.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.action_download -> {
-                    downloadAnnotationFile(annotation)
+
                     true
                 }
                 R.id.action_retranscribe -> {
@@ -487,214 +294,12 @@ class SessionAnnotationAdapter(
         popup.show()
     }
 
-    private fun requestSignedUrlAndPlay(
-        annotation: Annotation,
-        seekBar: SeekBar?,
-        timerText: TextView?
-    ) {
-        // Release previous media player if any
-        releaseMediaPlayer()
-
-        // Request signed URL in a coroutine
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val result = annotationRepository.getSignedUrl(annotation.id)
-
-                if (result.isSuccess) {
-                    val signedToken = result.getOrNull()?.signedToken
-                    if (signedToken != null) {
-                        val signedUrl = "${baseUrl}/api/annotation/download_signed/?token=$signedToken"
-
-                        withContext(Dispatchers.Main) {
-                            prepareAndPlayMedia(signedUrl, annotation, seekBar, timerText)
-                        }
-                    } else {
-                        showPlaybackError("Failed to get signed URL")
-                    }
-                } else {
-                    showPlaybackError("Error: ${result.exceptionOrNull()?.message}")
-                }
-            } catch (e: Exception) {
-                showPlaybackError("Error: ${e.message}")
-            }
-        }
-    }
-
-    private fun prepareAndPlayMedia(
-        url: String,
-        annotation: Annotation,
-        initialSeekBar: SeekBar?,
-        initialTimerText: TextView?
-    ) {
-        try {
-            mediaPlayer = MediaPlayer().apply {
-                setDataSource(url)
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                        .setUsage(AudioAttributes.USAGE_MEDIA)
-                        .build()
-                )
-
-                prepareAsync()
-
-                setOnPreparedListener { preparedMediaPlayer ->
-                    Log.d("SessionAnnotationAdapter", "Media prepared for duration: $duration")
-
-                    initialSeekBar?.max = 0
-                    initialSeekBar?.visibility = View.VISIBLE
-                    initialTimerText?.visibility = View.VISIBLE
-
-                    currentMaxPositionReached = 0
-
-                    this@SessionAnnotationAdapter.currentPlayingAnnotationId = annotation.id
-                    notifyDataSetChanged()
-
-                    preparedMediaPlayer.start()
-                    mediaPlayerUpdateHandler?.removeCallbacks(mediaPlayerUpdateRunnable!!)
-
-                    mediaPlayerUpdateHandler = android.os.Handler(android.os.Looper.getMainLooper())
-                    mediaPlayerUpdateRunnable = object : Runnable {
-                        override fun run() {
-                            if (preparedMediaPlayer == this@SessionAnnotationAdapter.mediaPlayer &&
-                                annotation.id == currentPlayingAnnotationId &&
-                                this@SessionAnnotationAdapter.mediaPlayer != null) {
-
-                                val mp = this@SessionAnnotationAdapter.mediaPlayer!!
-                                val currentPosition = mp.currentPosition
-
-                                val currentViewHolder = findViewHolderForAnnotationId(annotation.id)
-                                currentViewHolder?.let { holder ->
-                                    val seekBarView = holder.itemView.findViewById<SeekBar>(R.id.mediaSeekBar)
-                                    val timerTextView = holder.itemView.findViewById<TextView>(R.id.mediaTimerText)
-
-                                    if (mp.isPlaying) {
-                                        if (currentPosition > currentMaxPositionReached) {
-                                            currentMaxPositionReached = currentPosition
-                                        }
-                                    }
-                                    seekBarView?.max = currentMaxPositionReached
-                                    seekBarView?.progress = currentPosition
-
-                                    val currentPosStr = formatTime(currentPosition)
-                                    val mediaDuration = mp.duration
-                                    if (mediaDuration <= 0) {
-                                        timerTextView?.text = "Position: $currentPosStr"
-                                    } else {
-                                        val durationStr = formatTime(mediaDuration)
-                                        timerTextView?.text = "$currentPosStr / $durationStr"
-                                    }
-                                    holder.highlightCurrentTranscriptSection(currentPosition)
-                                }
-
-                                if (annotation.id == currentPlayingAnnotationId) {
-                                    mediaPlayerUpdateHandler?.postDelayed(this, 100)
-                                }
-                            }
-                        }
-                    }
-                    mediaPlayerUpdateHandler?.post(mediaPlayerUpdateRunnable!!)
-                }
-
-                setOnCompletionListener { mp ->
-                    if (mp == this@SessionAnnotationAdapter.mediaPlayer) {
-                        mediaPlayerUpdateHandler?.removeCallbacks(mediaPlayerUpdateRunnable!!)
-                        notifyDataSetChanged()
-                    }
-                }
-
-                setOnErrorListener { mp, _, _ ->
-                    if (mp == this@SessionAnnotationAdapter.mediaPlayer) {
-                        showPlaybackError("Failed to play media")
-                    }
-                    true
-                }
-            }
-        } catch (e: Exception) {
-            showPlaybackError("Error setting up media player: ${e.message}")
-        }
-    }
 
 
-    private fun updateTimerText(timerText: TextView?) {
-        mediaPlayer?.let { player ->
-            val currentPos = formatTime(player.currentPosition)
-
-            if (player.duration <= 0) {
-                timerText?.text = "Position: $currentPos"
-            } else {
-                val duration = formatTime(player.duration)
-                timerText?.text = "$currentPos / $duration"
-            }
-        }
-    }
-
-    private fun formatTime(ms: Int): String {
-        val seconds = (ms / 1000) % 60
-        val minutes = ms / 60000
-        return String.format("%d:%02d", minutes, seconds)
-    }
-
-    private fun releaseMediaPlayer() {
-        mediaPlayerUpdateHandler?.removeCallbacks(mediaPlayerUpdateRunnable!!)
-        mediaPlayerUpdateHandler = null
-        mediaPlayerUpdateRunnable = null
-
-        mediaPlayer?.apply {
-            if (isPlaying) {
-                stop()
-            }
-            release()
-        }
-        mediaPlayer = null
-    }
-
-    private fun showPlaybackError(message: String) {
-        // Get context from the RecyclerView
-        val context = recyclerView?.context
-        context?.let {
-            Toast.makeText(it, message, Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun downloadAnnotationFile(annotation: Annotation) {
-        val context = recyclerView?.context ?: return
-
-        Toast.makeText(context, "Preparing download...", Toast.LENGTH_SHORT).show()
-
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val result = annotationRepository.getSignedUrl(annotation.id)
-
-                if (result.isSuccess) {
-                    val signedToken = result.getOrNull()?.signedToken
-                    if (signedToken != null) {
-                        val signedUrl = "${baseUrl}/api/annotation/download_signed/?token=$signedToken"
-
-                        withContext(Dispatchers.Main) {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(signedUrl))
-                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            try {
-                                context.startActivity(intent)
-                            } catch (e: ActivityNotFoundException) {
-                                Toast.makeText(context, "No browser found to download file", Toast.LENGTH_LONG).show()
-                            }
-                        }
-                    } else {
-                        showPlaybackError("Failed to get download link")
-                    }
-                } else {
-                    showPlaybackError("Error: ${result.exceptionOrNull()?.message}")
-                }
-            } catch (e: Exception) {
-                showPlaybackError("Error: ${e.message}")
-            }
-        }
-    }
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         super.onDetachedFromRecyclerView(recyclerView)
-        releaseMediaPlayer()
+
         this.recyclerView = null
     }
 

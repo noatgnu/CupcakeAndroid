@@ -147,4 +147,6 @@
     <string name="view">View</string>
     <string name="delete">Delete</string>
     <string name="annotation_image">Annotation image</string>
+    <string name="media_player_position_text">Postion: %1$s</string>
+    <string name="media_player_progress_text">%1$s / %2$s</string>
 </resources>

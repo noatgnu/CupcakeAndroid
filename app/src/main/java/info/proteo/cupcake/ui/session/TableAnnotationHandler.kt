@@ -3,12 +3,14 @@ package info.proteo.cupcake.ui.session
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Typeface
+import android.text.InputType
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
 import info.proteo.cupcake.data.remote.model.annotation.Annotation
 import org.json.JSONObject
@@ -30,9 +32,9 @@ class TableAnnotationHandler(
         container.removeAllViews()
 
         try {
-            if (annotation.annotation == null || annotation.annotation.isBlank()) {
+            if (annotation.annotation.isNullOrBlank()) {
                 val errorText = TextView(container.context).apply {
-                    text = "No table data available"
+                    text = "Table data is empty or invalid."
                     setTextColor(Color.RED)
                 }
                 container.addView(errorText)
@@ -40,9 +42,8 @@ class TableAnnotationHandler(
             }
 
             val tableData = parseTableData(annotation.annotation)
-            var isEditMode = false
+            var isEditMode = false // Keep track of edit mode state
 
-            // Create a container for the entire table including header
             val mainLayout = LinearLayout(container.context).apply {
                 orientation = LinearLayout.VERTICAL
                 layoutParams = LinearLayout.LayoutParams(
@@ -52,15 +53,13 @@ class TableAnnotationHandler(
             }
             container.addView(mainLayout)
 
-            // Header layout with switches
             val headerLayout = LinearLayout(container.context).apply {
                 orientation = LinearLayout.HORIZONTAL
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    bottomMargin = 8
-                }
+                )
+                setPadding(0, 0, 0, 8) // Add some padding
             }
 
             val titleView = TextView(container.context).apply {
@@ -69,7 +68,7 @@ class TableAnnotationHandler(
                 layoutParams = LinearLayout.LayoutParams(
                     0,
                     LinearLayout.LayoutParams.WRAP_CONTENT,
-                    1f
+                    1.0f // Weight to push toggles to the right
                 )
             }
 
@@ -79,14 +78,14 @@ class TableAnnotationHandler(
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    marginEnd = 8
-                }
-
+                )
                 setOnCheckedChangeListener { _, isChecked ->
                     isEditMode = isChecked
-                    val contentContainer = mainLayout.findViewWithTag<ViewGroup>("table_content")
-                    refreshTableContent(contentContainer, annotation, isChecked, tableData.tracking)
+                    // Refresh table content to apply edit mode
+                    val tableContentContainer = mainLayout.findViewWithTag<LinearLayout>("table_content")
+                    tableContentContainer?.let {
+                        refreshTableContent(it, annotation, isEditMode, tableData.tracking)
+                    }
                 }
             }
 
@@ -97,9 +96,14 @@ class TableAnnotationHandler(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 )
-
                 setOnCheckedChangeListener { _, isChecked ->
                     updateTableTracking(annotation, isChecked)
+                    // No need to refresh full table, just update internal state if needed
+                    // Or, if tracking changes cell appearance, then refresh:
+                    // val tableContentContainer = mainLayout.findViewWithTag<LinearLayout>("table_content")
+                    // tableContentContainer?.let {
+                    //     refreshTableContent(it, annotation, isEditMode, isChecked)
+                    // }
                 }
             }
 
@@ -108,14 +112,13 @@ class TableAnnotationHandler(
             headerLayout.addView(trackingToggle)
             mainLayout.addView(headerLayout)
 
-            // Table content container
             val tableContainer = LinearLayout(container.context).apply {
                 orientation = LinearLayout.VERTICAL
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 )
-                tag = "table_content"
+                tag = "table_content" // Tag to find this container later
             }
             mainLayout.addView(tableContainer)
 
@@ -132,14 +135,9 @@ class TableAnnotationHandler(
 
     private fun refreshTableContent(container: ViewGroup, annotation: Annotation, isEditMode: Boolean, isTrackingMode: Boolean) {
         container.removeAllViews()
-
         try {
-            if (annotation.annotation == null || annotation.annotation.isBlank()) {
-                val errorText = TextView(container.context).apply {
-                    text = "No table data available"
-                    setTextColor(Color.RED)
-                }
-                container.addView(errorText)
+            if (annotation.annotation.isNullOrBlank()) {
+                // Handle empty or invalid annotation case
                 return
             }
             val tableData = parseTableData(annotation.annotation)
@@ -154,57 +152,33 @@ class TableAnnotationHandler(
                 }
 
                 for (j in 0 until tableData.nCol) {
+                    val cellContent = tableData.content.getOrNull(i)?.getOrNull(j) ?: ""
                     val cellKey = "$i,$j"
-                    val isHighlighted = tableData.trackingMap[cellKey] == true
-                    val cellContent = tableData.content[i][j]
+                    val isHighlighted = tableData.trackingMap[cellKey] ?: false
 
-                    if (isEditMode) {
-                        val editText = EditText(container.context).apply {
-                            setText(cellContent)
-                            gravity = android.view.Gravity.CENTER
-                            layoutParams = LinearLayout.LayoutParams(200, 100).apply {
-                                setMargins(1, 1, 1, 1)
-                            }
-                            background = getTableCellBackground(isHighlighted)
-                            setTextColor(if (isHighlighted) Color.WHITE else Color.BLACK)
+                    val cellView = TextView(container.context).apply {
+                        text = cellContent
+                        setPadding(8, 8, 8, 8)
+                        layoutParams = LinearLayout.LayoutParams(
+                            0,
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                            1.0f
+                        ).also {
+                            it.setMargins(1, 1, 1, 1)
+                        }
+                        background = getTableCellBackground(isHighlighted && isTrackingMode)
+                        setTextColor(if (isHighlighted && isTrackingMode) Color.WHITE else Color.BLACK)
 
-                            setOnFocusChangeListener { _, hasFocus ->
-                                if (!hasFocus) {
-                                    updateTableCellContent(annotation, i, j, text.toString())
-                                }
-                            }
 
-                            if (isTrackingMode) {
-                                setOnClickListener {
-                                    if (tag == null || !tag.toString().startsWith("pending_update")) {
-                                        updateTableCellState(annotation, i, j, !isHighlighted, this)
-                                    }
-                                }
+                        setOnClickListener {
+                            if (isEditMode) {
+                                showEditCellDialog(annotation, i, j, cellContent)
+                            } else if (isTrackingMode) {
+                                updateTableCellState(annotation, i, j, !isHighlighted, this)
                             }
                         }
-                        rowLayout.addView(editText)
-                    } else {
-                        val cell = TextView(container.context).apply {
-                            text = cellContent
-                            gravity = android.view.Gravity.CENTER
-                            layoutParams = LinearLayout.LayoutParams(200, 100).apply {
-                                setMargins(1, 1, 1, 1)
-                            }
-                            background = getTableCellBackground(isHighlighted)
-                            setTextColor(if (isHighlighted) Color.WHITE else Color.BLACK)
-
-                            if (isTrackingMode) {
-                                tag = isHighlighted
-
-                                setOnClickListener {
-                                    if (tag == null || !tag.toString().startsWith("pending_update")) {
-                                        updateTableCellState(annotation, i, j, !isHighlighted, this)
-                                    }
-                                }
-                            }
-                        }
-                        rowLayout.addView(cell)
                     }
+                    rowLayout.addView(cellView)
                 }
                 container.addView(rowLayout)
             }
@@ -217,91 +191,110 @@ class TableAnnotationHandler(
         }
     }
 
+    private fun showEditCellDialog(annotation: Annotation, row: Int, col: Int, currentContent: String) {
+        val dialogView = LayoutInflater.from(context).inflate(android.R.layout.select_dialog_item, null) // Using a simple layout
+        val editText = EditText(context).apply {
+            setText(currentContent)
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            setSingleLine(false)
+            layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        }
+
+        val container = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(48, 24, 48, 24) // Add some padding to the dialog content
+            addView(editText)
+        }
+
+        AlertDialog.Builder(context)
+            .setTitle("Edit Cell (${row + 1}, ${col + 1})")
+            .setView(container)
+            .setPositiveButton("Save") { dialog, _ ->
+                val newContent = editText.text.toString()
+                if (newContent != currentContent) {
+                    updateTableCellContent(annotation, row, col, newContent)
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.cancel()
+            }
+            .show()
+    }
+
+
     private fun updateTableTracking(annotation: Annotation, isTracking: Boolean) {
         try {
-            if (annotation.annotation == null || annotation.annotation.isBlank()) {
-                Toast.makeText(
-                    context,
-                    "No table data available to update",
-                    Toast.LENGTH_SHORT
-                ).show()
+            if (annotation.annotation.isNullOrBlank()) {
+                Toast.makeText(context, "Cannot update tracking: Table data is missing.", Toast.LENGTH_SHORT).show()
                 return
             }
-
             val json = JSONObject(annotation.annotation)
             json.put("tracking", isTracking)
-
             val updatedAnnotation = annotation.copy(annotation = json.toString())
             onTableUpdate(updatedAnnotation, null, null)
         } catch (e: Exception) {
-            Toast.makeText(
-                context,
-                "Error updating table tracking: ${e.message}",
-                Toast.LENGTH_SHORT
-            ).show()
+            Toast.makeText(context, "Error updating table tracking: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun updateTableCellContent(annotation: Annotation, row: Int, col: Int, newContent: String) {
         try {
-            if (annotation.annotation == null || annotation.annotation.isBlank()) {
-                Toast.makeText(
-                    context,
-                    "No table data available to update",
-                    Toast.LENGTH_SHORT
-                ).show()
+            if (annotation.annotation.isNullOrBlank()) {
+                Toast.makeText(context, "Cannot update content: Table data is missing.", Toast.LENGTH_SHORT).show()
                 return
             }
-
             val json = JSONObject(annotation.annotation)
             val contentArray = json.getJSONArray("content")
-            val rowArray = contentArray.getJSONArray(row)
-            rowArray.put(col, newContent)
-
-            val updatedAnnotation = annotation.copy(annotation = json.toString())
-            onTableUpdate(updatedAnnotation, null, null)
+            if (row < contentArray.length()) {
+                val rowArray = contentArray.getJSONArray(row)
+                if (col < rowArray.length()) {
+                    rowArray.put(col, newContent)
+                    val updatedAnnotation = annotation.copy(annotation = json.toString())
+                    onTableUpdate(updatedAnnotation, null, null)
+                } else {
+                    Toast.makeText(context, "Error: Column index out of bounds.", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(context, "Error: Row index out of bounds.", Toast.LENGTH_SHORT).show()
+            }
         } catch (e: Exception) {
-            Toast.makeText(
-                context,
-                "Error updating table content: ${e.message}",
-                Toast.LENGTH_SHORT
-            ).show()
+            Toast.makeText(context, "Error updating table content: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun updateTableCellState(annotation: Annotation, row: Int, col: Int, highlighted: Boolean, view: android.view.View) {
         try {
-            if (annotation.annotation == null || annotation.annotation.isBlank()) {
-                Toast.makeText(
-                    context,
-                    "No table data available to update",
-                    Toast.LENGTH_SHORT
-                ).show()
+            if (annotation.annotation.isNullOrBlank()) {
+                Toast.makeText(context, "Cannot update state: Table data is missing.", Toast.LENGTH_SHORT).show()
                 return
             }
-
             val cellKey = "$row,$col"
-
             val json = JSONObject(annotation.annotation)
-            val trackingMapJson = json.getJSONObject("trackingMap")
+            val trackingMapJson = json.optJSONObject("trackingMap") ?: JSONObject() // Ensure trackingMap exists
             trackingMapJson.put(cellKey, highlighted)
+            json.put("trackingMap", trackingMapJson) // Put it back if it was newly created
 
             val updatedAnnotation = annotation.copy(annotation = json.toString())
             onTableUpdate(updatedAnnotation, null, null)
+
+            // Visually update the cell directly if view is passed and valid
+            // This provides immediate feedback before the adapter potentially rebinds
+            if (view is TextView) {
+                view.background = getTableCellBackground(highlighted)
+                view.setTextColor(if (highlighted) Color.WHITE else Color.BLACK)
+            }
+
         } catch (e: Exception) {
-            Toast.makeText(
-                context,
-                "Error updating table: ${e.message}",
-                Toast.LENGTH_SHORT
-            ).show()
+            Toast.makeText(context, "Error updating table cell state: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun getTableCellBackground(isHighlighted: Boolean): android.graphics.drawable.GradientDrawable {
         return android.graphics.drawable.GradientDrawable().apply {
             shape = android.graphics.drawable.GradientDrawable.RECTANGLE
-            setColor(if (isHighlighted) Color.parseColor("#0d6efd") else Color.WHITE)
-            setStroke(1, Color.GRAY)
+            setColor(if (isHighlighted) Color.parseColor("#0d6efd") else Color.TRANSPARENT) // Use transparent for non-highlighted
+            setStroke(1, Color.LTGRAY) // Use a lighter gray for borders
         }
     }
 
@@ -311,28 +304,27 @@ class TableAnnotationHandler(
             val name = json.getString("name")
             val nRow = json.getInt("nRow")
             val nCol = json.getInt("nCol")
-            val tracking = json.getBoolean("tracking")
+            val tracking = json.optBoolean("tracking", false) // Default to false if not present
 
-            // Parse content 2D array
             val contentArray = json.getJSONArray("content")
             val content = mutableListOf<List<String>>()
-
             for (i in 0 until nRow) {
                 val row = mutableListOf<String>()
-                val jsonRow = contentArray.getJSONArray(i)
-
-                for (j in 0 until nCol) {
-                    val cellValue = jsonRow.getString(j)
-                    row.add(cellValue)
+                val jsonRow = contentArray.optJSONArray(i) // Use optJSONArray for safety
+                if (jsonRow != null) {
+                    for (j in 0 until nCol) {
+                        row.add(jsonRow.optString(j, "")) // Default to empty string
+                    }
+                } else { // if a row is missing, fill with empty strings for nCol
+                    for (j in 0 until nCol) {
+                        row.add("")
+                    }
                 }
-
                 content.add(row)
             }
 
-            // Parse tracking map
-            val trackingMapJson = json.getJSONObject("trackingMap")
+            val trackingMapJson = json.optJSONObject("trackingMap") ?: JSONObject() // Default to empty if not present
             val trackingMap = mutableMapOf<String, Boolean>()
-
             val keys = trackingMapJson.keys()
             while (keys.hasNext()) {
                 val key = keys.next()
