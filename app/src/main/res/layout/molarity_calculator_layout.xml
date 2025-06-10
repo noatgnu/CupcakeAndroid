@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/molarity_calculator_scroll"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:id="@+id/molarity_calculator_root"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Form Selector -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Calculation Type"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp"/>
+        <Spinner
+            android:id="@+id/formSelector"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:entries="@array/mcalculator_form_types"
+            android:layout_marginBottom="12dp"/>
+
+        <!-- Dynamic Form -->
+        <LinearLayout
+            android:id="@+id/formDynamicLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="visible"
+            android:padding="8dp"
+            android:layout_marginBottom="8dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Dynamic Formula" android:textStyle="bold"/>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <EditText android:id="@+id/inputConcentrationDyn" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="Concentration"/>
+                <Spinner android:id="@+id/inputConcentrationUnitDyn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:entries="@array/mcalculator_concentration_units"/>
+            </LinearLayout>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <EditText android:id="@+id/inputVolumeDyn" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="Volume"/>
+                <Spinner android:id="@+id/inputVolumeUnitDyn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:entries="@array/mcalculator_volume_units"/>
+            </LinearLayout>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <EditText android:id="@+id/inputMolecularWeightDyn" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="Molecular Weight"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="g/mol"/>
+            </LinearLayout>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <EditText android:id="@+id/inputWeightDyn" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="Weight"/>
+                <Spinner android:id="@+id/inputWeightUnitDyn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:entries="@array/mcalculator_weight_units"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Form 1: Mass from Volume and Concentration -->
+        <LinearLayout
+            android:id="@+id/form1Layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:padding="8dp"
+            android:layout_marginBottom="8dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Mass from Volume and Concentration" android:textStyle="bold"/>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <EditText android:id="@+id/inputConcentration1" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="Concentration"/>
+                <Spinner android:id="@+id/inputConcentrationUnit1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:entries="@array/mcalculator_concentration_units"/>
+            </LinearLayout>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <EditText android:id="@+id/inputVolume1" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="Volume"/>
+                <Spinner android:id="@+id/inputVolumeUnit1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:entries="@array/mcalculator_volume_units"/>
+            </LinearLayout>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <EditText android:id="@+id/inputMolecularWeight1" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="Molecular Weight"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="g/mol"/>
+            </LinearLayout>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <Spinner android:id="@+id/inputWeightUnit1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:entries="@array/mcalculator_weight_units"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Form 2: Volume from Mass and Concentration -->
+        <LinearLayout
+            android:id="@+id/form2Layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:padding="8dp"
+            android:layout_marginBottom="8dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Volume from Mass and Concentration" android:textStyle="bold"/>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <EditText android:id="@+id/inputWeight2" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="Weight"/>
+                <Spinner android:id="@+id/inputWeightUnit2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:entries="@array/mcalculator_weight_units"/>
+            </LinearLayout>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <EditText android:id="@+id/inputConcentration2" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="Concentration"/>
+                <Spinner android:id="@+id/inputConcentrationUnit2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:entries="@array/mcalculator_concentration_units"/>
+            </LinearLayout>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <EditText android:id="@+id/inputMolecularWeight2" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="Molecular Weight"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="g/mol"/>
+            </LinearLayout>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <Spinner android:id="@+id/inputVolumeUnit2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:entries="@array/mcalculator_volume_units"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Form 3: Concentration from Mass and Volume -->
+        <LinearLayout
+            android:id="@+id/form3Layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:padding="8dp"
+            android:layout_marginBottom="8dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Concentration from Mass and Volume" android:textStyle="bold"/>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <EditText android:id="@+id/inputWeight3" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="Weight"/>
+                <Spinner android:id="@+id/inputWeightUnit3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:entries="@array/mcalculator_weight_units"/>
+            </LinearLayout>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <EditText android:id="@+id/inputVolume3" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="Volume"/>
+                <Spinner android:id="@+id/inputVolumeUnit3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:entries="@array/mcalculator_volume_units"/>
+            </LinearLayout>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <EditText android:id="@+id/inputMolecularWeight3" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="Molecular Weight"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="g/mol"/>
+            </LinearLayout>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <Spinner android:id="@+id/inputConcentrationUnit3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:entries="@array/mcalculator_concentration_units"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Form 4: Volume from Stock Volume and Concentration -->
+        <LinearLayout
+            android:id="@+id/form4Layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:padding="8dp"
+            android:layout_marginBottom="8dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Volume from Stock Volume and Concentration" android:textStyle="bold"/>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <Spinner android:id="@+id/inputVolumeUnit4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:entries="@array/mcalculator_volume_units"/>
+            </LinearLayout>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <EditText android:id="@+id/inputStockConcentration4" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="Stock Concentration"/>
+                <Spinner android:id="@+id/inputStockConcentrationUnit4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:entries="@array/mcalculator_concentration_units"/>
+            </LinearLayout>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <EditText android:id="@+id/inputTargetConcentration4" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="Target Concentration"/>
+                <Spinner android:id="@+id/inputTargetConcentrationUnit4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:entries="@array/mcalculator_concentration_units"/>
+            </LinearLayout>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <EditText android:id="@+id/inputStockVolume4" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:hint="Stock Volume"/>
+                <Spinner android:id="@+id/inputStockVolumeUnit4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:entries="@array/mcalculator_volume_units"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Calculate and Save Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:layout_marginBottom="8dp">
+            <Button
+                android:id="@+id/btnCalculate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Calculate"
+                android:layout_marginEnd="8dp"/>
+        </LinearLayout>
+
+        <!-- Data Log -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Calculation Log"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp"/>
+        <TextView
+            android:id="@+id/dataLogView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:textIsSelectable="true"
+            android:minHeight="48dp"/>
+    </LinearLayout>
+</ScrollView>

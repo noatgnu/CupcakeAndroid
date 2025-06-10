@@ -1,3 +1,4 @@
+package info.proteo.cupcake.ui.session
 import android.content.Context
 import android.graphics.Typeface
 import android.media.AudioAttributes

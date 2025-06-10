@@ -149,4 +149,24 @@
     <string name="annotation_image">Annotation image</string>
     <string name="media_player_position_text">Postion: %1$s</string>
     <string name="media_player_progress_text">%1$s / %2$s</string>
+    <string-array name="mcalculator_form_types">
+        <item>dynamic</item>
+        <item>massFromVolumeAndConcentration</item>
+        <item>volumeFromMassAndConcentration</item>
+        <item>concentrationFromMassAndVolume</item>
+        <item>volumeFromStockVolumeAndConcentration</item>
+    </string-array>
+    <string-array name="mcalculator_concentration_units">
+        <item>uM</item>
+        <item>mM</item>
+        <item>M</item>
+    </string-array>
+    <string-array name="mcalculator_volume_units">
+        <item>mL</item>
+        <item>L</item>
+    </string-array>
+    <string-array name="mcalculator_weight_units">
+        <item>mg</item>
+        <item>g</item>
+    </string-array>
 </resources>

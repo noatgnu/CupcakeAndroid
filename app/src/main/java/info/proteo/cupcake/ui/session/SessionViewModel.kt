@@ -3,7 +3,6 @@ package info.proteo.cupcake.ui.session
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.lifecycle.HiltViewModel
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolModel
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
@@ -60,21 +59,30 @@ class SessionViewModel @Inject constructor(
     private val _hasEditPermission = MutableStateFlow(false)
     val hasEditPermission: StateFlow<Boolean> = _hasEditPermission.asStateFlow()
 
+    private val _hasMoreAnnotations = MutableStateFlow(false)
+    val hasMoreAnnotations: StateFlow<Boolean> = _hasMoreAnnotations.asStateFlow()
 
-    fun loadAnnotationsForStep(stepId: Int, sessionId: String) {
+
+    fun loadAnnotationsForStep(stepId: Int, sessionId: String, offset: Int =0, limit: Int = 10) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
+                Log.d("SessionViewModel", "Requesting annotations with offset=$offset, limit=$limit")
+
                 annotationRepository.getAnnotations(
                     stepId = stepId,
                     sessionUniqueId = sessionId,
-                    limit = 10,
-                    offset = 0
+                    limit = limit,
+                    offset = offset,
+                    ordering = "-created_at"
                 ).collect { result ->
                     result.onSuccess { response ->
+                        _hasMoreAnnotations.value = response.next != null
                         _stepAnnotations.value = response.results
+
                         Log.d("SessionViewModel", "Annotations loaded successfully: ${response.results.size} annotations")
                     }
+                    _isLoading.value = false
                     result.onFailure { error ->
                         Log.e("SessionViewModel", "Error loading annotations: ${error.message}")
                     }

@@ -249,8 +249,11 @@ class AnnotationServiceImpl @Inject constructor(
         limit: Int?, offset: Int?, folderId: Int?
     ): Result<LimitOffsetResponse<Annotation>> {
         return try {
+            Log.d("AnnotationService", "Fetching annotations with params: stepId=$stepId, sessionUniqueId=$sessionUniqueId, search=$search, ordering=$ordering, limit=$limit, offset=$offset, folderId=$folderId")
             val response = apiService.getAnnotations(stepId, sessionUniqueId, search, ordering, limit ?: 20, offset ?: 0, folderId)
+            Log.d("AnnotationService", "Fetched ${response.results.size} annotations")
             response.results.forEach { cacheAnnotationWithRelations(it) }
+
             Result.success(response)
         } catch (e: Exception) {
             try {

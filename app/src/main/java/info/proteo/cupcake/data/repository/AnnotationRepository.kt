@@ -39,11 +39,19 @@ class AnnotationRepository @Inject constructor(
         sessionUniqueId: String? = null,
         search: String? = null,
         ordering: String? = null,
-        limit: Int,
-        offset: Int,
+        limit: Int? = null,
+        offset: Int? = null,
         folderId: Int? = null
     ): Flow<Result<LimitOffsetResponse<Annotation>>> = flow {
-        emit(annotationService.getAnnotations(stepId, sessionUniqueId, search, ordering, limit, offset, folderId))
+        emit(annotationService.getAnnotations(
+            stepId = stepId,
+            sessionUniqueId = sessionUniqueId,
+            search = search,
+            ordering = ordering,
+            limit = limit,
+            offset = offset,
+            folderId = folderId
+            ))
     }
 
     fun getAnnotationById(id: Int): Flow<Result<Annotation>> = flow {

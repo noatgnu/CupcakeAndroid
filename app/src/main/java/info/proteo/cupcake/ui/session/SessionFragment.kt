@@ -1,6 +1,5 @@
 package info.proteo.cupcake.ui.session
 
-import SessionAnnotationAdapter
 import android.app.Activity
 import android.content.Intent
 import android.content.res.Configuration
@@ -37,7 +36,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.card.MaterialCardView
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.R
 import info.proteo.cupcake.SessionManager
@@ -107,6 +105,12 @@ class SessionFragment : Fragment() {
     @Inject lateinit var userRepository: UserRepository
     @Inject lateinit var annotationRepository: AnnotationRepository
 
+    private var currentAnnotationOffset = 0
+    private val annotationsPerPage = 10
+    private var hasMoreAnnotations = false
+
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
     }
@@ -171,7 +175,7 @@ class SessionFragment : Fragment() {
 
         observeViewModel()
         setupAnnotationsSection()
-
+        setupPaginationButtons()
         binding.reagentsSectionHeader.setOnClickListener {
             toggleReagentsSection()
         }
@@ -191,6 +195,34 @@ class SessionFragment : Fragment() {
             binding.reagentsExpandIcon.contentDescription = "Collapse reagents section"
         }
     }
+
+    private fun setupPaginationButtons() {
+        binding.fabPrevAnnotation.setOnClickListener {
+            if (currentAnnotationOffset > 0) {
+                currentAnnotationOffset -= annotationsPerPage
+                if (currentAnnotationOffset < 0) currentAnnotationOffset = 0
+                loadAnnotationsForCurrentStep()
+            }
+        }
+
+        binding.fabNextAnnotation.setOnClickListener {
+            if (hasMoreAnnotations) {
+                currentAnnotationOffset += annotationsPerPage
+                loadAnnotationsForCurrentStep()
+            }
+        }
+
+        updateAnnotationPaginationButtons()
+    }
+
+    private fun updateAnnotationPaginationButtons(hasMore: Boolean = false) {
+        binding.fabPrevAnnotation.isEnabled = currentAnnotationOffset > 0
+        binding.fabNextAnnotation.isEnabled = hasMore
+
+        binding.fabPrevAnnotation.visibility = if (currentAnnotationOffset > 0) View.VISIBLE else View.INVISIBLE
+        binding.fabNextAnnotation.visibility = if (hasMore) View.VISIBLE else View.INVISIBLE
+    }
+
 
     private fun setupReagentAdapter() {
         reagentAdapter = SessionStepReagentAdapter(
@@ -225,10 +257,10 @@ class SessionFragment : Fragment() {
     }
 
     private fun setupSidebar() {
-        sidebarAdapter = SessionSidebarAdapter { step, section -> // Modified lambda
-            displayStepContent(step, section) // Pass section here
-            sidebarAdapter.setSelectedStep(step.id, section.id) // Update selection in adapter
-            binding.drawerLayout.closeDrawer(GravityCompat.START) // Close drawer after selection
+        sidebarAdapter = SessionSidebarAdapter { step, section ->
+            displayStepContent(step, section)
+            sidebarAdapter.setSelectedStep(step.id, section.id)
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
         }
 
         binding.sidebarRecyclerView.apply {
@@ -363,6 +395,13 @@ class SessionFragment : Fragment() {
                 viewModel.hasEditPermission.collect { hasPermission ->
                     binding.fabAddAnnotation.visibility = if (hasPermission) View.VISIBLE else View.GONE
                 }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.hasMoreAnnotations.collectLatest { hasMore ->
+                hasMoreAnnotations = hasMore
+                updateAnnotationPaginationButtons(hasMore)
             }
         }
     }
@@ -708,12 +747,18 @@ class SessionFragment : Fragment() {
         currentStep?.id?.let { stepId ->
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
+                    Toast.makeText(context, "Loading annotations ${currentAnnotationOffset+1} to ${currentAnnotationOffset + annotationsPerPage}", Toast.LENGTH_SHORT).show()
                     binding.progressBar.visibility = View.VISIBLE
-                    viewModel.loadAnnotationsForStep(stepId, sessionId)
+                    viewModel.loadAnnotationsForStep(
+                        stepId = stepId,
+                        sessionId = sessionId,
+                        offset = currentAnnotationOffset,
+                        limit = annotationsPerPage
+                    )
                     binding.progressBar.visibility = View.GONE
                 } catch (e: Exception) {
-                    showError("Failed to load annotations: ${e.message}")
                     binding.progressBar.visibility = View.GONE
+                    showError("Error loading annotations: ${e.message}")
                 }
             }
         }
@@ -722,12 +767,13 @@ class SessionFragment : Fragment() {
     private fun observeAnnotations() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.stepAnnotations.collectLatest { annotations ->
+                Log.d("SessionFragment", "Loaded ${annotations.size} annotations for step ${currentStep?.id}")
                 if (annotations.isEmpty()) {
-                    binding.annotationsRecyclerView?.visibility = View.GONE
-                    binding.annotationsEmptyState?.visibility = View.VISIBLE
+                    binding.annotationsEmptyState.visibility = View.VISIBLE
+                    binding.annotationsRecyclerView.visibility = View.GONE
                 } else {
-                    binding.annotationsRecyclerView?.visibility = View.VISIBLE
-                    binding.annotationsEmptyState?.visibility = View.GONE
+                    binding.annotationsEmptyState.visibility = View.GONE
+                    binding.annotationsRecyclerView.visibility = View.VISIBLE
                     annotationAdapter?.submitList(annotations)
                 }
             }

@@ -1,3 +1,5 @@
+package info.proteo.cupcake.ui.session
+
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -51,8 +53,9 @@ import com.bumptech.glide.request.RequestListener
 import info.proteo.cupcake.ui.session.CalculatorAnnotationHandler
 import info.proteo.cupcake.ui.session.ChecklistAnnotationHandler
 import info.proteo.cupcake.ui.session.CounterAnnotationHandler
+import info.proteo.cupcake.ui.session.MCalculatorAnnotationHandler
 import info.proteo.cupcake.ui.session.TableAnnotationHandler
-import kotlin.toString
+import info.proteo.cupcake.ui.session.RandomizationAnnotationHandler
 
 
 data class VttCue(
@@ -107,6 +110,22 @@ class SessionAnnotationAdapter(
     private var checklistAnnotationHandler: ChecklistAnnotationHandler? = null
     private var mediaAnnotationHandler: MediaAnnotationHandler? = null
     private var calculatorAnnotationHandler: CalculatorAnnotationHandler? = null
+    private var mCalculatorAnnotationHandler: MCalculatorAnnotationHandler? = null
+    private var randomizationAnnotationHandler: RandomizationAnnotationHandler? = null
+
+    private fun getRandomizationAnnotationHandler(context: Context): RandomizationAnnotationHandler {
+        if (randomizationAnnotationHandler == null) {
+            randomizationAnnotationHandler = RandomizationAnnotationHandler(context)
+        }
+        return randomizationAnnotationHandler!!
+    }
+
+    private fun getMCalculatorAnnotationHandler(context: Context): MCalculatorAnnotationHandler {
+        if (mCalculatorAnnotationHandler == null) {
+            mCalculatorAnnotationHandler = MCalculatorAnnotationHandler(context, onAnnotationUpdate)
+        }
+        return mCalculatorAnnotationHandler!!
+    }
 
     private fun getCalculatorAnnotationHandler(context: Context): CalculatorAnnotationHandler {
         if (calculatorAnnotationHandler == null) {
@@ -153,6 +172,7 @@ class SessionAnnotationAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val annotation = getItem(position)
         holder.bind(annotation)
+
     }
 
 
@@ -169,8 +189,7 @@ class SessionAnnotationAdapter(
         private val tableContainer = itemView.findViewById<ViewGroup>(R.id.table_container)
         private val calculatorContainer = itemView.findViewById<ViewGroup>(R.id.calculator_container) // Add this
 
-
-
+        private val randomizationContainer = itemView.findViewById<ViewGroup>(R.id.randomization_container)
         private val mediaPlayerContainer: View? = itemView.findViewById(R.id.mediaPlayerContainer)
         private val playButton: ImageButton? = itemView.findViewById(R.id.playButton)
         private val progressBar: ProgressBar? = itemView.findViewById(R.id.mediaLoadingProgressBar)
@@ -207,6 +226,16 @@ class SessionAnnotationAdapter(
             tableContainer.visibility = View.GONE
 
             when (annotation.annotationType) {
+                "randomization" -> {
+                    textAnnotation.visibility = View.GONE
+                    randomizationContainer.visibility = View.VISIBLE
+                    getRandomizationAnnotationHandler(itemView.context)
+                        .displayRandomizationData(annotation, randomizationContainer)
+                }
+                "mcalculator" -> {
+                    calculatorContainer.visibility = View.VISIBLE
+                    getMCalculatorAnnotationHandler(itemView.context).displayMolarityCalculator(annotation, calculatorContainer)
+                }
                 "calculator" -> {
                     calculatorContainer.visibility = View.VISIBLE
                     getCalculatorAnnotationHandler(itemView.context).displayCalculator(annotation, calculatorContainer)

@@ -16,7 +16,7 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:textAppearance="?attr/textAppearanceBody2"
-        tools:text="1 + 1 = 2"/>
+        tools:text="Mass: 2.5 g from 0.1 M, 250 mL, MW: 100"/>
 
     <ImageButton
         android:id="@+id/button_scratch_log"
