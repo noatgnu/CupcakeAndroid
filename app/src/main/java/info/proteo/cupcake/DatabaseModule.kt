@@ -209,6 +209,9 @@ object DatabaseModule {
 
     @Provides
     fun provideUserPreferencesDao(database: AppDatabase): UserPreferencesDao = database.userPreferencesDao()
+
+    @Provides
+    fun provideRecentSessionDao(database: AppDatabase): RecentSessionDao = database.recentSessionDao()
 }
 
 @Singleton

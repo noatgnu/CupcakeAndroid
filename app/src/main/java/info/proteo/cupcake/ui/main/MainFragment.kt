@@ -20,11 +20,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.LoginActivity
 import info.proteo.cupcake.R
+import info.proteo.cupcake.SessionActivity
 import info.proteo.cupcake.TimeKeeperActivity
+import info.proteo.cupcake.data.local.entity.protocol.RecentSessionEntity
 import info.proteo.cupcake.data.remote.model.message.MessageThread
 import info.proteo.cupcake.data.remote.model.protocol.TimeKeeper
 import info.proteo.cupcake.databinding.FragmentMainBinding
 import info.proteo.cupcake.ui.message.MessageThreadAdapter
+import info.proteo.cupcake.ui.session.RecentSessionAdapter
 import info.proteo.cupcake.ui.timekeeper.ActiveTimeKeeperPreviewAdapter
 import kotlinx.coroutines.launch
 import kotlin.jvm.java
@@ -37,7 +40,44 @@ class MainFragment : Fragment() {
     private val viewModel: MainViewModel by viewModels()
     private lateinit var threadAdapter: MessageThreadAdapter
     private lateinit var activeTimekeeperAdapter: ActiveTimeKeeperPreviewAdapter
+    private lateinit var recentSessionAdapter: RecentSessionAdapter
 
+    private fun setupRecentSessionsSection() {
+        recentSessionAdapter = RecentSessionAdapter { recentSession ->
+            val intent = Intent(requireContext(), SessionActivity::class.java)
+            intent.putExtra("sessionId", recentSession.sessionUniqueId)
+            intent.putExtra("protocolId", recentSession.protocolId)
+            intent.putExtra("isNewSession", false)
+            startActivity(intent)
+        }
+
+        binding.recyclerViewRecentSessions.apply {
+            adapter = recentSessionAdapter
+            layoutManager = LinearLayoutManager(requireContext())
+        }
+    }
+
+
+
+
+
+    private fun updateRecentSessionsUI(sessions: List<RecentSessionEntity>) {
+        recentSessionAdapter.submitList(sessions)
+
+        if (viewModel.userData.value != null) {
+            binding.recentSessionsSection.visibility = View.VISIBLE
+
+            if (sessions.isEmpty()) {
+                binding.recyclerViewRecentSessions.visibility = View.GONE
+                binding.textViewNoRecentSessions.visibility = View.VISIBLE
+            } else {
+                binding.recyclerViewRecentSessions.visibility = View.VISIBLE
+                binding.textViewNoRecentSessions.visibility = View.GONE
+            }
+        } else {
+            binding.recentSessionsSection.visibility = View.GONE
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -52,6 +92,7 @@ class MainFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupMenu()
         setupRecyclerView()
+        setupRecentSessionsSection()
         setupActiveTimekeepersSection()
         setupObservers()
         setupClickListeners()
@@ -166,6 +207,14 @@ class MainFragment : Fragment() {
                     } else {
                         binding.progressBar.visibility = View.GONE
                     }
+                }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.recentSessions.collect { sessions ->
+                    updateRecentSessionsUI(sessions)
                 }
             }
         }

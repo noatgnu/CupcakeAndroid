@@ -54,6 +54,7 @@ import java.util.Date
         AnnotationFolderPathEntity::class,
         StepVariationEntity::class,
         SessionEntity::class,
+        RecentSessionEntity::class,
         TimeKeeperEntity::class,
         UserEntity::class,
         ProtocolRatingEntity::class,
@@ -144,6 +145,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun msUniqueVocabulariesDao(): MSUniqueVocabulariesDao
     abstract fun humanDiseaseDao(): HumanDiseaseDao
     abstract fun userPreferencesDao(): UserPreferencesDao
+    abstract fun recentSessionDao(): RecentSessionDao
 
     companion object {
         const val DATABASE_NAME = "cupcake_database"

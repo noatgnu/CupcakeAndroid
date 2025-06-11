@@ -4,25 +4,37 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import info.proteo.cupcake.SessionManager
+import info.proteo.cupcake.data.local.dao.protocol.RecentSessionDao
+import info.proteo.cupcake.data.local.entity.protocol.RecentSessionEntity
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolModel
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
 import info.proteo.cupcake.data.remote.model.protocol.Session
 import info.proteo.cupcake.data.remote.model.protocol.StepReagent
 import info.proteo.cupcake.data.remote.model.reagent.ReagentAction
 import info.proteo.cupcake.data.remote.model.annotation.Annotation
+import info.proteo.cupcake.data.remote.model.instrument.Instrument
 import info.proteo.cupcake.data.remote.model.reagent.StoredReagent
 import info.proteo.cupcake.data.remote.service.SessionService
 import info.proteo.cupcake.data.repository.AnnotationRepository
+import info.proteo.cupcake.data.repository.InstrumentRepository
 import info.proteo.cupcake.data.repository.ProtocolRepository
 import info.proteo.cupcake.data.repository.ProtocolStepRepository
 import info.proteo.cupcake.data.repository.ReagentActionRepository
 import info.proteo.cupcake.data.repository.StoredReagentRepository
 import info.proteo.cupcake.data.repository.UserRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import javax.inject.Inject
+import kotlin.text.format
 
 
 data class DisplayableStepReagent(
@@ -38,7 +50,10 @@ class SessionViewModel @Inject constructor(
     private val storedReagentRepository: StoredReagentRepository,
     private val reagentActionRepository: ReagentActionRepository,
     private val annotationRepository: AnnotationRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val recentSessionDao: RecentSessionDao,
+    private val sessionManager: SessionManager,
+    private val instrumentRepository: InstrumentRepository
 ) : ViewModel() {
 
     private val _session = MutableStateFlow<Session?>(null)
@@ -62,6 +77,56 @@ class SessionViewModel @Inject constructor(
     private val _hasMoreAnnotations = MutableStateFlow(false)
     val hasMoreAnnotations: StateFlow<Boolean> = _hasMoreAnnotations.asStateFlow()
 
+    private val _instruments = MutableStateFlow<List<Instrument>>(emptyList())
+    val instruments: StateFlow<List<Instrument>> = _instruments.asStateFlow()
+
+    fun updateRecentSession(session: Session, protocolId: Int, protocolName: String?) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val activeUser = userRepository.getUserFromActivePreference()
+                if (activeUser != null) {
+                    val currentTime = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+                        timeZone = TimeZone.getTimeZone("UTC")
+                    }.format(Date())
+
+                    // Check if this session already exists for this user
+                    val recentS = recentSessionDao.getRecentSessionsByUser(activeUser.id, 100).first()
+                    val existingSession = recentS.find { it.sessionUniqueId == session.uniqueId }
+                    if (existingSession != null) {
+                        val updatedSession = existingSession.copy(
+                            lastAccessed = currentTime,
+                            sessionName = existingSession.sessionName,
+                            protocolName = protocolName
+                        )
+                        recentSessionDao.update(updatedSession)
+                    } else {
+                        val recentSession = RecentSessionEntity(
+                            id = 0,
+                            sessionId = session.id,
+                            protocolId = protocolId,
+                            sessionUniqueId = session.uniqueId,
+                            userId = activeUser.id,
+                            protocolName = protocolName,
+                            lastAccessed = currentTime,
+                            sessionName = session.name
+                        )
+                        recentSessionDao.insert(recentSession)
+                    }
+
+
+                    val recentSessions = recentSessionDao.getRecentSessionsByUser(activeUser.id, 100).first()
+                    if (recentSessions.size > RecentSessionEntity.MAX_RECENT_SESSIONS) {
+                        recentSessions
+                            .sortedBy { it.lastAccessed }
+                            .take(recentSessions.size - RecentSessionEntity.MAX_RECENT_SESSIONS)
+                            .forEach { recentSessionDao.delete(it) }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("SessionViewModel", "Error updating recent sessions: ${e.message}")
+            }
+        }
+    }
 
     fun loadAnnotationsForStep(stepId: Int, sessionId: String, offset: Int =0, limit: Int = 10) {
         viewModelScope.launch {
@@ -237,6 +302,26 @@ class SessionViewModel @Inject constructor(
             } catch (e: Exception) {
                 _hasEditPermission.value = false
                 Log.e("SessionViewModel", "Exception checking permissions", e)
+            }
+        }
+    }
+
+    fun getInstruments(offset: Int, limit: Int) {
+        viewModelScope.launch {
+            try {
+                instrumentRepository.getInstruments(limit = limit, offset = offset).collect {
+                    result ->
+                    result.onSuccess { response ->
+                        Log.d("SessionViewModel", "Instruments loaded successfully: ${response.results.size} instruments")
+
+                        _instruments.value = response.results
+                    }
+                    result.onFailure { error ->
+                        Log.e("SessionViewModel", "Error loading instruments: ${error.message}")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("SessionViewModel", "Exception loading instruments", e)
             }
         }
     }

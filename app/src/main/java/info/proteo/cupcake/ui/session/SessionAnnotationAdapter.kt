@@ -1,32 +1,15 @@
 package info.proteo.cupcake.ui.session
 
-import android.content.ActivityNotFoundException
 import android.content.Context
-import android.content.Intent
-import android.graphics.Color
-import android.graphics.Typeface
 import android.graphics.drawable.Drawable
-import android.media.AudioAttributes
 import android.media.MediaPlayer
-import android.net.Uri
-import android.text.Spannable
-import android.text.SpannableString
-import android.text.style.BackgroundColorSpan
-import android.text.style.StyleSpan
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.CheckBox
-import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.ProgressBar
-import android.widget.RadioButton
-import android.widget.RadioGroup
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
@@ -44,18 +27,13 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
-import androidx.core.graphics.toColorInt
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.target.Target
 import com.bumptech.glide.request.RequestListener
-import info.proteo.cupcake.ui.session.CalculatorAnnotationHandler
-import info.proteo.cupcake.ui.session.ChecklistAnnotationHandler
-import info.proteo.cupcake.ui.session.CounterAnnotationHandler
-import info.proteo.cupcake.ui.session.MCalculatorAnnotationHandler
-import info.proteo.cupcake.ui.session.TableAnnotationHandler
-import info.proteo.cupcake.ui.session.RandomizationAnnotationHandler
+import info.proteo.cupcake.data.repository.InstrumentRepository
+import info.proteo.cupcake.data.repository.InstrumentUsageRepository
 
 
 data class VttCue(
@@ -94,6 +72,9 @@ class SessionAnnotationAdapter(
     private val onRetranscribeClick: (Annotation) -> Unit,
     private val onAnnotationUpdate: (Annotation, String?, String?) -> Unit,
     private val annotationRepository: AnnotationRepository,
+    private val instrumentRepository: InstrumentRepository,
+    private val instrumentUsageRepository: InstrumentUsageRepository,
+
     private val baseUrl: String
 ) : ListAdapter<Annotation, SessionAnnotationAdapter.ViewHolder>(DIFF_CALLBACK) {
     private var recyclerView: RecyclerView? = null
@@ -112,6 +93,42 @@ class SessionAnnotationAdapter(
     private var calculatorAnnotationHandler: CalculatorAnnotationHandler? = null
     private var mCalculatorAnnotationHandler: MCalculatorAnnotationHandler? = null
     private var randomizationAnnotationHandler: RandomizationAnnotationHandler? = null
+    private var imageAnnotationHandler: ImageAnnotationHandler? = null
+    private var sketchAnnotationHandler: SketchAnnotationHandler? = null
+    private var alignmentAnnotationHandler: AlignmentAnnotationHandler? = null
+    private var instrumentAnnotationHandler: InstrumentAnnotationHandler? = null
+
+    private fun getInstrumentAnnotationHandler(context: Context): InstrumentAnnotationHandler {
+        if (instrumentAnnotationHandler == null) {
+            instrumentAnnotationHandler = InstrumentAnnotationHandler(
+                context,
+                instrumentRepository,
+                instrumentUsageRepository
+            )
+        }
+        return instrumentAnnotationHandler!!
+    }
+
+    private fun getAlignmentAnnotationHandler(context: Context): AlignmentAnnotationHandler {
+        if (alignmentAnnotationHandler == null) {
+            alignmentAnnotationHandler = AlignmentAnnotationHandler(context, annotationRepository, baseUrl)
+        }
+        return alignmentAnnotationHandler!!
+    }
+
+    private fun getSketchAnnotationHandler(context: Context): SketchAnnotationHandler {
+        if (sketchAnnotationHandler == null) {
+            sketchAnnotationHandler = SketchAnnotationHandler(context, annotationRepository, baseUrl)
+        }
+        return sketchAnnotationHandler!!
+    }
+
+    private fun getImageAnnotationHandler(context: Context): ImageAnnotationHandler {
+        if (imageAnnotationHandler == null) {
+            imageAnnotationHandler = ImageAnnotationHandler(context, annotationRepository, baseUrl)
+        }
+        return imageAnnotationHandler!!
+    }
 
     private fun getRandomizationAnnotationHandler(context: Context): RandomizationAnnotationHandler {
         if (randomizationAnnotationHandler == null) {
@@ -184,6 +201,8 @@ class SessionAnnotationAdapter(
         private val menuButton: ImageButton = itemView.findViewById(R.id.menu_button)
         private var vttCues: List<VttCue> = emptyList()
         private val annotationImage: ImageView = itemView.findViewById(R.id.annotation_image)
+        private val imageContainer: ViewGroup = itemView.findViewById(R.id.image_container)
+
         private val checklistContainer = itemView.findViewById<ViewGroup>(R.id.checklist_container)
         private val counterContainer = itemView.findViewById<ViewGroup>(R.id.counter_container)
         private val tableContainer = itemView.findViewById<ViewGroup>(R.id.table_container)
@@ -196,6 +215,7 @@ class SessionAnnotationAdapter(
 
         private val transcriptionContainer: View = itemView.findViewById(R.id.transcription_container)
         private val transcriptionText: TextView = itemView.findViewById(R.id.transcription_text)
+        private val instrumentContainer = itemView.findViewById<ViewGroup>(R.id.instrument_container)
 
         fun bind(annotation: Annotation) {
             menuButton.setOnClickListener { view ->
@@ -216,6 +236,7 @@ class SessionAnnotationAdapter(
             textAnnotation.text = annotation.annotation
             textDate.text = formattedDate
             textUsername.text = annotation.user?.username?.let { "Created by: $it" } ?: ""
+            imageContainer.visibility = View.GONE
 
             textAnnotation.visibility = View.GONE
             annotationImage.visibility = View.GONE
@@ -224,8 +245,38 @@ class SessionAnnotationAdapter(
             checklistContainer.visibility = View.GONE
             counterContainer.visibility = View.GONE
             tableContainer.visibility = View.GONE
+            instrumentContainer.visibility = View.GONE
+
 
             when (annotation.annotationType) {
+                "instrument" -> {
+                    textAnnotation.visibility = View.GONE
+                    instrumentContainer.visibility = View.VISIBLE
+                    getInstrumentAnnotationHandler(itemView.context)
+                        .displayInstrumentBooking(annotation, instrumentContainer)
+                }
+                "alignment" -> {
+                    textAnnotation.visibility = View.GONE
+                    annotationImage.visibility = View.VISIBLE
+                    imageContainer.visibility = View.VISIBLE
+                    mediaPlayerContainer?.visibility = View.GONE
+                    getAlignmentAnnotationHandler(itemView.context)
+                        .displayAlignment(annotation, annotationImage, imageContainer)
+                }
+                "sketch" -> {
+                    textAnnotation.visibility = View.VISIBLE
+                    annotationImage.visibility = View.VISIBLE
+                    imageContainer.visibility = View.VISIBLE
+                    mediaPlayerContainer?.visibility = View.GONE
+                    getSketchAnnotationHandler(itemView.context)
+                        .displaySketch(
+                            annotation,
+                            annotationImage,
+                            transcriptionText,
+                            imageContainer,
+                            transcriptionContainer
+                        )
+                }
                 "randomization" -> {
                     textAnnotation.visibility = View.GONE
                     randomizationContainer.visibility = View.VISIBLE
@@ -261,11 +312,12 @@ class SessionAnnotationAdapter(
                     transcriptionContainer.visibility = View.GONE
                 }
                 "image" -> {
-                    textAnnotation.visibility = View.VISIBLE
-                    annotationImage.visibility = View.VISIBLE
-                    mediaPlayerContainer?.visibility = View.GONE
-                    transcriptionContainer.visibility = View.GONE
-                    loadAnnotationImage(annotation, annotationImage)
+                    textAnnotation.visibility = View.VISIBLE // Or GONE if only image is shown
+                    imageContainer.visibility = View.VISIBLE
+                    annotationImage.visibility = View.VISIBLE // Make sure ImageView itself is visible
+                    // Ensure image is reset for recycled views
+                    annotationImage.setImageDrawable(null)
+                    getImageAnnotationHandler(itemView.context).displayImage(annotation, annotationImage, imageContainer)
                 }
                 "audio", "video" -> {
                     mediaPlayerContainer?.visibility = View.VISIBLE
@@ -337,62 +389,8 @@ class SessionAnnotationAdapter(
         this.recyclerView = recyclerView
     }
 
-    private fun parseVttContent(vttContent: String): List<VttCue> {
-        val cues = mutableListOf<VttCue>()
-        val lines = vttContent.split("\n")
 
-        var i = 0
-        while (i < lines.size && !lines[i].contains("-->")) i++
 
-        while (i < lines.size) {
-            if (lines[i].contains("-->")) {
-                val timeLine = lines[i]
-                val timesParts = timeLine.split("-->")
-                if (timesParts.size == 2) {
-                    val startTime = parseVttTime(timesParts[0].trim())
-                    val endTime = parseVttTime(timesParts[1].trim())
-
-                    val textBuilder = StringBuilder()
-                    i++
-                    while (i < lines.size && lines[i].isNotBlank() && !lines[i].contains("-->")) {
-                        if (textBuilder.isNotEmpty()) textBuilder.append(" ")
-                        textBuilder.append(lines[i])
-                        i++
-                    }
-
-                    if (textBuilder.isNotEmpty()) {
-                        cues.add(VttCue(startTime, endTime, textBuilder.toString()))
-                    }
-                } else {
-                    i++
-                }
-            } else {
-                i++
-            }
-        }
-
-        return cues
-    }
-
-    private fun parseVttTime(timeString: String): Long {
-        val parts = timeString.split(":", ".")
-        return when (parts.size) {
-            3 -> {
-                val minutes = parts[0].toLong() * 60 * 1000
-                val seconds = parts[1].toLong() * 1000
-                val millis = parts[2].toLong()
-                minutes + seconds + millis
-            }
-            4 -> {
-                val hours = parts[0].toLong() * 60 * 60 * 1000
-                val minutes = parts[1].toLong() * 60 * 1000
-                val seconds = parts[2].toLong() * 1000
-                val millis = parts[3].toLong()
-                hours + minutes + seconds + millis
-            }
-            else -> 0L
-        }
-    }
 
     private fun loadAnnotationImage(annotation: Annotation, imageView: ImageView) {
         val progressBar = ProgressBar(imageView.context).apply {
@@ -470,20 +468,6 @@ class SessionAnnotationAdapter(
         imageView.setImageResource(R.drawable.ic_more_vert)
     }
 
-    private fun findViewHolderForAnnotationId(annotationId: Int): ViewHolder? {
-        recyclerView?.let { rv ->
-            for (i in 0 until rv.childCount) {
-                val child = rv.getChildAt(i) ?: continue
-                val holder = rv.getChildViewHolder(child) as? ViewHolder
-                if (holder != null && holder.bindingAdapterPosition != RecyclerView.NO_POSITION) {
-                    if (getItem(holder.bindingAdapterPosition).id == annotationId) {
-                        return holder
-                    }
-                }
-            }
-        }
-        return null
-    }
 
 
 

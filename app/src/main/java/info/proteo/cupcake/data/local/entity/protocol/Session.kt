@@ -16,3 +16,19 @@ data class SessionEntity(
     @ColumnInfo(name = "started_at") val startedAt: String?,
     @ColumnInfo(name = "ended_at") val endedAt: String?
 )
+
+@Entity(tableName = "recent_session")
+data class RecentSessionEntity(
+    @PrimaryKey val id: Int,
+    @ColumnInfo(name = "session_id") val sessionId: Int,
+    @ColumnInfo(name = "session_unique_id") val sessionUniqueId: String,
+    @ColumnInfo(name = "session_name") val sessionName: String?,
+    @ColumnInfo(name = "protocol_id") val protocolId: Int,
+    @ColumnInfo(name = "protocol_name") val protocolName: String?,
+    @ColumnInfo(name = "user_id") val userId: Int,
+    @ColumnInfo(name = "last_accessed") val lastAccessed: String
+) {
+    companion object {
+        const val MAX_RECENT_SESSIONS = 5
+    }
+}

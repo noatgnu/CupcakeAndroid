@@ -48,6 +48,26 @@
                 android:contentDescription="More options" />
         </LinearLayout>
         <LinearLayout
+            android:id="@+id/instrument_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone" />
+        <FrameLayout
+            android:id="@+id/image_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/annotation_image"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:scaleType="centerCrop"
+                android:visibility="gone"/>
+
+        </FrameLayout>
+        <LinearLayout
             android:id="@+id/randomization_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -96,17 +116,7 @@
             android:layout_marginTop="8dp"
             android:visibility="gone"
             tools:visibility="visible">
-            <!-- The calculator_annotation_layout will be inflated here by CalculatorAnnotationHandler -->
         </LinearLayout>
-        <ImageView
-            android:id="@+id/annotation_image"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:adjustViewBounds="true"
-            android:scaleType="fitCenter"
-            android:layout_marginTop="8dp"
-            android:visibility="gone"
-            android:contentDescription="@string/annotation_image" />
 
         <LinearLayout
             android:id="@+id/mediaPlayerContainer"

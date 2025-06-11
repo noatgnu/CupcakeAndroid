@@ -10,61 +10,25 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <TextView
+        <!-- Annotation Type Selection -->
+        <Spinner
+            android:id="@+id/spinnerAnnotationType"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/create_annotation"
-            android:textAppearance="?attr/textAppearanceHeadline6"
-            android:layout_marginBottom="16dp" />
+            android:layout_height="wrap_content" />
 
-        <RadioGroup
-            android:id="@+id/radioGroupAnnotationType"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="16dp">
-
-            <RadioButton
-                android:id="@+id/radioButtonText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/text"
-                android:checked="true" />
-
-            <RadioButton
-                android:id="@+id/radioButtonFile"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/file"
-                android:layout_marginStart="8dp" />
-
-            <RadioButton
-                android:id="@+id/radioButtonAudio"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/audio"
-                android:layout_marginStart="8dp" />
-
-            <RadioButton
-                android:id="@+id/radioButtonVideo"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/video"
-                android:layout_marginStart="8dp" />
-        </RadioGroup>
-
-        <!-- Text annotation container -->
+        <!-- Text Annotation Container -->
         <LinearLayout
             android:id="@+id/textAnnotationContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp">
 
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="@string/enter_text"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:hint="Enter text annotation">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/editTextAnnotation"
@@ -76,85 +40,272 @@
             </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
 
-        <!-- File annotation container -->
-        <LinearLayout
+        <!-- Image Annotation Container -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/imageAnnotationContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardElevation="2dp"
+            app:cardCornerRadius="8dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Image Annotation"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonTakePhoto"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Camera"
+                        app:icon="@drawable/ic_outline_camera_24" />
+
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonSelectImage"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Gallery"
+                        app:icon="@drawable/ic_gallery" />
+                </LinearLayout>
+
+                <ImageView
+                    android:id="@+id/previewImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:layout_marginTop="8dp"
+                    android:scaleType="centerInside"
+                    android:visibility="gone"
+                    android:contentDescription="Preview of selected image" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- File Annotation Container -->
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/fileAnnotationContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:layout_marginBottom="16dp"
+            app:cardElevation="2dp"
+            app:cardCornerRadius="8dp"
             android:visibility="gone">
 
-            <Button
-                android:id="@+id/buttonSelectFile"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/select_file" />
+                android:orientation="vertical"
+                android:padding="16dp">
 
-            <TextView
-                android:id="@+id/textSelectedFileName"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:visibility="gone" />
-        </LinearLayout>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="File Annotation"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
 
-        <!-- Audio annotation container -->
-        <LinearLayout
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonSelectFile"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Select File"
+                    app:icon="@drawable/ic_file_upload" />
+
+                <TextView
+                    android:id="@+id/textSelectedFileName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Audio Annotation Container -->
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/audioAnnotationContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:layout_marginBottom="16dp"
+            app:cardElevation="2dp"
+            app:cardCornerRadius="8dp"
             android:visibility="gone">
 
-            <Button
-                android:id="@+id/buttonRecordAudio"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/record_audio" />
+                android:orientation="vertical"
+                android:padding="16dp">
 
-            <TextView
-                android:id="@+id/textAudioStatus"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:visibility="gone" />
-        </LinearLayout>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Audio Annotation"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
 
-        <!-- Video annotation container -->
-        <LinearLayout
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonRecordAudio"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Record Audio"
+                    app:icon="@drawable/ic_audio_record" />
+
+                <TextView
+                    android:id="@+id/textAudioStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Video Annotation Container -->
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/videoAnnotationContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:layout_marginBottom="16dp"
+            app:cardElevation="2dp"
+            app:cardCornerRadius="8dp"
             android:visibility="gone">
 
-            <Button
-                android:id="@+id/buttonRecordVideo"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/record_video" />
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Video Annotation"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonRecordVideo"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Record Video"
+                    app:icon="@drawable/ic_menu_camera" />
+
+                <TextView
+                    android:id="@+id/textVideoStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Calculator Annotation Container -->
+        <LinearLayout
+            android:id="@+id/calculatorAnnotationContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone">
 
             <TextView
-                android:id="@+id/textVideoStatus"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:visibility="gone" />
+                android:text="Calculator will be available after saving"
+                android:gravity="center"
+                android:padding="16dp" />
         </LinearLayout>
 
-        <!-- Notes container - for Text and File annotations -->
+        <!-- Molarity Calculator Container -->
+        <LinearLayout
+            android:id="@+id/molarityCalculatorContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Molarity Calculator will be available after saving"
+                android:gravity="center"
+                android:padding="16dp" />
+        </LinearLayout>
+
+        <!-- Instrument Annotation Container -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/instrumentAnnotationContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardElevation="2dp"
+            app:cardCornerRadius="8dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Instrument Annotation"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonSelectInstrument"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Select Instrument"
+                    app:icon="@drawable/ic_instrument" />
+
+                <TextView
+                    android:id="@+id/textSelectedInstrument"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Notes Container -->
         <LinearLayout
             android:id="@+id/notesContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginTop="16dp">
+            android:layout_marginBottom="16dp">
 
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="@string/notes"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:hint="Additional Notes">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/editTextNotes"
@@ -165,6 +316,5 @@
                     android:gravity="top|start" />
             </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
-
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

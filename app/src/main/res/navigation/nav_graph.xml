@@ -4,7 +4,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
     app:startDestination="@id/nav_main">
-
+    <include app:graph="@navigation/instrument_nav_graph" />
+    <include app:graph="@navigation/session_nav_graph" />
+    <include app:graph="@navigation/protocol_nav_graph" />
     <fragment
         android:id="@+id/nav_settings"
         android:name="info.proteo.cupcake.ui.settings.SettingsFragment"
@@ -30,7 +32,7 @@
             app:destination="@id/nav_settings" />
     </fragment>
 
-    <include app:graph="@navigation/protocol_nav_graph" />
+
 
     <fragment
         android:id="@+id/nav_main"
@@ -49,6 +51,9 @@
         <action
             android:id="@+id/action_mainFragment_to_protocolListFragment"
             app:destination="@id/protocol_nav_graph" />
+        <action
+            android:id="@+id/action_mainFragment_to_sessionFragment"
+            app:destination="@id/session_nav_graph" />
     </fragment>
     <fragment
         android:id="@+id/loginFragment"

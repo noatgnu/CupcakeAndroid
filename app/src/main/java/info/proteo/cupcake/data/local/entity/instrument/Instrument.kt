@@ -30,7 +30,7 @@ data class InstrumentUsageEntity(
     @ColumnInfo(name = "updated_at") val updatedAt: String?,
     @ColumnInfo(name = "time_started") val timeStarted: String?,
     @ColumnInfo(name = "time_ended") val timeEnded: String?,
-    val user: String?,
+    val user: Int?,
     val description: String?,
     val approved: Boolean?,
     val maintenance: Boolean?,

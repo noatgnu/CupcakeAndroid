@@ -1,12 +1,17 @@
 package info.proteo.cupcake.ui.session
 
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Typeface
+import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.Log
 import android.view.Gravity
@@ -18,15 +23,22 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebSettings
 import android.webkit.WebView
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RadioGroup
+import android.widget.Spinner
 import androidx.appcompat.widget.SearchView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.view.GravityCompat
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
@@ -49,6 +61,8 @@ import info.proteo.cupcake.data.remote.service.SessionCreateRequest
 import info.proteo.cupcake.data.remote.service.SessionService
 import info.proteo.cupcake.data.remote.service.UpdateAnnotationRequest
 import info.proteo.cupcake.data.repository.AnnotationRepository
+import info.proteo.cupcake.data.repository.InstrumentRepository
+import info.proteo.cupcake.data.repository.InstrumentUsageRepository
 import info.proteo.cupcake.data.repository.ProtocolStepRepository
 import info.proteo.cupcake.data.repository.StorageRepository
 import info.proteo.cupcake.data.repository.StoredReagentRepository
@@ -62,6 +76,11 @@ import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.File
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -79,6 +98,10 @@ class SessionFragment : Fragment() {
     lateinit var storageRepository: StorageRepository
     @Inject
     lateinit var sessionManager: SessionManager
+    @Inject
+    lateinit var instrumentRepository: InstrumentRepository
+    @Inject
+    lateinit var instrumentUsageRepository: InstrumentUsageRepository
 
     private var protocolId: Int = -1
     private var sessionId: String = ""
@@ -105,11 +128,11 @@ class SessionFragment : Fragment() {
     @Inject lateinit var userRepository: UserRepository
     @Inject lateinit var annotationRepository: AnnotationRepository
 
+
     private var currentAnnotationOffset = 0
     private val annotationsPerPage = 10
     private var hasMoreAnnotations = false
-
-
+    private lateinit var annotationDialogHandler: CreateAnnotationDialogHandler
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -180,8 +203,20 @@ class SessionFragment : Fragment() {
             toggleReagentsSection()
         }
         binding.fabAddAnnotation.setOnClickListener {
-            showAnnotationDialog()
+            annotationDialogHandler.showCreateAnnotationDialog(
+                sessionId = viewModel.session.value?.uniqueId ?: "",
+                stepId = currentStep?.id ?: 0
+            )
         }
+
+        annotationDialogHandler = CreateAnnotationDialogHandler(
+            fragment = this,
+            lifecycleOwner = viewLifecycleOwner,
+            instrumentRepository = instrumentRepository,
+            onAnnotationCreated = { request ->
+            }
+        )
+
     }
 
     private fun toggleReagentsSection() {
@@ -306,6 +341,7 @@ class SessionFragment : Fragment() {
                         val relevantProtocolId = protocols[0].id
                         this@SessionFragment.protocolId = relevantProtocolId
                         viewModel.loadProtocolDetails(relevantProtocolId)
+
                     } else {
                         showError("No protocols associated with this session")
                         binding.progressBar.visibility = View.GONE
@@ -374,6 +410,8 @@ class SessionFragment : Fragment() {
             viewModel.session.collectLatest { session ->
                 session?.let {
                     Log.d("SessionFragment", "Session loaded: ${it.uniqueId}")
+
+                    viewModel.updateRecentSession(session, protocolId, null)
                 }
             }
         }
@@ -780,126 +818,6 @@ class SessionFragment : Fragment() {
         }
     }
 
-    private fun showAnnotationDialog() {
-        dialogView = LayoutInflater.from(requireContext())
-            .inflate(R.layout.dialog_create_annotation, null)
-
-
-        // Setup the UI components
-        val radioGroup = dialogView?.findViewById<RadioGroup>(R.id.radioGroupAnnotationType)
-        val textContainer = dialogView?.findViewById<LinearLayout>(R.id.textAnnotationContainer)
-        val fileContainer = dialogView?.findViewById<LinearLayout>(R.id.fileAnnotationContainer)
-        val audioContainer = dialogView?.findViewById<LinearLayout>(R.id.audioAnnotationContainer)
-        val videoContainer = dialogView?.findViewById<LinearLayout>(R.id.videoAnnotationContainer)
-        val notesContainer = dialogView?.findViewById<LinearLayout>(R.id.notesContainer)
-
-        val annotationEditText = dialogView?.findViewById<EditText>(R.id.editTextAnnotation)
-        val notesEditText = dialogView?.findViewById<EditText>(R.id.editTextNotes)
-        val attachFileButton = dialogView?.findViewById<Button>(R.id.buttonSelectFile)
-        val selectedFileText = dialogView?.findViewById<TextView>(R.id.textSelectedFileName)
-        val recordAudioButton = dialogView?.findViewById<Button>(R.id.buttonRecordAudio)
-        val recordVideoButton = dialogView?.findViewById<Button>(R.id.buttonRecordVideo)
-
-        var selectedFileUri: Uri? = null
-        var annotationType = "text"
-
-
-        textContainer?.visibility = View.VISIBLE
-        fileContainer?.visibility = View.GONE
-        audioContainer?.visibility = View.GONE
-        videoContainer?.visibility = View.GONE
-        notesContainer?.visibility = View.VISIBLE
-
-        radioGroup?.setOnCheckedChangeListener { _, checkedId ->
-            textContainer?.visibility = View.GONE
-            fileContainer?.visibility = View.GONE
-            audioContainer?.visibility = View.GONE
-            videoContainer?.visibility = View.GONE
-            notesContainer?.visibility = View.GONE
-
-            when (checkedId) {
-                R.id.radioButtonText -> {
-                    annotationType = "text"
-                    textContainer?.visibility = View.VISIBLE
-                    notesContainer?.visibility = View.VISIBLE
-                }
-                R.id.radioButtonFile -> {
-                    annotationType = "file"
-                    fileContainer?.visibility = View.VISIBLE
-                    notesContainer?.visibility = View.VISIBLE
-                }
-                R.id.radioButtonAudio -> {
-                    annotationType = "audio"
-                    audioContainer?.visibility = View.VISIBLE
-                }
-                R.id.radioButtonVideo -> {
-                    annotationType = "video"
-                    videoContainer?.visibility = View.VISIBLE
-                }
-            }
-        }
-
-        attachFileButton?.setOnClickListener {
-            val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-                type = "*/*"
-                addCategory(Intent.CATEGORY_OPENABLE)
-            }
-            startActivityForResult(Intent.createChooser(intent, "Select File"), FILE_PICK_REQUEST_CODE)
-        }
-
-        // Audio recording
-        recordAudioButton?.setOnClickListener {
-            // Implementation for audio recording would go here
-            // This would typically launch an audio recording intent or use a custom recording UI
-            Toast.makeText(context, "Audio recording not implemented in this example", Toast.LENGTH_SHORT).show()
-        }
-
-        // Video recording
-        recordVideoButton?.setOnClickListener {
-            // Implementation for video recording would go here
-            // This would typically launch a video recording intent
-            Toast.makeText(context, "Video recording not implemented in this example", Toast.LENGTH_SHORT).show()
-        }
-
-
-        val dialog = AlertDialog.Builder(requireContext())
-            .setTitle("Add Annotation")
-            .setView(dialogView)
-            .setPositiveButton("Save", null)
-            .setNegativeButton("Cancel", null)
-            .create()
-
-        currentAnnotationDialog = dialog
-        currentAnnotationDialog?.show()
-
-        // Set the positive button listener manually to prevent automatic dismissal on validation failure
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-            val isValid = when (annotationType) {
-                "text" -> annotationEditText?.text?.isNotEmpty()
-                "file" -> selectedFileUri != null
-                "audio", "video" -> true // For now, always allow these (would check for recordings in real implementation)
-                else -> false
-            }
-
-            if (isValid == true) {
-                val notes = if (notesContainer?.visibility == View.VISIBLE) notesEditText?.text.toString() else ""
-                val annotationText = when (annotationType) {
-                    "text" -> annotationEditText?.text.toString()
-                    "file", "audio", "video" -> notes
-                    else -> ""
-                }
-
-                createAnnotation(annotationText, selectedFileUri, annotationType)
-                dialog.dismiss()
-            } else {
-                if (annotationType == "text" && annotationEditText?.text?.isEmpty() == true) {
-                    Toast.makeText(context, "Please enter text for the annotation", Toast.LENGTH_SHORT).show()
-                } else if (annotationType == "file" && selectedFileUri == null) {
-                    Toast.makeText(context, "Please select a file", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -988,6 +906,8 @@ class SessionFragment : Fragment() {
                     updateAnnotation(updatedAnnotation, translation, transcription)
                 },
                 annotationRepository = annotationRepository,
+                instrumentRepository = instrumentRepository,
+                instrumentUsageRepository = instrumentUsageRepository,
                 baseUrl
 
             )
@@ -1088,7 +1008,6 @@ class SessionFragment : Fragment() {
         }
     }
 
-
     private fun Int.dpToPx(): Int {
         return (this * resources.displayMetrics.density).toInt()
     }
@@ -1097,7 +1016,9 @@ class SessionFragment : Fragment() {
     }
 
 
+
     companion object {
         private const val FILE_PICK_REQUEST_CODE = 1001
+        private const val TAG = "SessionFragment"
     }
 }

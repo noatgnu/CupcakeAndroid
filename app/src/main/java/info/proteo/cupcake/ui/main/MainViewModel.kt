@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import android.util.Log
+import info.proteo.cupcake.data.local.dao.protocol.RecentSessionDao
+import info.proteo.cupcake.data.local.entity.protocol.RecentSessionEntity
 import info.proteo.cupcake.data.remote.model.protocol.TimeKeeper
 import info.proteo.cupcake.data.remote.service.WebSocketService
 import info.proteo.cupcake.data.repository.TimeKeeperRepository
@@ -33,7 +35,8 @@ class MainViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val messageThreadRepository: MessageThreadRepository,
     private val timeKeeperRepository: TimeKeeperRepository,
-    private val webSocketService: WebSocketService
+    private val webSocketService: WebSocketService,
+    private val recentSessionDao: RecentSessionDao
 ) : ViewModel() {
 
     private val _userData = MutableLiveData<User?>()
@@ -50,6 +53,10 @@ class MainViewModel @Inject constructor(
 
     private val _activeTimerStates = MutableStateFlow<Map<Int, TimerState>>(emptyMap())
     val activeTimerStates: StateFlow<Map<Int, TimerState>> = _activeTimerStates.asStateFlow()
+
+    private val _recentSessions = MutableStateFlow<List<RecentSessionEntity>>(emptyList())
+    val recentSessions: StateFlow<List<RecentSessionEntity>> = _recentSessions.asStateFlow()
+
 
     private var timerJob: Job? = null
     private var webSocketListenerJob: Job? = null
@@ -69,6 +76,25 @@ class MainViewModel @Inject constructor(
 
     init {
         observeWebSocketNotifications()
+    }
+
+    private fun fetchRecentSessions() {
+        viewModelScope.launch {
+            try {
+                val user = userRepository.getUserFromActivePreference()
+                if (user != null) {
+                    recentSessionDao.getRecentSessionsByUser(user.id, 5).collect { sessions ->
+                        _recentSessions.value = sessions
+                        Log.d("MainViewModel", "Fetched recent sessions: ${sessions.size}")
+                    }
+                } else {
+                    _recentSessions.value = emptyList()
+                }
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Error fetching recent sessions", e)
+                _recentSessions.value = emptyList()
+            }
+        }
     }
 
     private fun observeWebSocketNotifications() {
@@ -281,6 +307,7 @@ class MainViewModel @Inject constructor(
                     Log.d("MainViewModel", "User data found: ${user.username}")
                     fetchLatestMessageThreads()
                     fetchActiveTimekeepers()
+                    fetchRecentSessions()
                 } else {
                     Log.d("MainViewModel", "No active user found")
                     _messageThreads.value = emptyList()

@@ -76,7 +76,7 @@ class InstrumentFragment : Fragment() {
         }
     }
 
-    private fun navigateToDetail(instrumentId: Int) { // Parameter is now instrumentId (Int)
+    private fun navigateToDetail(instrumentId: Int) {
         val action = InstrumentFragmentDirections.actionInstrumentFragmentToInstrumentDetailFragment(instrumentId)
         findNavController().navigate(action)
     }

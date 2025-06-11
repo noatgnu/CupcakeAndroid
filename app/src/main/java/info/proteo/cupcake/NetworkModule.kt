@@ -29,6 +29,9 @@ import info.proteo.cupcake.data.local.dao.user.UserPreferencesDao
 import info.proteo.cupcake.data.model.api.user.User
 import info.proteo.cupcake.data.remote.LimitOffsetResponseAdapterFactory
 import info.proteo.cupcake.data.remote.interceptor.AuthInterceptor
+import info.proteo.cupcake.data.remote.model.instrument.InstrumentUsageApiService
+import info.proteo.cupcake.data.remote.model.instrument.InstrumentUsageService
+import info.proteo.cupcake.data.remote.model.instrument.InstrumentUsageServiceImpl
 import info.proteo.cupcake.data.remote.service.AnnotationApiService
 import info.proteo.cupcake.data.remote.service.AnnotationService
 import info.proteo.cupcake.data.remote.service.AnnotationServiceImpl
@@ -87,6 +90,7 @@ import info.proteo.cupcake.data.remote.service.WebSocketManager
 import info.proteo.cupcake.data.remote.service.WebSocketService
 import info.proteo.cupcake.data.repository.AnnotationRepository
 import info.proteo.cupcake.data.repository.InstrumentRepository
+import info.proteo.cupcake.data.repository.InstrumentUsageRepository
 import info.proteo.cupcake.data.repository.MessageRepository
 import info.proteo.cupcake.data.repository.MessageRepositoryImpl
 import info.proteo.cupcake.data.repository.MessageThreadRepository
@@ -786,6 +790,38 @@ object NetworkModule {
     @Singleton
     fun provideIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
 
+    @Provides
+    @Singleton
+    fun provideInstrumentUsageApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): InstrumentUsageApiService {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
+            .build()
+            .create(InstrumentUsageApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideInstrumentUsageService(
+        instrumentUsageServiceImpl: InstrumentUsageServiceImpl
+    ): InstrumentUsageService {
+        return instrumentUsageServiceImpl
+    }
+
+    @Provides
+    @Singleton
+    fun provideInstrumentUsageRepository(
+        instrumentUsageService: InstrumentUsageService
+    ): InstrumentUsageRepository {
+        return InstrumentUsageRepository(
+            instrumentUsageService
+        )
+    }
 }
 
 class JsonResponseInterceptor : Interceptor {

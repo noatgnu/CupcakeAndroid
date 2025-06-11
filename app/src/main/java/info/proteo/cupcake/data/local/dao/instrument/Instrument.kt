@@ -56,4 +56,8 @@ interface InstrumentUsageDao {
 
     @Query("DELETE FROM instrument_usage")
     suspend fun deleteAll()
+
+    suspend fun insertAll(usages: List<InstrumentUsageEntity>) {
+        usages.forEach { insert(it) }
+    }
 }

@@ -275,6 +275,22 @@ object RoomMigrations {
             )
         """)
 
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS recent_session
+                (id INTEGER PRIMARY KEY NOT NULL,
+                session_id INTEGER NOT NULL,
+                session_unique_id TEXT NOT NULL,
+                session_name TEXT,
+                protocol_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                protocol_name TEXT,
+                last_accessed TEXT NOT NULL,
+                FOREIGN KEY (session_id) REFERENCES session(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+                FOREIGN KEY (protocol_id) REFERENCES protocol_model(id) ON DELETE CASCADE)
+        """.trimIndent())
+
+
         // Time tracking
         database.execSQL("""
             CREATE TABLE IF NOT EXISTS time_keeper (
@@ -457,12 +473,12 @@ object RoomMigrations {
             CREATE TABLE IF NOT EXISTS instrument_usage (
                 id INTEGER PRIMARY KEY NOT NULL,
                 instrument INTEGER NOT NULL,
-                user TEXT NOT NULL,
+                user INTEGER NOT NULL,
                 start_time TEXT NOT NULL,
                 end_time TEXT,
                 notes TEXT,
                 FOREIGN KEY (instrument) REFERENCES instrument(id) ON DELETE CASCADE,
-                FOREIGN KEY (user) REFERENCES user(username)
+                FOREIGN KEY (user) REFERENCES user(id) ON DELETE CASCADE
             )
         """)
 
@@ -771,6 +787,8 @@ object RoomMigrations {
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_support_info_manufacturer_contact ON support_information_manufacturer_contact(support_information_id)")
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_protocol_step_next_from ON protocol_step_next_relation(from_step)")
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_protocol_step_next_to ON protocol_step_next_relation(to_step)")
-
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_recent_session_session ON recent_session(session_id)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_recent_session_user ON recent_session(user_id)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_recent_session_protocol ON recent_session(protocol_id)")
     }
 }
