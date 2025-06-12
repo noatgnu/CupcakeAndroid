@@ -13,8 +13,10 @@ import info.proteo.cupcake.data.remote.model.protocol.Session
 import info.proteo.cupcake.data.remote.model.protocol.StepReagent
 import info.proteo.cupcake.data.remote.model.reagent.ReagentAction
 import info.proteo.cupcake.data.remote.model.annotation.Annotation
+import info.proteo.cupcake.data.remote.model.annotation.AnnotationWithPermissions
 import info.proteo.cupcake.data.remote.model.instrument.Instrument
 import info.proteo.cupcake.data.remote.model.reagent.StoredReagent
+import info.proteo.cupcake.data.remote.service.CreateAnnotationRequest
 import info.proteo.cupcake.data.remote.service.SessionService
 import info.proteo.cupcake.data.repository.AnnotationRepository
 import info.proteo.cupcake.data.repository.InstrumentRepository
@@ -29,12 +31,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import okhttp3.MultipartBody
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import javax.inject.Inject
 import kotlin.text.format
+import kotlin.text.get
 
 
 data class DisplayableStepReagent(
@@ -68,8 +72,8 @@ class SessionViewModel @Inject constructor(
     private val _currentStepReagentInfo = MutableStateFlow<List<DisplayableStepReagent>>(emptyList())
     val currentStepReagentInfo: StateFlow<List<DisplayableStepReagent>> = _currentStepReagentInfo.asStateFlow()
 
-    private val _stepAnnotations = MutableStateFlow<List<Annotation>>(emptyList())
-    val stepAnnotations: StateFlow<List<Annotation>> = _stepAnnotations.asStateFlow()
+    private val _stepAnnotations = MutableStateFlow<List<AnnotationWithPermissions>>(emptyList())
+    val stepAnnotations: StateFlow<List<AnnotationWithPermissions>> = _stepAnnotations.asStateFlow()
 
     private val _hasEditPermission = MutableStateFlow(false)
     val hasEditPermission: StateFlow<Boolean> = _hasEditPermission.asStateFlow()
@@ -80,7 +84,9 @@ class SessionViewModel @Inject constructor(
     private val _instruments = MutableStateFlow<List<Instrument>>(emptyList())
     val instruments: StateFlow<List<Instrument>> = _instruments.asStateFlow()
 
-    fun updateRecentSession(session: Session, protocolId: Int, protocolName: String?) {
+
+
+    fun updateRecentSession(session: Session, protocolId: Int, protocolName: String?, stepId: Int?) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val activeUser = userRepository.getUserFromActivePreference()
@@ -89,14 +95,14 @@ class SessionViewModel @Inject constructor(
                         timeZone = TimeZone.getTimeZone("UTC")
                     }.format(Date())
 
-                    // Check if this session already exists for this user
                     val recentS = recentSessionDao.getRecentSessionsByUser(activeUser.id, 100).first()
                     val existingSession = recentS.find { it.sessionUniqueId == session.uniqueId }
                     if (existingSession != null) {
                         val updatedSession = existingSession.copy(
                             lastAccessed = currentTime,
                             sessionName = existingSession.sessionName,
-                            protocolName = protocolName
+                            protocolName = protocolName,
+                            stepId = stepId
                         )
                         recentSessionDao.update(updatedSession)
                     } else {
@@ -108,7 +114,8 @@ class SessionViewModel @Inject constructor(
                             userId = activeUser.id,
                             protocolName = protocolName,
                             lastAccessed = currentTime,
-                            sessionName = session.name
+                            sessionName = session.name,
+                            stepId = stepId
                         )
                         recentSessionDao.insert(recentSession)
                     }
@@ -143,8 +150,38 @@ class SessionViewModel @Inject constructor(
                 ).collect { result ->
                     result.onSuccess { response ->
                         _hasMoreAnnotations.value = response.next != null
-                        _stepAnnotations.value = response.results
+                        val annotations = response.results
+                        if (annotations.isNotEmpty()) {
+                            val annotationIds = annotations.map { it.id }
+                            val permissionsResult = userRepository.checkAnnotationsPermission(annotationIds)
 
+                            if (permissionsResult.isSuccess) {
+                                val permissions = permissionsResult.getOrDefault(emptyList())
+                                Log.d("SessionViewModel", "Permissions loaded successfully: ${permissions.size} permissions")
+                                val permissionsMap = permissions.associate {
+                                    it.annotation to it.permission
+                                }
+                                Log.d("SessionViewModel", "Permissions map created with ${permissionsMap.size} entries")
+
+                                val annotationsWithPermissions = annotations.map { annotation ->
+                                    val permission = permissionsMap[annotation.id]
+                                    AnnotationWithPermissions(
+                                        annotation = annotation,
+                                        canEdit = permission?.edit == true,
+                                        canDelete = permission?.delete == true
+                                    )
+                                }
+
+                                _stepAnnotations.value = annotationsWithPermissions
+                            } else {
+                                // If permission check fails, assume no permissions
+                                _stepAnnotations.value = annotations.map {
+                                    AnnotationWithPermissions(it, false, false)
+                                }
+                            }
+                        }  else {
+                            _stepAnnotations.value = emptyList()
+                        }
                         Log.d("SessionViewModel", "Annotations loaded successfully: ${response.results.size} annotations")
                     }
                     _isLoading.value = false
@@ -322,6 +359,67 @@ class SessionViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Log.e("SessionViewModel", "Exception loading instruments", e)
+            }
+        }
+    }
+
+    fun createAnnotation(request: CreateAnnotationRequest, filePart: MultipartBody.Part?) {
+        viewModelScope.launch {
+            val response = annotationRepository.createAnnotationInRepository(request, filePart).getOrNull()
+            if (response != null) {
+                Log.d("SessionViewModel", "Annotation created successfully: ${response.id}")
+                // Optionally, you can refresh annotations for the current step
+                if (response.step != null && session.value != null) {
+                    loadAnnotationsForStep(response.step, session.value!!.uniqueId, 0, 10)
+                }
+            } else {
+                Log.e("SessionViewModel", "Failed to create annotation")
+            }
+        }
+    }
+
+    fun deleteAnnotation(annotationId: Int) {
+        viewModelScope.launch {
+            try {
+                val result = annotationRepository.deleteAnnotation(annotationId)
+                if (result.isSuccess) {
+                    // Remove the deleted annotation from the list
+                    _stepAnnotations.value = _stepAnnotations.value.filter {
+                        it.annotation.id != annotationId
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("SessionViewModel", "Error deleting annotation: ${e.message}")
+            }
+        }
+    }
+
+    fun renameAnnotation(annotationId: Int, annotationName: String?) {
+        viewModelScope.launch {
+            try {
+                if (annotationName.isNullOrBlank()) {
+                    Log.e("SessionViewModel", "Annotation name cannot be null or blank")
+                    return@launch
+                }
+                val result = annotationRepository.renameAnnotation(annotationId, annotationName)
+                if (result.isSuccess) {
+                    // Update the annotation in the list
+                    _stepAnnotations.value = _stepAnnotations.value.map { annotationWithPermissions ->
+                        if (annotationWithPermissions.annotation.id == annotationId) {
+                            AnnotationWithPermissions(
+                                annotation = annotationWithPermissions.annotation.copy(annotationName = annotationName),
+                                canEdit = annotationWithPermissions.canEdit,
+                                canDelete = annotationWithPermissions.canDelete
+                            )
+                        } else {
+                            annotationWithPermissions
+                        }
+                    }
+                } else {
+                    Log.e("SessionViewModel", "Failed to rename annotation: ${result.exceptionOrNull()?.message}")
+                }
+            } catch (e: Exception) {
+
             }
         }
     }

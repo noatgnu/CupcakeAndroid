@@ -1,0 +1,8 @@
+<actions>
+    <action intentName="actions.intent.CREATE_NOTE">
+        <fulfillment fulfillmentMode="actions.fulfillment.ACTIVITY">
+        </fulfillment>
+        <parameter name="text" type="SchemaOrg.Text" />
+        <parameter name="name" type="SchemaOrg.Text" />
+    </action>
+</actions>

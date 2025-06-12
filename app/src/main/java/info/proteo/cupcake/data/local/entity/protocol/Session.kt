@@ -26,7 +26,8 @@ data class RecentSessionEntity(
     @ColumnInfo(name = "protocol_id") val protocolId: Int,
     @ColumnInfo(name = "protocol_name") val protocolName: String?,
     @ColumnInfo(name = "user_id") val userId: Int,
-    @ColumnInfo(name = "last_accessed") val lastAccessed: String
+    @ColumnInfo(name = "last_accessed") val lastAccessed: String,
+    @ColumnInfo(name = "step_id") val stepId: Int? = null,
 ) {
     companion object {
         const val MAX_RECENT_SESSIONS = 5

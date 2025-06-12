@@ -2,19 +2,28 @@ package info.proteo.cupcake.ui.session
 
 import android.Manifest
 import android.app.Activity
-import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.MediaRecorder
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import android.widget.*
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.Button
+import android.widget.ImageView
+import android.widget.Spinner
+import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.widget.SearchView
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
@@ -22,37 +31,33 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.card.MaterialCardView
+import com.google.android.material.textfield.TextInputEditText
 import info.proteo.cupcake.R
 import info.proteo.cupcake.data.remote.model.instrument.Instrument
 import info.proteo.cupcake.data.remote.service.CreateAnnotationRequest
 import info.proteo.cupcake.data.repository.InstrumentRepository
-import info.proteo.cupcake.data.repository.UserRepository
 import info.proteo.cupcake.ui.instrument.InstrumentAdapter
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.io.IOException
+import java.text.DecimalFormat
 import java.text.SimpleDateFormat
-import java.util.*
-import kotlin.toString
+import java.util.Date
+import java.util.Locale
+import kotlin.compareTo
+import kotlin.div
+import kotlin.text.format
+import kotlin.text.toDouble
 
 class CreateAnnotationDialogHandler(
     private val fragment: Fragment,
     private val lifecycleOwner: LifecycleOwner,
     private val instrumentRepository: InstrumentRepository,
-    private val onAnnotationCreated: (CreateAnnotationRequest) -> Unit
+    private val onAnnotationCreated: (request: CreateAnnotationRequest, filePart: MultipartBody.Part?) -> Unit
 ) {
-    private var dialogView: View? = null
-    private var dialog: AlertDialog? = null
-
-    // Media handling variables
-    private var currentPhotoPath: String? = null
-    private var selectedImageUri: Uri? = null
-    private var recordedAudioUri: Uri? = null
-    private var recordedVideoUri: Uri? = null
-    private var selectedInstrumentId: Int? = null
-    private var selectedFileUri: Uri? = null
-    private var mediaRecorder: MediaRecorder? = null
     private var isRecording = false
     private var instrumentCurrentOffset = 0
     private var instrumentPageSize = 5
@@ -66,687 +71,839 @@ class CreateAnnotationDialogHandler(
     private var currentSearchQuery = ""
 
     private var instrumentListAdapter: InstrumentAdapter? = null
+    private var photoUri: Uri? = null
+    private var videoFile: File? = null
+    private var videoUri: Uri? = null
+    private var audioFile: File? = null
+    private var audioUri: Uri? = null
+    private var mediaRecorder: MediaRecorder? = null
+    private var isAudioRecording = false
+
+    private var selectedFileUri: Uri? = null
+
+    // Permission request launchers
+    private lateinit var cameraPermissionLauncher: ActivityResultLauncher<String>
+    private lateinit var audioPermissionLauncher: ActivityResultLauncher<String>
+    private lateinit var videoPermissionLauncher: ActivityResultLauncher<Array<String>>
+    private lateinit var storagePermissionLauncher: ActivityResultLauncher<String>
 
     // Activity result launchers
-    private val takePictureLauncher = fragment.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            currentPhotoPath?.let {
-                selectedImageUri = Uri.fromFile(File(it))
-                updateImagePreview()
+    private lateinit var takePictureLauncher: ActivityResultLauncher<Uri>
+    private lateinit var selectImageLauncher: ActivityResultLauncher<String>
+    private lateinit var selectFileLauncher: ActivityResultLauncher<String>
+    private lateinit var takeVideoLauncher: ActivityResultLauncher<Uri>
+
+    private var dialogView: View? = null
+
+    init {
+        // Initialize permission launchers
+        initPermissionLaunchers()
+        initActivityResultLaunchers()
+    }
+
+    private fun initPermissionLaunchers() {
+        cameraPermissionLauncher = fragment.registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted ->
+            if (isGranted) {
+                takePicture()
+            } else {
+                Toast.makeText(fragment.requireContext(), "Camera permission denied", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        audioPermissionLauncher = fragment.registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted ->
+            if (isGranted) {
+                startAudioRecording()
+            } else {
+                Toast.makeText(fragment.requireContext(), "Microphone permission denied", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        videoPermissionLauncher = fragment.registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { permissions ->
+            if (permissions.all { it.value }) {
+                startVideoRecording()
+            } else {
+                Toast.makeText(fragment.requireContext(), "Video recording permissions denied", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        storagePermissionLauncher = fragment.registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted ->
+            if (isGranted) {
+                openFilePicker()
+            } else {
+                Toast.makeText(fragment.requireContext(), "Storage permission denied", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-    private val pickImageLauncher = fragment.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            result.data?.data?.let { uri ->
-                selectedImageUri = uri
-                updateImagePreview()
+    private fun initActivityResultLaunchers() {
+        takePictureLauncher = fragment.registerForActivityResult(
+            ActivityResultContracts.TakePicture()
+        ) { success ->
+            if (success && photoUri != null) {
+                handleImageCaptured(photoUri!!)
+            }
+        }
+
+        selectImageLauncher = fragment.registerForActivityResult(
+            ActivityResultContracts.GetContent()
+        ) { uri ->
+            uri?.let { handleImageSelected(it) }
+        }
+
+        selectFileLauncher = fragment.registerForActivityResult(
+            ActivityResultContracts.GetContent()
+        ) { uri ->
+            uri?.let { handleFileSelected(it) }
+        }
+
+        takeVideoLauncher = fragment.registerForActivityResult(
+            ActivityResultContracts.CaptureVideo()
+        ) { success ->
+            if (success && videoUri != null) {
+                handleVideoCaptured(videoUri!!)
             }
         }
     }
 
-    private val videoRecordLauncher = fragment.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            result.data?.data?.let { uri ->
-                recordedVideoUri = uri
-                dialogView?.findViewById<TextView>(R.id.textVideoStatus)?.apply {
-                    text = "Video recorded successfully"
-                    visibility = View.VISIBLE
-                }
-            }
-        }
-    }
-
-    private val pickFileLauncher = fragment.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            result.data?.data?.let { uri ->
-                selectedFileUri = uri
-                val fileName = getFileNameFromUri(uri)
-                dialogView?.findViewById<TextView>(R.id.textSelectedFileName)?.apply {
-                    text = "Selected file: $fileName"
-                    visibility = View.VISIBLE
-                }
-            }
-        }
-    }
-
-    private fun showInstrumentSelectionDialog() {
+    fun showCreateAnnotationDialog(sessionId: String, stepId: Int) {
         val dialogView = LayoutInflater.from(fragment.requireContext())
-            .inflate(R.layout.dialog_instrument_selection, null)
+            .inflate(R.layout.dialog_create_annotation, null)
 
+        this.dialogView = dialogView
         // Initialize UI components
-        val searchView = dialogView.findViewById<SearchView>(R.id.searchInstrument)
-        val recyclerViewInstruments = dialogView.findViewById<RecyclerView>(R.id.recyclerViewInstruments)
-        val noResultsText = dialogView.findViewById<TextView>(R.id.textViewNoResults)
-        val progressBar = dialogView.findViewById<ProgressBar>(R.id.progressBar)
-        val prevButton = dialogView.findViewById<Button>(R.id.buttonPrevPage)
-        val nextButton = dialogView.findViewById<Button>(R.id.buttonNextPage)
-        // val selectedInstrumentText = dialogView.findViewById<TextView>(R.id.textSelectedInstrument) // This is for the selection dialog's own text view
+        val spinnerAnnotationType = dialogView.findViewById<Spinner>(R.id.spinnerAnnotationType)
+        val textAnnotationContainer = dialogView.findViewById<View>(R.id.textAnnotationContainer)
+        val imageAnnotationContainer = dialogView.findViewById<View>(R.id.imageAnnotationContainer)
+        val fileAnnotationContainer = dialogView.findViewById<View>(R.id.fileAnnotationContainer)
+        val audioAnnotationContainer = dialogView.findViewById<View>(R.id.audioAnnotationContainer)
+        val videoAnnotationContainer = dialogView.findViewById<View>(R.id.videoAnnotationContainer)
+        val calculatorAnnotationContainer = dialogView.findViewById<View>(R.id.calculatorAnnotationContainer)
+        val molarityCalculatorContainer = dialogView.findViewById<View>(R.id.molarityCalculatorContainer)
+        val instrumentAnnotationContainer = dialogView.findViewById<View>(R.id.instrumentAnnotationContainer)
+        val editTextAnnotation = dialogView.findViewById<TextInputEditText>(R.id.editTextAnnotation)
 
-        // Setup RecyclerView
-        recyclerViewInstruments.layoutManager = LinearLayoutManager(fragment.requireContext())
+        // Hide notes container - should never be used for annotations
+        val notesContainer = dialogView.findViewById<View>(R.id.notesContainer)
+        notesContainer.visibility = View.GONE
 
-        // Create and set adapter
-        instrumentListAdapter = InstrumentAdapter { instrumentId ->
-            lifecycleOwner.lifecycleScope.launch {
-                instrumentRepository.getInstrumentPermissionFor(instrumentId, "").collect { result ->
-                    result.onSuccess { permission ->
-                        val hasPermission = permission.canBook || permission.canManage
-                        if (hasPermission) {
-                            selectedInstrumentId = instrumentId
-                            // Find the selected instrument in the adapter's current list
-                            instrumentListAdapter?.currentList?.find { it.id == instrumentId }?.let { instrument ->
-                                // Update the TextView in the main CreateAnnotationDialog
-                                this@CreateAnnotationDialogHandler.dialogView?.findViewById<TextView>(R.id.textSelectedInstrument)?.apply {
-                                    text = "Selected: ${instrument.instrumentName}"
-                                    visibility = View.VISIBLE
-                                }
-                                selectedInstrument = instrument // Store the selected instrument object
-                            }
-                            // Dismiss the instrument selection dialog
-                            // 'this.dialog' should be the AlertDialog instance of the instrument selection dialog
-                            this@CreateAnnotationDialogHandler.dialog?.dismiss()
-                        } else {
-                            Toast.makeText(fragment.context, "You don't have permission to use this instrument", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                    result.onFailure {
-                        Toast.makeText(fragment.context, "Failed to check permission", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-        }
-        recyclerViewInstruments.adapter = instrumentListAdapter
+        // Reset state
+        selectedFileUri = null
+        photoUri = null
+        videoUri = null
+        selectedInstrument = null
 
-        // Set up pagination buttons
-        updatePaginationButtons(prevButton, nextButton) // This function needs to be defined or accessible
-
-        prevButton.setOnClickListener {
-            if (instrumentListAdapter != null) {
-                if (currentInstrumentPage > 0) {
-                    currentInstrumentPage--
-                    loadInstruments(instrumentListAdapter!!, searchView.query.toString(), progressBar, noResultsText, recyclerViewInstruments, prevButton, nextButton)
-                }
-            }
-
-        }
-
-        nextButton.setOnClickListener {
-            if (hasMoreInstruments) {
-                currentInstrumentPage++
-                loadInstruments(instrumentListAdapter!!, searchView.query.toString(), progressBar, noResultsText, recyclerViewInstruments, prevButton, nextButton)
-            }
-        }
-
-        // Set up search functionality
-        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean = false
-
-            override fun onQueryTextChange(newText: String?): Boolean {
-                currentSearchQuery = newText ?: ""
-                currentInstrumentPage = 0 // Reset to first page on new search
-                loadInstruments(instrumentListAdapter!!, currentSearchQuery, progressBar, noResultsText, recyclerViewInstruments, prevButton, nextButton)
-                return true
-            }
-        })
-
-        // Create and show dialog
-        val instrumentDialog = AlertDialog.Builder(fragment.requireContext())
-            .setTitle("Select Instrument")
-            .setView(dialogView)
-            .setNegativeButton("Cancel", null)
-            .create()
-
-        // Initial load of instruments
-        loadInstruments(instrumentListAdapter!!, "", progressBar, noResultsText, recyclerViewInstruments, prevButton, nextButton)
-
-        instrumentDialog.show()
-        this.dialog = instrumentDialog
-    }
-
-
-    private fun checkInstrumentPermission(instrumentId: Int, callback: (Boolean) -> Unit) {
-        lifecycleOwner.lifecycleScope.launch {
-            try {
-                instrumentRepository.getInstrumentPermissionFor(instrumentId, "").collect { result ->
-                    result.onSuccess { permission ->
-                        val hasPermission = permission.canBook || permission.canManage
-                        callback(hasPermission)
-                    }
-
-                    result.onFailure {
-                        callback(false)
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error checking instrument permission", e)
-                callback(false)
-            }
-        }
-    }
-
-    private fun setupAnnotationTypeSpinner() {
-        val spinner = dialogView?.findViewById<Spinner>(R.id.spinnerAnnotationType)
+        // Set up annotation types
         val annotationTypes = arrayOf("Text", "Image", "File", "Audio", "Video", "Calculator", "Molarity Calculator", "Instrument")
         val adapter = ArrayAdapter(fragment.requireContext(), android.R.layout.simple_spinner_item, annotationTypes)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinner?.adapter = adapter
+        spinnerAnnotationType.adapter = adapter
 
-        spinner?.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+        // Set up the UI elements for each annotation type
+        setupImageAnnotationContainer(dialogView)
+        setupFileAnnotationContainer(dialogView)
+        setupAudioAnnotationContainer(dialogView)
+        setupVideoAnnotationContainer(dialogView)
+        setupInstrumentAnnotationContainer(dialogView)
+
+        // Handle annotation type selection
+        spinnerAnnotationType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                updateContainerVisibility(annotationTypes[position])
+                // Hide all containers first
+                textAnnotationContainer.visibility = View.GONE
+                imageAnnotationContainer.visibility = View.GONE
+                fileAnnotationContainer.visibility = View.GONE
+                audioAnnotationContainer.visibility = View.GONE
+                videoAnnotationContainer.visibility = View.GONE
+                calculatorAnnotationContainer.visibility = View.GONE
+                molarityCalculatorContainer.visibility = View.GONE
+                instrumentAnnotationContainer.visibility = View.GONE
+
+                // Show only relevant container
+                when (annotationTypes[position]) {
+                    "Text" -> textAnnotationContainer.visibility = View.VISIBLE
+                    "Image" -> imageAnnotationContainer.visibility = View.VISIBLE
+                    "File" -> {
+                        fileAnnotationContainer.visibility = View.VISIBLE
+                        textAnnotationContainer.visibility = View.VISIBLE // Show text for file annotations
+                    }
+                    "Audio" -> audioAnnotationContainer.visibility = View.VISIBLE
+                    "Video" -> videoAnnotationContainer.visibility = View.VISIBLE
+                    "Calculator" -> calculatorAnnotationContainer.visibility = View.VISIBLE
+                    "Molarity Calculator" -> molarityCalculatorContainer.visibility = View.VISIBLE
+                    "Instrument" -> instrumentAnnotationContainer.visibility = View.VISIBLE
+                }
             }
 
             override fun onNothingSelected(parent: AdapterView<*>) {
                 // Do nothing
             }
         }
+
+        // Create and show the dialog
+        val dialog = AlertDialog.Builder(fragment.requireContext())
+            .setTitle("Create Annotation")
+            .setView(dialogView)
+            .setPositiveButton("Create", null) // Set to null initially to prevent auto-dismiss
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        dialog.show()
+
+        // Set up the positive button click listener
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val selectedType = annotationTypes[spinnerAnnotationType.selectedItemPosition]
+            val annotationText = editTextAnnotation.text.toString().trim()
+
+            // Validate inputs based on type
+            if (validateAnnotation(selectedType, annotationText)) {
+                // Create the annotation request
+                var request = CreateAnnotationRequest(
+                    annotation = annotationText,
+                    annotationType = selectedType.lowercase(),
+                    step = stepId,
+                    session = sessionId
+                )
+
+                // Add additional data for specific annotation types
+                when (selectedType) {
+                    "Instrument" -> {
+                        selectedInstrument?.let { instrument ->
+                            request = request.copy(
+                                instrument = instrument.id
+                            )
+                        }
+                    }
+                }
+
+                val filePart: MultipartBody.Part? = when (selectedType) {
+                    "Image" -> {
+                        photoUri?.let { uri ->
+                            createFilePartFromUri(uri, "image/*")
+                        }
+                    }
+                    "Audio" -> {
+                        audioUri?.let { uri ->
+                            createFilePartFromUri(uri, "audio/*")
+                        }
+                    }
+                    "Video" -> {
+                        videoUri?.let { uri ->
+                            createFilePartFromUri(uri, "video/*")
+                        }
+                    }
+                    "File" -> {
+                        selectedFileUri?.let { uri ->
+                            createFilePartFromUri(uri, null)
+                        }
+                    }
+                    else -> null
+                }
+
+                onAnnotationCreated(request, filePart)
+                dialog.dismiss()
+            }
+        }
     }
 
-    private fun updateContainerVisibility(selectedType: String) {
-        val containers = mapOf(
-            "Text" to R.id.textAnnotationContainer,
-            "Image" to R.id.imageAnnotationContainer,
-            "File" to R.id.fileAnnotationContainer,
-            "Audio" to R.id.audioAnnotationContainer,
-            "Video" to R.id.videoAnnotationContainer,
-            "Calculator" to R.id.calculatorAnnotationContainer,
-            "Molarity Calculator" to R.id.molarityCalculatorContainer,
-            "Instrument" to R.id.instrumentAnnotationContainer
-        )
+    private fun validateAnnotation(type: String, text: String): Boolean {
+        when (type) {
+            "Text" -> {
+                if (text.isEmpty()) {
+                    Toast.makeText(fragment.requireContext(), "Please enter text for the annotation", Toast.LENGTH_SHORT).show()
+                    return false
+                }
+            }
+            "File" -> {
+                if (selectedFileUri == null) {
+                    Toast.makeText(fragment.requireContext(), "Please select a file", Toast.LENGTH_SHORT).show()
+                    return false
+                }
+            }
+            "Image" -> {
+                if (photoUri == null) {
+                    Toast.makeText(fragment.requireContext(), "Please capture or select an image", Toast.LENGTH_SHORT).show()
+                    return false
+                }
+            }
+            "Video" -> {
+                if (videoUri == null) {
+                    Toast.makeText(fragment.requireContext(), "Please capture a video", Toast.LENGTH_SHORT).show()
+                    return false
+                }
+            }
+            "Audio" -> {
+                if (audioUri == null) {
+                    Toast.makeText(fragment.requireContext(), "Please record audio", Toast.LENGTH_SHORT).show()
+                    return false
+                }
+            }
+            "Instrument" -> {
+                if (selectedInstrument == null) {
+                    Toast.makeText(fragment.requireContext(), "Please select an instrument", Toast.LENGTH_SHORT).show()
+                    return false
+                }
+            }
+        }
+        return true
+    }
 
-        containers.forEach { (type, containerId) ->
-            dialogView?.findViewById<View>(containerId)?.visibility =
-                if (type == selectedType) View.VISIBLE else View.GONE
+    private fun setupImageAnnotationContainer(dialogView: View) {
+        val buttonTakePhoto = dialogView.findViewById<Button>(R.id.buttonTakePhoto)
+        val buttonSelectImage = dialogView.findViewById<Button>(R.id.buttonSelectImage)
+        val previewImage = dialogView.findViewById<ImageView>(R.id.previewImage)
+
+        buttonTakePhoto.setOnClickListener {
+            checkCameraPermission()
         }
 
-        // Notes container is visible for all types except calculators
-        dialogView?.findViewById<View>(R.id.notesContainer)?.visibility =
-            if (selectedType == "Calculator" || selectedType == "Molarity Calculator") View.GONE else View.VISIBLE
+        buttonSelectImage.setOnClickListener {
+            selectImageLauncher.launch("image/*")
+        }
+
+        photoUri?.let {
+            uri -> updateImagePreview(dialogView)
+        }
     }
 
-    private fun setupButtonListeners(sessionId: String, stepId: Int) {
-        // Image buttons
-        dialogView?.findViewById<Button>(R.id.buttonTakePhoto)?.setOnClickListener { captureImage() }
-        dialogView?.findViewById<Button>(R.id.buttonSelectImage)?.setOnClickListener { selectImageFromGallery() }
+    private fun updateImagePreview(dialogView: View) {
+        val previewImage = dialogView.findViewById<ImageView>(R.id.previewImage)
+        photoUri?.let { uri ->
+            try {
+                // Clear any previous image and set the new one
+                previewImage.setImageURI(null)
+                previewImage.setImageURI(uri)
+                previewImage.visibility = View.VISIBLE
+            } catch (e: Exception) {
+                Log.e("CreateAnnotationDialog", "Error loading image preview", e)
+                Toast.makeText(
+                    fragment.requireContext(),
+                    "Failed to load image preview",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
 
-        // File button
-        dialogView?.findViewById<Button>(R.id.buttonSelectFile)?.setOnClickListener { selectFile() }
+    private fun setupFileAnnotationContainer(dialogView: View) {
+        val buttonSelectFile = dialogView.findViewById<Button>(R.id.buttonSelectFile)
+        val textSelectedFileName = dialogView.findViewById<TextView>(R.id.textSelectedFileName)
 
-        // Audio button
-        dialogView?.findViewById<Button>(R.id.buttonRecordAudio)?.setOnClickListener {
-            if (isRecording) {
+        buttonSelectFile.setOnClickListener {
+            checkStoragePermission()
+        }
+    }
+
+    private fun setupAudioAnnotationContainer(dialogView: View) {
+        val buttonRecordAudio = dialogView.findViewById<Button>(R.id.buttonRecordAudio)
+        val textAudioStatus = dialogView.findViewById<TextView>(R.id.textAudioStatus)
+
+        buttonRecordAudio.setOnClickListener {
+            if (isAudioRecording) {
                 stopAudioRecording()
             } else {
-                startAudioRecording()
+                checkAudioPermission()
             }
         }
-
-        // Video button
-        dialogView?.findViewById<Button>(R.id.buttonRecordVideo)?.setOnClickListener { startVideoRecording() }
-
-        // Instrument button
-        dialogView?.findViewById<Button>(R.id.buttonSelectInstrument)?.setOnClickListener { showInstrumentSelectionDialog() }
     }
 
-    private fun createAnnotation(sessionId: String, stepId: Int) {
-        val spinner = dialogView?.findViewById<Spinner>(R.id.spinnerAnnotationType)
-        val selectedType = spinner?.selectedItem as String
+    private fun setupVideoAnnotationContainer(dialogView: View) {
+        val buttonRecordVideo = dialogView.findViewById<Button>(R.id.buttonRecordVideo)
+        val textVideoStatus = dialogView.findViewById<TextView>(R.id.textVideoStatus)
 
-        val annotationText = when (selectedType) {
-            "Text" -> dialogView?.findViewById<EditText>(R.id.editTextAnnotation)?.text?.toString() ?: ""
-            "Calculator" -> "{}" // Empty JSON for calculator
-            "Molarity Calculator" -> "[]" // Empty array for molarity calculator
-            else -> ""
-        }
-
-        val notes = dialogView?.findViewById<EditText>(R.id.editTextNotes)?.text?.toString()
-
-        val annotationType = when (selectedType) {
-            "Text" -> "text"
-            "Image" -> "image"
-            "File" -> "file"
-            "Audio" -> "audio"
-            "Video" -> "video"
-            "Calculator" -> "calculator"
-            "Molarity Calculator" -> "mcalculator"
-            "Instrument" -> "instrument"
-            else -> "text"
-        }
-
-        val request = CreateAnnotationRequest(
-            annotation = annotationText,
-            annotationType = annotationType,
-            session = sessionId,
-            step = stepId,
-            storedReagent = null,
-            maintenance = null,
-            instrument = selectedInstrumentId,
-            timeStarted = null,
-            timeEnded = null,
-            instrumentJob = null,
-            instrumentUserType = null
-        )
-
-        onAnnotationCreated(request)
-    }
-
-    private fun captureImage() {
-        // Check if camera permission is granted
-        if (ContextCompat.checkSelfPermission(fragment.requireContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            fragment.requestPermissions(arrayOf(Manifest.permission.CAMERA), REQUEST_CAMERA_PERMISSION)
-            return
-        }
-
-        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        val photoFile = createImageFile()
-        photoFile?.let {
-            val photoURI = FileProvider.getUriForFile(
-                fragment.requireContext(),
-                "info.proteo.cupcake.fileprovider",
-                it
-            )
-            intent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
-            takePictureLauncher.launch(intent)
+        buttonRecordVideo.setOnClickListener {
+            checkVideoPermission()
         }
     }
 
-    private fun selectImageFromGallery() {
-        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        pickImageLauncher.launch(intent)
-    }
+    private fun setupInstrumentAnnotationContainer(dialogView: View) {
+        val buttonSelectInstrument = dialogView.findViewById<Button>(R.id.buttonSelectInstrument)
+        val textSelectedInstrument = dialogView.findViewById<TextView>(R.id.textSelectedInstrument)
 
-    private fun createImageFile(): File? {
-        try {
-            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val storageDir = fragment.requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-            return File.createTempFile(
-                "JPEG_${timeStamp}_",
-                ".jpg",
-                storageDir
-            ).apply {
-                currentPhotoPath = absolutePath
-            }
-        } catch (e: IOException) {
-            Log.e(TAG, "Error creating image file", e)
-            return null
+        buttonSelectInstrument.setOnClickListener {
+            showInstrumentSelectionDialog(textSelectedInstrument)
         }
     }
 
-    private fun startAudioRecording() {
-        // Check for recording permission
-        if (ContextCompat.checkSelfPermission(fragment.requireContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            fragment.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST_AUDIO_PERMISSION)
-            return
-        }
+    private fun showInstrumentSelectionDialog(textSelectedInstrument: TextView) {
+        val dialogView = LayoutInflater.from(fragment.requireContext())
+            .inflate(R.layout.dialog_instrument_selection, null)
 
-        val fileName = "${fragment.requireContext().externalCacheDir?.absolutePath}/audio_recording.3gp"
-        mediaRecorder = MediaRecorder().apply {
-            setAudioSource(MediaRecorder.AudioSource.MIC)
-            setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-            setOutputFile(fileName)
-            setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+        val searchView = dialogView.findViewById<SearchView>(R.id.searchInstrument)
+        val recyclerView = dialogView.findViewById<RecyclerView>(R.id.recyclerViewInstruments)
+        val progressBar = dialogView.findViewById<View>(R.id.progressBar)
+        val noResultsText = dialogView.findViewById<TextView>(R.id.textViewNoResults)
+        val buttonPrevPage = dialogView.findViewById<Button>(R.id.buttonPrevPage)
+        val buttonNextPage = dialogView.findViewById<Button>(R.id.buttonNextPage)
 
-            try {
-                prepare()
-                start()
-                isRecording = true
+        // Setup recycler view
+        recyclerView.layoutManager = LinearLayoutManager(fragment.requireContext())
+        instrumentListAdapter = InstrumentAdapter { instrumentId ->
+            // Handle instrument selection
+            lifecycleOwner.lifecycleScope.launch {
+                progressBar.visibility = View.VISIBLE
+                val result = instrumentRepository.getInstrument(instrumentId)
+                progressBar.visibility = View.GONE
+                result.collect {
+                    it.onSuccess { instrument ->
+                        selectedInstrument = instrument
+                        textSelectedInstrument.text = "Selected: ${instrument.instrumentName}"
+                        textSelectedInstrument.visibility = View.VISIBLE
 
-                // Update UI to show recording in progress
-                dialogView?.findViewById<TextView>(R.id.textAudioStatus)?.apply {
-                    text = "Recording in progress..."
-                    visibility = View.VISIBLE
+                    }
+                    it.onFailure { error ->
+                        Toast.makeText(fragment.requireContext(), "Error: ${error.message}", Toast.LENGTH_SHORT).show()
+                    }
                 }
 
-                // Change button text
-                dialogView?.findViewById<Button>(R.id.buttonRecordAudio)?.text = "Stop Recording"
-
-                recordedAudioUri = Uri.fromFile(File(fileName))
-            } catch (e: Exception) {
-                Log.e(TAG, "Error preparing media recorder", e)
-                Toast.makeText(fragment.requireContext(), "Failed to start recording", Toast.LENGTH_SHORT).show()
             }
         }
-    }
+        recyclerView.adapter = instrumentListAdapter
 
-    private fun stopAudioRecording() {
-        if (isRecording) {
-            try {
-                mediaRecorder?.apply {
-                    stop()
-                    release()
+        // Initial loading of instruments
+        loadInstruments(searchView.query.toString(), recyclerView, progressBar, noResultsText, buttonPrevPage, buttonNextPage)
+
+        // Search functionality
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                currentSearchQuery = query ?: ""
+                currentInstrumentPage = 0
+                loadInstruments(currentSearchQuery, recyclerView, progressBar, noResultsText, buttonPrevPage, buttonNextPage)
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                if (newText.isNullOrBlank()) {
+                    currentSearchQuery = ""
+                    currentInstrumentPage = 0
+                    loadInstruments(currentSearchQuery, recyclerView, progressBar, noResultsText, buttonPrevPage, buttonNextPage)
                 }
-                mediaRecorder = null
-                isRecording = false
+                return true
+            }
+        })
 
-                // Update UI to show recording completed
-                dialogView?.findViewById<TextView>(R.id.textAudioStatus)?.apply {
-                    text = "Recording completed"
-                    visibility = View.VISIBLE
-                }
-
-                // Reset button text
-                dialogView?.findViewById<Button>(R.id.buttonRecordAudio)?.text = "Record Audio"
-            } catch (e: Exception) {
-                Log.e(TAG, "Error stopping media recorder", e)
-                Toast.makeText(fragment.requireContext(), "Failed to stop recording", Toast.LENGTH_SHORT).show()
+        // Pagination
+        buttonPrevPage.setOnClickListener {
+            if (currentInstrumentPage > 0) {
+                currentInstrumentPage--
+                loadInstruments(currentSearchQuery, recyclerView, progressBar, noResultsText, buttonPrevPage, buttonNextPage)
             }
         }
-    }
 
-    private fun startVideoRecording() {
-        // Check for camera and audio recording permissions
-        if (ContextCompat.checkSelfPermission(fragment.requireContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(fragment.requireContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            fragment.requestPermissions(
-                arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO),
-                REQUEST_VIDEO_PERMISSION
-            )
-            return
-        }
-
-        val intent = Intent(MediaStore.ACTION_VIDEO_CAPTURE)
-        videoRecordLauncher.launch(intent)
-    }
-
-    private fun selectFile() {
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "*/*"
-        }
-        pickFileLauncher.launch(intent)
-    }
-
-
-    private suspend fun checkInstrumentBookingPermission(instrumentId: Int): Boolean {
-        return try {
-            var canBook = false
-            instrumentRepository.getInstrumentPermission(instrumentId).collect { result ->
-                result.onSuccess { permission ->
-                    canBook = permission.canBook
-                }
-            }
-            canBook
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-
-
-    private fun updateImagePreview() {
-        dialogView?.findViewById<ImageView>(R.id.previewImage)?.apply {
-            visibility = View.VISIBLE
-            setImageURI(selectedImageUri)
-        }
-    }
-
-    private fun getFileNameFromUri(uri: Uri): String {
-        val context = fragment.requireContext()
-        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val nameIndex = cursor.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME)
-                if (nameIndex >= 0) {
-                    return cursor.getString(nameIndex)
-                }
+        buttonNextPage.setOnClickListener {
+            if (hasMoreInstruments) {
+                currentInstrumentPage++
+                loadInstruments(currentSearchQuery, recyclerView, progressBar, noResultsText, buttonPrevPage, buttonNextPage)
             }
         }
-        return uri.lastPathSegment ?: "Unknown file"
-    }
 
-    private fun updatePaginationButtons(prevButton: Button, nextButton: Button) {
-        prevButton.isEnabled = currentInstrumentPage > 0
-        nextButton.isEnabled = hasMoreInstruments
+        val dialog = AlertDialog.Builder(fragment.requireContext())
+            .setTitle("Select Instrument")
+            .setView(dialogView)
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        dialog.show()
     }
 
     private fun loadInstruments(
-        adapter: InstrumentAdapter,
         query: String,
-        progressBar: ProgressBar,
-        noResultsText: TextView,
         recyclerView: RecyclerView,
-        prevButton: Button,
-        nextButton: Button
+        progressBar: View,
+        noResultsText: TextView,
+        buttonPrevPage: Button,
+        buttonNextPage: Button
     ) {
         progressBar.visibility = View.VISIBLE
+        recyclerView.visibility = View.GONE
         noResultsText.visibility = View.GONE
 
         val offset = currentInstrumentPage * instrumentsPerPage
+        val limit = instrumentsPerPage
 
         lifecycleOwner.lifecycleScope.launch {
             try {
-                instrumentRepository.getInstruments(
-                    search = query.ifEmpty { null },
-                    limit = instrumentsPerPage,
+                val result = instrumentRepository.getInstruments(
+                    search = if (query.isNotEmpty()) query else null,
+                    limit = limit,
                     offset = offset
-                ).collect { result ->
-                    progressBar.visibility = View.GONE
+                ).collect {
+                    it.onSuccess { response ->
+                        progressBar.visibility = View.GONE
 
-                    result.onSuccess { response ->
-                        val instruments = response.results
-                        hasMoreInstruments = response.next != null
-
-                        if (instruments.isEmpty()) {
+                        if (response.results.isEmpty()) {
                             noResultsText.visibility = View.VISIBLE
                             recyclerView.visibility = View.GONE
                         } else {
                             noResultsText.visibility = View.GONE
                             recyclerView.visibility = View.VISIBLE
-                            adapter.submitList(instruments)
+                            instrumentListAdapter?.submitList(response.results)
                         }
 
-                        // Update pagination buttons
-                        updatePaginationButtons(prevButton, nextButton)
+                        hasMoreInstruments = response.next != null
+                        buttonPrevPage.isEnabled = currentInstrumentPage > 0
+                        buttonNextPage.isEnabled = hasMoreInstruments
                     }
-
-                    result.onFailure { error ->
-                        Toast.makeText(fragment.context, "Error: ${error.message}", Toast.LENGTH_SHORT).show()
+                    it.onFailure { error ->
+                        progressBar.visibility = View.GONE
                         noResultsText.visibility = View.VISIBLE
+                        noResultsText.text = "Error loading instruments: ${error.message}"
                         recyclerView.visibility = View.GONE
                     }
                 }
             } catch (e: Exception) {
                 progressBar.visibility = View.GONE
                 noResultsText.visibility = View.VISIBLE
+                noResultsText.text = "Error: ${e.message}"
                 recyclerView.visibility = View.GONE
-                Log.e(TAG, "Error loading instruments", e)
             }
         }
     }
 
-    fun showCreateAnnotationDialog(sessionId: String, stepId: Int) {
-        // Inflate the dialog layout
-        dialogView = LayoutInflater.from(fragment.requireContext())
-            .inflate(R.layout.dialog_create_annotation, null)
-
-        // Get references to relevant views
-        val spinnerAnnotationType = dialogView?.findViewById<Spinner>(R.id.spinnerAnnotationType)
-        val textAnnotationContainer = dialogView?.findViewById<LinearLayout>(R.id.textAnnotationContainer)
-        val fileAnnotationContainer = dialogView?.findViewById<MaterialCardView>(R.id.fileAnnotationContainer)
-        val imageAnnotationContainer = dialogView?.findViewById<MaterialCardView>(R.id.imageAnnotationContainer)
-        val audioAnnotationContainer = dialogView?.findViewById<MaterialCardView>(R.id.audioAnnotationContainer)
-        val videoAnnotationContainer = dialogView?.findViewById<MaterialCardView>(R.id.videoAnnotationContainer)
-        val calculatorAnnotationContainer = dialogView?.findViewById<LinearLayout>(R.id.calculatorAnnotationContainer)
-        val molarityCalculatorContainer = dialogView?.findViewById<LinearLayout>(R.id.molarityCalculatorContainer)
-        val instrumentAnnotationContainer = dialogView?.findViewById<MaterialCardView>(R.id.instrumentAnnotationContainer)
-        val notesContainer = dialogView?.findViewById<LinearLayout>(R.id.notesContainer)
-
-        notesContainer?.visibility = View.GONE
-
-        // Set up annotation type spinner
-        val annotationTypes = arrayOf("Text", "File", "Image", "Audio", "Video", "Calculator", "Molarity Calculator", "Instrument")
-        val adapter = ArrayAdapter(fragment.requireContext(), android.R.layout.simple_spinner_item, annotationTypes)
-
-        spinnerAnnotationType?.adapter = adapter
-
-        // Set up annotation type selection listener
-        spinnerAnnotationType?.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                // Hide all containers first
-                textAnnotationContainer?.visibility = View.GONE
-                fileAnnotationContainer?.visibility = View.GONE
-                imageAnnotationContainer?.visibility = View.GONE
-                audioAnnotationContainer?.visibility = View.GONE
-                videoAnnotationContainer?.visibility = View.GONE
-                calculatorAnnotationContainer?.visibility = View.GONE
-                molarityCalculatorContainer?.visibility = View.GONE
-                instrumentAnnotationContainer?.visibility = View.GONE
-
-                // Show the appropriate container based on selection
-                when (position) {
-                    0 -> textAnnotationContainer?.visibility = View.VISIBLE
-                    1 -> {
-                        fileAnnotationContainer?.visibility = View.VISIBLE
-                        textAnnotationContainer?.visibility = View.VISIBLE // Allow text for file annotations
-                    }
-                    2 -> {
-                        imageAnnotationContainer?.visibility = View.VISIBLE
-                        //textAnnotationContainer?.visibility = View.VISIBLE // Allow text for image annotations
-                    }
-                    3 -> {
-                        audioAnnotationContainer?.visibility = View.VISIBLE
-                        //textAnnotationContainer?.visibility = View.VISIBLE // Allow text for audio annotations
-                    }
-                    4 -> {
-                        videoAnnotationContainer?.visibility = View.VISIBLE
-                        //textAnnotationContainer?.visibility = View.VISIBLE // Allow text for video annotations
-                    }
-                    5 -> calculatorAnnotationContainer?.visibility = View.VISIBLE
-                    6 -> molarityCalculatorContainer?.visibility = View.VISIBLE
-                    7 -> instrumentAnnotationContainer?.visibility = View.VISIBLE
-                }
+    // Permission handling methods
+    private fun checkCameraPermission() {
+        when {
+            ContextCompat.checkSelfPermission(
+                fragment.requireContext(),
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                takePicture()
             }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-
+            fragment.shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -> {
+                showPermissionRationaleDialog("Camera Permission",
+                    "Camera permission is needed to take photos for annotations.",
+                    Manifest.permission.CAMERA,
+                    cameraPermissionLauncher)
+            }
+            else -> {
+                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
             }
         }
+    }
 
-        //setupFileSelectionButton(dialogView)
-        //setupImageSelectionButtons(dialogView)
-        //setupAudioRecordingButton(dialogView)
-        //setupVideoRecordingButton(dialogView)
-        //setupInstrumentSelectionButton(dialogView)
+    private fun checkAudioPermission() {
+        when {
+            ContextCompat.checkSelfPermission(
+                fragment.requireContext(),
+                Manifest.permission.RECORD_AUDIO
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                startAudioRecording()
+            }
+            fragment.shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO) -> {
+                showPermissionRationaleDialog("Microphone Permission",
+                    "Microphone permission is needed to record audio for annotations.",
+                    Manifest.permission.RECORD_AUDIO,
+                    audioPermissionLauncher)
+            }
+            else -> {
+                audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            }
+        }
+    }
 
-        // Create and show the dialog
-        dialog = AlertDialog.Builder(fragment.requireContext())
-            .setTitle("Create Annotation")
-            .setView(dialogView)
-            .setPositiveButton("Save") { _, _ ->
-                val selectedAnnotationType = spinnerAnnotationType?.selectedItemPosition
-                val annotationText = dialogView?.findViewById<EditText>(R.id.editTextAnnotation)?.text.toString()
+    private fun checkVideoPermission() {
+        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)
+        } else {
+            arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        }
 
-                val request = when (selectedAnnotationType) {
-                    0 -> createTextAnnotationRequest(sessionId, stepId, annotationText)
-                    1 -> createFileAnnotationRequest(sessionId, stepId, annotationText)
-                    2 -> createImageAnnotationRequest(sessionId, stepId, annotationText)
-                    3 -> createAudioAnnotationRequest(sessionId, stepId, annotationText)
-                    4 -> createVideoAnnotationRequest(sessionId, stepId, annotationText)
-                    5 -> createCalculatorAnnotationRequest(sessionId, stepId)
-                    6 -> createMolarityCalculatorAnnotationRequest(sessionId, stepId)
-                    7 -> createInstrumentAnnotationRequest(sessionId, stepId, annotationText)
-                    else -> createTextAnnotationRequest(sessionId, stepId, annotationText)
+        if (permissions.all { permission ->
+                ContextCompat.checkSelfPermission(fragment.requireContext(), permission) == PackageManager.PERMISSION_GRANTED
+            }) {
+            startVideoRecording()
+        } else {
+            videoPermissionLauncher.launch(permissions)
+        }
+    }
+
+    private fun checkStoragePermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // On Android 13+, we don't need storage permission to pick files
+            openFilePicker()
+        } else {
+            when {
+                ContextCompat.checkSelfPermission(
+                    fragment.requireContext(),
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                ) == PackageManager.PERMISSION_GRANTED -> {
+                    openFilePicker()
                 }
-                processAnnotationRequest(request, selectedAnnotationType!!)
+                fragment.shouldShowRequestPermissionRationale(Manifest.permission.READ_EXTERNAL_STORAGE) -> {
+                    showPermissionRationaleDialog("Storage Permission",
+                        "Storage permission is needed to select files for annotations.",
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        storagePermissionLauncher)
+                }
+                else -> {
+                    storagePermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+                }
+            }
+        }
+    }
+
+    private fun showPermissionRationaleDialog(
+        title: String,
+        message: String,
+        permission: String,
+        permissionLauncher: ActivityResultLauncher<String>
+    ) {
+        AlertDialog.Builder(fragment.requireContext())
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("Grant") { _, _ ->
+                permissionLauncher.launch(permission)
             }
             .setNegativeButton("Cancel", null)
-            .create()
-
-        dialog?.show()
+            .show()
     }
 
-    private fun createTextAnnotationRequest(sessionId: String, stepId: Int, text: String): CreateAnnotationRequest {
-        return CreateAnnotationRequest(
-            annotation = text,
-            annotationType = "text",
-            session = sessionId,
-            step = stepId
-        )
-    }
-
-    private fun createFileAnnotationRequest(sessionId: String, stepId: Int, text: String): CreateAnnotationRequest {
-        return CreateAnnotationRequest(
-            annotation = text,
-            annotationType = "file",
-            session = sessionId,
-            step = stepId
-        )
-    }
-
-    private fun createImageAnnotationRequest(sessionId: String, stepId: Int, text: String): CreateAnnotationRequest {
-        return CreateAnnotationRequest(
-            annotation = text,
-            annotationType = "image",
-            session = sessionId,
-            step = stepId
-        )
-    }
-
-    private fun createAudioAnnotationRequest(sessionId: String, stepId: Int, text: String): CreateAnnotationRequest {
-        return CreateAnnotationRequest(
-            annotation = text,
-            annotationType = "audio",
-            session = sessionId,
-            step = stepId
-        )
-    }
-
-    private fun createVideoAnnotationRequest(sessionId: String, stepId: Int, text: String): CreateAnnotationRequest {
-        return CreateAnnotationRequest(
-            annotation = text,
-            annotationType = "video",
-            session = sessionId,
-            step = stepId
-        )
-    }
-
-    private fun createCalculatorAnnotationRequest(sessionId: String, stepId: Int): CreateAnnotationRequest {
-        return CreateAnnotationRequest(
-            annotation = "",
-            annotationType = "calculator",
-            session = sessionId,
-            step = stepId
-        )
-    }
-
-    private fun createMolarityCalculatorAnnotationRequest(sessionId: String, stepId: Int): CreateAnnotationRequest {
-        return CreateAnnotationRequest(
-            annotation = "",
-            annotationType = "molarity_calculator",
-            session = sessionId,
-            step = stepId
-        )
-    }
-
-    private fun createInstrumentAnnotationRequest(sessionId: String, stepId: Int, text: String): CreateAnnotationRequest {
-        return CreateAnnotationRequest(
-            annotation = text,
-            annotationType = "instrument",
-            session = sessionId,
-            step = stepId,
-            instrument = selectedInstrumentId
-        )
-    }
-
-    private fun processAnnotationRequest(request: CreateAnnotationRequest, annotationType: Int) {
-        when (annotationType) {
-            //1 -> processFileAnnotation(request)
-            //2 -> processImageAnnotation(request)
-            //3 -> processAudioAnnotation(request)
-            //4 -> processVideoAnnotation(request)
-            //else -> onAnnotationCreated(request)
+    private fun takePicture() {
+        try {
+            val photoFile = createImageFile()
+            photoUri = FileProvider.getUriForFile(
+                fragment.requireContext(),
+                "${fragment.requireContext().packageName}.fileprovider",
+                photoFile
+            )
+            takePictureLauncher.launch(photoUri!!)
+        } catch (e: IOException) {
+            Toast.makeText(fragment.requireContext(), "Error creating image file: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
+    private fun startAudioRecording() {
+        try {
+            audioFile = createAudioFile()
+            audioUri = FileProvider.getUriForFile(
+                fragment.requireContext(),
+                "${fragment.requireContext().packageName}.fileprovider",
+                audioFile!!
+            )
 
+            mediaRecorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                MediaRecorder(fragment.requireContext())
+            } else {
+                @Suppress("DEPRECATION")
+                MediaRecorder()
+            }
 
+            mediaRecorder?.apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+                setOutputFile(audioFile?.absolutePath)
+                prepare()
+                start()
+            }
 
+            isAudioRecording = true
 
-    companion object {
-        private const val TAG = "AnnotationDialog"
-        private const val REQUEST_CAMERA_PERMISSION = 100
-        private const val REQUEST_AUDIO_PERMISSION = 101
-        private const val REQUEST_VIDEO_PERMISSION = 102
+            val buttonRecordAudio = dialogView?.findViewById<Button>(R.id.buttonRecordAudio)
+            val textAudioStatus = dialogView?.findViewById<TextView>(R.id.textAudioStatus)
+
+            buttonRecordAudio?.text = "Stop Recording"
+            textAudioStatus?.text = "Recording in progress..."
+            textAudioStatus?.visibility = View.VISIBLE
+
+            buttonRecordAudio?.setCompoundDrawablesWithIntrinsicBounds(
+                R.drawable.ic_stop_recording, 0, 0, 0
+            )
+
+        } catch (e: Exception) {
+            Log.e("CreateAnnotationDialog", "Error starting audio recording: ${e.message}", e)
+            Toast.makeText(fragment.requireContext(),
+                "Failed to start recording: ${e.message}",
+                Toast.LENGTH_SHORT).show()
+            resetAudioRecording()
+        }
     }
+
+    private fun stopAudioRecording() {
+        try {
+            mediaRecorder?.apply {
+                stop()
+                release()
+            }
+            mediaRecorder = null
+
+            // Update UI
+            val buttonRecordAudio = dialogView?.findViewById<Button>(R.id.buttonRecordAudio)
+            val textAudioStatus = dialogView?.findViewById<TextView>(R.id.textAudioStatus)
+
+            buttonRecordAudio?.text = "Record Audio"
+            textAudioStatus?.text = "Recording saved (${getFormattedFileSize(audioFile)})"
+
+            // Reset recording icon
+            buttonRecordAudio?.setCompoundDrawablesWithIntrinsicBounds(
+                R.drawable.ic_audio_record, 0, 0, 0
+            )
+
+            isAudioRecording = false
+        } catch (e: Exception) {
+            Log.e("CreateAnnotationDialog", "Error stopping audio recording: ${e.message}", e)
+            Toast.makeText(fragment.requireContext(),
+                "Failed to save recording: ${e.message}",
+                Toast.LENGTH_SHORT).show()
+            resetAudioRecording()
+        }
+    }
+
+    private fun resetAudioRecording() {
+        mediaRecorder?.release()
+        mediaRecorder = null
+        isAudioRecording = false
+        audioFile?.delete()
+        audioFile = null
+        audioUri = null
+
+        val buttonRecordAudio = dialogView?.findViewById<Button>(R.id.buttonRecordAudio)
+        buttonRecordAudio?.text = "Record Audio"
+        buttonRecordAudio?.setCompoundDrawablesWithIntrinsicBounds(
+            R.drawable.ic_audio_record, 0, 0, 0
+        )
+    }
+
+    private fun createAudioFile(): File {
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val storageDir = fragment.requireContext().getExternalFilesDir(Environment.DIRECTORY_MUSIC)
+        return File.createTempFile(
+            "AUDIO_${timeStamp}_",
+            ".m4a",
+            storageDir
+        )
+    }
+
+    private fun getFormattedFileSize(file: File?): String {
+        if (file == null || !file.exists()) return "0 KB"
+
+        val size = file.length()
+        if (size <= 0) return "0 KB"
+
+        val units = arrayOf("B", "KB", "MB", "GB")
+        val digitGroups = (Math.log10(size.toDouble()) / Math.log10(1024.0)).toInt()
+
+        return DecimalFormat("#,##0.#").format(size / Math.pow(1024.0, digitGroups.toDouble())) + " " + units[digitGroups]
+    }
+
+    private fun startVideoRecording() {
+        try {
+            val videoFile = createVideoFile()
+            videoUri = FileProvider.getUriForFile(
+                fragment.requireContext(),
+                "${fragment.requireContext().packageName}.fileprovider",
+                videoFile
+            )
+            takeVideoLauncher.launch(videoUri!!)
+        } catch (e: IOException) {
+            Toast.makeText(fragment.requireContext(), "Error creating video file: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun openFilePicker() {
+        selectFileLauncher.launch("*/*")
+    }
+
+    private fun createImageFile(): File {
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val storageDir = fragment.requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        return File.createTempFile(
+            "JPEG_${timeStamp}_",
+            ".jpg",
+            storageDir
+        )
+    }
+
+    private fun createVideoFile(): File {
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val storageDir = fragment.requireContext().getExternalFilesDir(Environment.DIRECTORY_MOVIES)
+        return File.createTempFile(
+            "VIDEO_${timeStamp}_",
+            ".mp4",
+            storageDir
+        ).also {
+            videoFile = it
+        }
+    }
+
+    private fun handleImageCaptured(uri: Uri) {
+        photoUri = uri
+        val dialogView = dialogView?.findViewById<View>(R.id.previewImage) as? ImageView
+        dialogView?.setImageURI(uri)
+        dialogView?.visibility = View.VISIBLE
+    }
+
+    private fun handleImageSelected(uri: Uri) {
+        photoUri = uri
+        val dialogView = dialogView?.findViewById<View>(R.id.previewImage) as? ImageView
+        dialogView?.setImageURI(uri)
+        Log.d("CreateAnnotationDialog", "Image selected: $uri")
+        dialogView?.visibility = View.VISIBLE
+    }
+
+    private fun handleFileSelected(uri: Uri) {
+        selectedFileUri = uri
+        val textView = fragment.requireView().findViewById<View>(R.id.textSelectedFileName) as? TextView
+
+        val fileName = getFileNameFromUri(uri)
+        textView?.text = fileName ?: "Selected file"
+        textView?.visibility = View.VISIBLE
+    }
+
+    private fun handleVideoCaptured(uri: Uri) {
+        videoUri = uri
+        val textView = dialogView?.findViewById<View>(R.id.textVideoStatus) as? TextView
+        textView?.text = "Video recorded successfully"
+        Log.d("CreateAnnotationDialog", "video selected: $videoUri")
+        textView?.visibility = View.VISIBLE
+    }
+
+
+    private fun createFilePartFromUri(uri: Uri, defaultMimeType: String?): MultipartBody.Part? {
+        return try {
+            val contentResolver = fragment.requireContext().contentResolver
+            val mimeType = contentResolver.getType(uri) ?: defaultMimeType ?: "application/octet-stream"
+            val inputStream = contentResolver.openInputStream(uri)
+            val fileName = getFileNameFromUri(uri) ?: "attachment"
+
+            val byteArray = inputStream?.readBytes()
+            inputStream?.close()
+
+            if (byteArray != null) {
+                val requestFile = byteArray.toRequestBody(mimeType.toMediaTypeOrNull())
+                MultipartBody.Part.createFormData("file", fileName, requestFile)
+            } else null
+        } catch (e: Exception) {
+            Log.e("CreateAnnotationDialog", "Error creating file part: ${e.message}")
+            null
+        }
+    }
+
+    private fun getFileNameFromUri(uri: Uri): String? {
+        val contentResolver = fragment.requireContext().contentResolver
+        val cursor = contentResolver.query(uri, null, null, null, null)
+
+        return cursor?.use {
+            val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            it.moveToFirst()
+            if (nameIndex != -1) it.getString(nameIndex) else null
+        } ?: uri.lastPathSegment
+    }
+
+    fun cleanup() {
+        if (isAudioRecording) {
+            stopAudioRecording()
+        }
+        mediaRecorder?.release()
+        mediaRecorder = null
+    }
+
+
 }

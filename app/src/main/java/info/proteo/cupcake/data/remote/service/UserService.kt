@@ -69,7 +69,7 @@ interface UserApiService {
     @POST("api/user/check_protocol_permission/")
     suspend fun checkProtocolPermission(@Body request: ProtocolPermissionRequest): UserPermissionResponse
 
-    @POST("api/user/check_annotations_permission/")
+    @POST("api/user/check_annotation_permission/")
     suspend fun checkAnnotationsPermission(@Body request: AnnotationsPermissionRequest): List<AnnotationsPermissionResponse>
 }
 

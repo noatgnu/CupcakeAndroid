@@ -9,6 +9,8 @@ import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
 import info.proteo.cupcake.data.remote.model.reagent.StoredReagentPermission
 import info.proteo.cupcake.data.remote.model.user.User
 import info.proteo.cupcake.data.remote.model.user.UserBasic
+import info.proteo.cupcake.data.remote.service.AnnotationsPermissionRequest
+import info.proteo.cupcake.data.remote.service.AnnotationsPermissionResponse
 import info.proteo.cupcake.data.remote.service.ProtocolPermissionRequest
 import info.proteo.cupcake.data.remote.service.SessionPermissionRequest
 import info.proteo.cupcake.data.remote.service.StoredReagentPermissionRequest
@@ -153,10 +155,10 @@ class UserRepository @Inject constructor(
         }
     }
 
-    suspend fun checkAnnotationsPermission(sessionIds: List<Int>): Result<List<StoredReagentPermission>> {
+    suspend fun checkAnnotationsPermission(sessionIds: List<Int>): Result<List<AnnotationsPermissionResponse>> {
         return try {
-            val request = StoredReagentPermissionRequest(sessionIds)
-            Result.success(userService.checkStoredReagentPermission(request))
+            val request = AnnotationsPermissionRequest(annotations =  sessionIds)
+            Result.success(userService.checkAnnotationsPermission(request))
         } catch (e: Exception) {
             Log.e("UserRepository", "Error checking annotations permission: ${e.message}")
             Result.failure(e)

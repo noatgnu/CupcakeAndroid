@@ -213,7 +213,9 @@ class SessionFragment : Fragment() {
             fragment = this,
             lifecycleOwner = viewLifecycleOwner,
             instrumentRepository = instrumentRepository,
-            onAnnotationCreated = { request ->
+            onAnnotationCreated = { request, filePart ->
+                Log.d("SessionFragment", "Creating annotation with request: $request and filePart: $filePart")
+                viewModel.createAnnotation(request, filePart)
             }
         )
 
@@ -411,7 +413,7 @@ class SessionFragment : Fragment() {
                 session?.let {
                     Log.d("SessionFragment", "Session loaded: ${it.uniqueId}")
 
-                    viewModel.updateRecentSession(session, protocolId, null)
+                    viewModel.updateRecentSession(session, protocolId, null, stepId = currentStep?.id)
                 }
             }
         }
@@ -905,6 +907,12 @@ class SessionFragment : Fragment() {
                 onAnnotationUpdate = { updatedAnnotation, translation, transcription ->
                     updateAnnotation(updatedAnnotation, translation, transcription)
                 },
+                onAnnotationRename = {
+                    annotation -> viewModel.renameAnnotation(annotation.id, annotation.annotationName)
+                },
+                onAnnotationDelete = {
+                    annotation -> viewModel.deleteAnnotation(annotation.id)
+                },
                 annotationRepository = annotationRepository,
                 instrumentRepository = instrumentRepository,
                 instrumentUsageRepository = instrumentUsageRepository,
@@ -938,9 +946,10 @@ class SessionFragment : Fragment() {
                 } else {
                     val ann = result.getOrNull()
                     val updatedList = annotationAdapter?.currentList?.toMutableList()
-                    val position = updatedList?.indexOfFirst { it.id == updatedAnnotation.id } ?: -1
+                    val position = updatedList?.indexOfFirst { it.annotation.id == updatedAnnotation.id } ?: -1
                     if (position != -1 && updatedList != null && ann != null) {
-                        updatedList[position] = ann
+                        val annWithPermission = updatedList[position]
+                        updatedList[position] = annWithPermission.copy(annotation = ann)
                         annotationAdapter?.submitList(updatedList)
 
                     }

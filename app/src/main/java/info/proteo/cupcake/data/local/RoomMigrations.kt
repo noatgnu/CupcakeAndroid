@@ -285,9 +285,11 @@ object RoomMigrations {
                 user_id INTEGER NOT NULL,
                 protocol_name TEXT,
                 last_accessed TEXT NOT NULL,
+                step_id INTEGER,
                 FOREIGN KEY (session_id) REFERENCES session(id) ON DELETE CASCADE,
                 FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
-                FOREIGN KEY (protocol_id) REFERENCES protocol_model(id) ON DELETE CASCADE)
+                FOREIGN KEY (protocol_id) REFERENCES protocol_model(id) ON DELETE CASCADE,
+                FOREIGN KEY (step_id) REFERENCES protocol_step(id) ON DELETE SET NULL)
         """.trimIndent())
 
 
@@ -790,5 +792,6 @@ object RoomMigrations {
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_recent_session_session ON recent_session(session_id)")
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_recent_session_user ON recent_session(user_id)")
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_recent_session_protocol ON recent_session(protocol_id)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_recent_session_step ON recent_session(step_id)")
     }
 }

@@ -3,16 +3,22 @@ package info.proteo.cupcake.ui.session
 import android.content.Context
 import android.graphics.drawable.Drawable
 import android.media.MediaPlayer
+import android.text.InputType
+import android.util.Log
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.ProgressBar
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -32,8 +38,13 @@ import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.target.Target
 import com.bumptech.glide.request.RequestListener
+import info.proteo.cupcake.data.remote.model.annotation.AnnotationWithPermissions
 import info.proteo.cupcake.data.repository.InstrumentRepository
 import info.proteo.cupcake.data.repository.InstrumentUsageRepository
+import kotlin.or
+import kotlin.text.format
+import kotlin.text.toInt
+import kotlin.toString
 
 
 data class VttCue(
@@ -71,12 +82,14 @@ class SessionAnnotationAdapter(
     private val onItemClick: (Annotation) -> Unit,
     private val onRetranscribeClick: (Annotation) -> Unit,
     private val onAnnotationUpdate: (Annotation, String?, String?) -> Unit,
+    private val onAnnotationRename: (Annotation) -> Unit,
+    private val onAnnotationDelete: (Annotation) -> Unit,
     private val annotationRepository: AnnotationRepository,
     private val instrumentRepository: InstrumentRepository,
     private val instrumentUsageRepository: InstrumentUsageRepository,
 
     private val baseUrl: String
-) : ListAdapter<Annotation, SessionAnnotationAdapter.ViewHolder>(DIFF_CALLBACK) {
+) : ListAdapter<AnnotationWithPermissions, SessionAnnotationAdapter.ViewHolder>(DIFF_CALLBACK) {
     private var recyclerView: RecyclerView? = null
 
     private var mediaPlayer: MediaPlayer? = null
@@ -196,13 +209,14 @@ class SessionAnnotationAdapter(
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val textAnnotation: TextView = itemView.findViewById(R.id.annotation_text)
-        private val textDate: TextView = itemView.findViewById(R.id.annotation_created_date)
+        private val createdDate: TextView = itemView.findViewById(R.id.annotation_created_date)
         private val textUsername: TextView = itemView.findViewById(R.id.annotation_username)
         private val menuButton: ImageButton = itemView.findViewById(R.id.menu_button)
         private var vttCues: List<VttCue> = emptyList()
         private val annotationImage: ImageView = itemView.findViewById(R.id.annotation_image)
         private val imageContainer: ViewGroup = itemView.findViewById(R.id.image_container)
-
+        private val annotationName: TextView = itemView.findViewById(R.id.annotation_name)
+        private val annotationUpdatedDate: TextView = itemView.findViewById(R.id.annotation_updated_date)
         private val checklistContainer = itemView.findViewById<ViewGroup>(R.id.checklist_container)
         private val counterContainer = itemView.findViewById<ViewGroup>(R.id.counter_container)
         private val tableContainer = itemView.findViewById<ViewGroup>(R.id.table_container)
@@ -216,25 +230,34 @@ class SessionAnnotationAdapter(
         private val transcriptionContainer: View = itemView.findViewById(R.id.transcription_container)
         private val transcriptionText: TextView = itemView.findViewById(R.id.transcription_text)
         private val instrumentContainer = itemView.findViewById<ViewGroup>(R.id.instrument_container)
+        private val mcalculatorContainer = itemView.findViewById<ViewGroup>(R.id.molarityCalculatorContainer)
 
-        fun bind(annotation: Annotation) {
+        fun bind(annotationWithPermissions: AnnotationWithPermissions) {
+            val annotation = annotationWithPermissions.annotation
             menuButton.setOnClickListener { view ->
-                showPopupMenu(view, annotation)
+                showPopupMenu(view, annotationWithPermissions)
             }
-            val formattedDate = try {
-                val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
-                inputFormat.timeZone = TimeZone.getTimeZone("UTC")
-                val date = inputFormat.parse(annotation.createdAt)
-
-                val outputFormat = SimpleDateFormat("MMM d, yyyy 'at' h:mm a", Locale.getDefault())
-                outputFormat.timeZone = TimeZone.getDefault()
-                outputFormat.format(date ?: Date())
-            } catch (e: Exception) {
-                annotation.createdAt
+            Log.d("SessionAnnotationAdapter", "Binding annotation: editable=${annotationWithPermissions.canEdit}, deletable=${annotationWithPermissions.canDelete}")
+            menuButton.visibility = if (annotationWithPermissions.canEdit ||
+                annotationWithPermissions.canDelete) {
+                View.VISIBLE
+            } else {
+                View.GONE
             }
 
             textAnnotation.text = annotation.annotation
-            textDate.text = formattedDate
+            createdDate.text = "Created:  ${formatDate(annotation.createdAt)}"
+            annotationUpdatedDate.text = "Updated: ${formatDate(annotation.updatedAt)}"
+
+            if (!annotation.annotationName.isNullOrEmpty()) {
+                annotationName.text = annotation.annotationName
+                annotationName.visibility = View.VISIBLE
+            } else {
+                annotationName.visibility = View.GONE
+            }
+
+
+
             textUsername.text = annotation.user?.username?.let { "Created by: $it" } ?: ""
             imageContainer.visibility = View.GONE
 
@@ -246,6 +269,8 @@ class SessionAnnotationAdapter(
             counterContainer.visibility = View.GONE
             tableContainer.visibility = View.GONE
             instrumentContainer.visibility = View.GONE
+            calculatorContainer.visibility = View.GONE
+            mcalculatorContainer?.visibility = View.GONE
 
 
             when (annotation.annotationType) {
@@ -347,21 +372,44 @@ class SessionAnnotationAdapter(
         }
     }
 
-    private fun showPopupMenu(view: View, annotation: Annotation) {
+    private fun showPopupMenu(view: View, annotationWithPermissions: AnnotationWithPermissions) {
+        val annotation = annotationWithPermissions.annotation
         val popup = PopupMenu(view.context, view)
         val inflater = popup.menuInflater
         inflater.inflate(R.menu.session_annotation_item_menu, popup.menu)
 
         popup.menu.findItem(R.id.action_download).isVisible = annotation.file != null
-
         popup.menu.findItem(R.id.action_retranscribe).isVisible =
             (annotation.annotationType == "audio" || annotation.annotationType == "video") &&
                 !annotation.transcription.isNullOrBlank()
 
+        popup.menu.findItem(R.id.action_edit).isVisible = false
+
+        if (annotationWithPermissions.canEdit) {
+            popup.menu.add(0, R.id.action_rename, 0, "Rename").isVisible = true
+
+            if (annotation.annotationType == "text" || annotation.annotationType == "file") {
+                popup.menu.add(0, R.id.action_edit, 0, "Edit Content").isVisible = true
+            }
+        }
+
+        popup.menu.findItem(R.id.action_delete).isVisible = annotationWithPermissions.canDelete
+
         popup.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
+                R.id.action_rename -> {
+                    showRenameDialog(annotation, view)
+                    true
+                }
+                R.id.action_edit -> {
+                    showEditContentDialog(annotation, view)
+                    true
+                }
+                R.id.action_delete -> {
+                    showDeleteConfirmationDialog(annotation, view)
+                    true
+                }
                 R.id.action_download -> {
-
                     true
                 }
                 R.id.action_retranscribe -> {
@@ -375,8 +423,93 @@ class SessionAnnotationAdapter(
         popup.show()
     }
 
+    private fun showRenameDialog(annotation: Annotation, itemView: View) {
+        val context = itemView.context
+
+        val layout = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(16.dpToPx(context), 8.dpToPx(context), 16.dpToPx(context), 0)
+        }
+
+        val nameEditText = EditText(context).apply {
+            setText(annotation.annotationName)
+            isSingleLine = true
+            hint = "Enter annotation title"
+        }
+
+        layout.addView(nameEditText, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ))
+
+        AlertDialog.Builder(context)
+            .setTitle("Rename Annotation")
+            .setView(layout)
+            .setPositiveButton("Save") { _, _ ->
+                val updatedName = nameEditText.text.toString()
+                if (updatedName != annotation.annotationName) {
+                    val updatedAnnotation = annotation.copy(
+                        annotationName = updatedName
+                    )
+                    onAnnotationRename(updatedAnnotation)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
 
 
+    private fun showEditContentDialog(annotation: Annotation, itemView: View) {
+        val context = itemView.context
+
+        if (annotation.annotationType != "text" && annotation.annotationType != "file") {
+            Toast.makeText(context, "This annotation type cannot be edited", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val layout = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(16.dpToPx(context), 8.dpToPx(context), 16.dpToPx(context), 0)
+        }
+
+        val contentEditText = EditText(context).apply {
+            setText(annotation.annotation)
+            gravity = Gravity.TOP or Gravity.START
+            minLines = 5
+            isSingleLine = false
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        }
+
+        layout.addView(contentEditText, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ))
+
+        AlertDialog.Builder(context)
+            .setTitle("Edit Content")
+            .setView(layout)
+            .setPositiveButton("Save") { _, _ ->
+                val updatedContent = contentEditText.text.toString()
+                if (updatedContent != annotation.annotation) {
+                    val updatedAnnotation = annotation.copy(
+                        annotation = updatedContent
+                    )
+                    onAnnotationUpdate(updatedAnnotation, null, null)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+    private fun showDeleteConfirmationDialog(annotation: Annotation, itemView: View) {
+        AlertDialog.Builder(itemView.context)
+            .setTitle("Delete Annotation")
+            .setMessage("Are you sure you want to delete this annotation?")
+            .setPositiveButton("Delete") { _, _ ->
+                onAnnotationDelete(annotation)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         super.onDetachedFromRecyclerView(recyclerView)
@@ -389,95 +522,34 @@ class SessionAnnotationAdapter(
         this.recyclerView = recyclerView
     }
 
-
-
-
-    private fun loadAnnotationImage(annotation: Annotation, imageView: ImageView) {
-        val progressBar = ProgressBar(imageView.context).apply {
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        // Add progress indicator to parent layout
-        val parent = imageView.parent as ViewGroup
-        val imageIndex = parent.indexOfChild(imageView)
-        parent.addView(progressBar, imageIndex)
-
-        // Request signed URL in a coroutine
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val result = annotationRepository.getSignedUrl(annotation.id)
-
-                if (result.isSuccess) {
-                    val signedToken = result.getOrNull()?.signedToken
-                    if (signedToken != null) {
-                        val signedUrl = "${baseUrl}/api/annotation/download_signed/?token=$signedToken"
-
-                        withContext(Dispatchers.Main) {
-                            Glide.with(imageView)
-                                .load(signedUrl)
-                                .listener(object : RequestListener<Drawable> {
-                                    override fun onLoadFailed(
-                                        e: GlideException?,
-                                        model: Any?,
-                                        target: Target<Drawable>,
-                                        isFirstResource: Boolean
-                                    ): Boolean {
-                                        parent.removeView(progressBar)
-                                        return false
-                                    }
-
-                                    override fun onResourceReady(
-                                        resource: Drawable,
-                                        model: Any?,
-                                        target: Target<Drawable>,
-                                        dataSource: DataSource,
-                                        isFirstResource: Boolean
-                                    ): Boolean {
-                                        parent.removeView(progressBar)
-                                        return false
-                                    }
-                                })
-                                .into(imageView)
-                        }
-                    } else {
-                        withContext(Dispatchers.Main) {
-                            parent.removeView(progressBar)
-                            showImageLoadError("Failed to get image URL", imageView)
-                        }
-                    }
-                } else {
-                    withContext(Dispatchers.Main) {
-                        parent.removeView(progressBar)
-                        showImageLoadError("Error: ${result.exceptionOrNull()?.message}", imageView)
-                    }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    parent.removeView(progressBar)
-                    showImageLoadError("Error: ${e.message}", imageView)
-                }
-            }
-        }
-    }
-
-    private fun showImageLoadError(message: String, imageView: ImageView) {
-        Toast.makeText(imageView.context, message, Toast.LENGTH_SHORT).show()
-        imageView.setImageResource(R.drawable.ic_more_vert)
+    private fun Int.dpToPx(context: Context): Int {
+        return (this * context.resources.displayMetrics.density).toInt()
     }
 
 
+    private fun formatDate(dateString: String?): String {
+        return try {
+            if (dateString == null) return ""
 
+            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+            inputFormat.timeZone = TimeZone.getTimeZone("UTC")
+            val date = inputFormat.parse(dateString)
+
+            val outputFormat = SimpleDateFormat("MMM d, yyyy 'at' h:mm a", Locale.getDefault())
+            outputFormat.timeZone = TimeZone.getDefault()
+            outputFormat.format(date ?: Date())
+        } catch (e: Exception) {
+            dateString ?: ""
+        }
+    }
 
     companion object {
-        private val DIFF_CALLBACK = object : DiffUtil.ItemCallback<Annotation>() {
-            override fun areItemsTheSame(oldItem: Annotation, newItem: Annotation): Boolean {
-                return oldItem.id == newItem.id
+        private val DIFF_CALLBACK = object : DiffUtil.ItemCallback<AnnotationWithPermissions>() {
+            override fun areItemsTheSame(oldItem: AnnotationWithPermissions, newItem: AnnotationWithPermissions): Boolean {
+                return oldItem.annotation.id == newItem.annotation.id
             }
 
-            override fun areContentsTheSame(oldItem: Annotation, newItem: Annotation): Boolean {
+            override fun areContentsTheSame(oldItem: AnnotationWithPermissions, newItem: AnnotationWithPermissions): Boolean {
                 return oldItem == newItem
             }
         }

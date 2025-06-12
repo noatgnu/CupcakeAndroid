@@ -54,3 +54,9 @@ data class AnnotationFolderDetails(
     val id: Int,
     @Json(name = "folder_name") val folderName: String
 )
+
+data class AnnotationWithPermissions(
+    val annotation: Annotation,
+    val canEdit: Boolean = false,
+    val canDelete: Boolean = false
+)

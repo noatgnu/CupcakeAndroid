@@ -1,6 +1,8 @@
 package info.proteo.cupcake.data.repository
 
 import com.squareup.moshi.Json
+import info.proteo.cupcake.data.local.dao.protocol.RecentSessionDao
+import info.proteo.cupcake.data.local.entity.protocol.RecentSessionEntity
 import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolModel
 import info.proteo.cupcake.data.remote.model.protocol.Session
@@ -15,7 +17,8 @@ import javax.inject.Singleton
 
 @Singleton
 class SessionRepository @Inject constructor(
-    private val sessionService: SessionService
+    private val sessionService: SessionService,
+    private val recentSessionDao: RecentSessionDao
 ) {
     suspend fun getSessions(
         offset: Int? = null,
@@ -64,4 +67,9 @@ class SessionRepository @Inject constructor(
     suspend fun calendarGetSessions(startDate: String, endDate: String): Result<List<Session>> {
         return sessionService.calendarGetSessions(startDate, endDate)
     }
+
+    suspend fun getMostRecentSessionForUser(userId: Int): RecentSessionEntity? {
+        return recentSessionDao.getMostRecentSession(userId)
+    }
+
 }

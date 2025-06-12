@@ -18,6 +18,7 @@ import info.proteo.cupcake.data.local.dao.message.MessageAttachmentDao
 import info.proteo.cupcake.data.local.dao.message.MessageDao
 import info.proteo.cupcake.data.local.dao.message.MessageRecipientDao
 import info.proteo.cupcake.data.local.dao.message.MessageThreadDao
+import info.proteo.cupcake.data.local.dao.protocol.RecentSessionDao
 import info.proteo.cupcake.data.local.dao.protocol.TimeKeeperDao
 import info.proteo.cupcake.data.local.dao.reagent.ReagentActionDao
 import info.proteo.cupcake.data.local.dao.reagent.ReagentDao
@@ -781,9 +782,10 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideSessionRepository(
-        sessionService: SessionService
+        sessionService: SessionService,
+        recentSessionDao: RecentSessionDao
     ): SessionRepository {
-        return SessionRepository(sessionService)
+        return SessionRepository(sessionService, recentSessionDao)
     }
 
     @Provides

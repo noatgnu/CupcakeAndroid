@@ -59,4 +59,7 @@ interface RecentSessionDao {
 
     @Query("DELETE FROM recent_session WHERE session_id = :sessionId AND user_id = :userId")
     suspend fun deleteRecentSession(sessionId: Int, userId: Int)
+
+    @Query("SELECT * FROM recent_session WHERE user_id = :userId ORDER BY last_accessed DESC LIMIT 1")
+    suspend fun getMostRecentSession(userId: Int): RecentSessionEntity?
 }
