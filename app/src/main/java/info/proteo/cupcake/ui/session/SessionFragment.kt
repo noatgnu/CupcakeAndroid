@@ -213,6 +213,7 @@ class SessionFragment : Fragment() {
             fragment = this,
             lifecycleOwner = viewLifecycleOwner,
             instrumentRepository = instrumentRepository,
+            instrumentUsageRepository = instrumentUsageRepository,
             onAnnotationCreated = { request, filePart ->
                 Log.d("SessionFragment", "Creating annotation with request: $request and filePart: $filePart")
                 viewModel.createAnnotation(request, filePart)

@@ -30,6 +30,28 @@ class SessionAdapter(
         dateFormat.timeZone = TimeZone.getDefault()
     }
 
+    private fun parseApiDateTime(dateTimeString: String?): Long {
+        if (dateTimeString == null) return 0L
+        return try {
+            // Create formatter that handles the Z timezone indicator
+            val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
+            // Set timezone to UTC for parsing
+            format.timeZone = TimeZone.getTimeZone("UTC")
+            // The resulting timestamp will be in device's local time
+            format.parse(dateTimeString)?.time ?: 0L
+        } catch (e: Exception) {
+            try {
+                // Try alternative format with milliseconds
+                val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+                format.timeZone = TimeZone.getTimeZone("UTC")
+                format.parse(dateTimeString)?.time ?: 0L
+            } catch (e: Exception) {
+                Log.e("DateParsing", "Error parsing date: $dateTimeString", e)
+                0L
+            }
+        }
+    }
+
     fun updateSessionPermissions(permissions: Map<String, UserPermissionResponse>) {
         sessionPermissions.putAll(permissions)
         notifyDataSetChanged()
@@ -102,9 +124,7 @@ class SessionAdapter(
             // Format created at date
             binding.sessionCreatedAt.text = session.createdAt?.let { createdAt ->
                 try {
-                    val date = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.getDefault())
-                        .apply { timeZone = TimeZone.getTimeZone("UTC") }
-                        .parse(createdAt)
+                    val date = parseApiDateTime(createdAt)
                     "Created: ${dateFormat.format(date)}"
                 } catch (e: Exception) {
                     Log.e("SessionAdapter", "Error parsing date: $createdAt", e)
@@ -119,9 +139,7 @@ class SessionAdapter(
             if (!startDate.isNullOrBlank() || !endDate.isNullOrBlank()) {
                 val startFormatted = if (!startDate.isNullOrBlank()) {
                     try {
-                        val date = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
-                            .apply { timeZone = TimeZone.getTimeZone("UTC") }
-                            .parse(startDate)
+                        val date = parseApiDateTime(startDate)
                         dateFormat.format(date)
                     } catch (e: Exception) {
                         "Unknown"
@@ -130,9 +148,7 @@ class SessionAdapter(
 
                 val endFormatted = if (!endDate.isNullOrBlank()) {
                     try {
-                        val date = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
-                            .apply { timeZone = TimeZone.getTimeZone("UTC") }
-                            .parse(endDate)
+                        val date = parseApiDateTime(endDate)
                         dateFormat.format(date)
                     } catch (e: Exception) {
                         "Unknown"

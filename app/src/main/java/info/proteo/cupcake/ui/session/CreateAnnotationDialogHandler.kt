@@ -2,6 +2,8 @@ package info.proteo.cupcake.ui.session
 
 import android.Manifest
 import android.app.Activity
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.MediaRecorder
@@ -34,9 +36,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputEditText
 import info.proteo.cupcake.R
 import info.proteo.cupcake.data.remote.model.instrument.Instrument
+import info.proteo.cupcake.data.remote.model.instrument.InstrumentUsage
 import info.proteo.cupcake.data.remote.service.CreateAnnotationRequest
 import info.proteo.cupcake.data.repository.InstrumentRepository
+import info.proteo.cupcake.data.repository.InstrumentUsageRepository
 import info.proteo.cupcake.ui.instrument.InstrumentAdapter
+import info.proteo.cupcake.ui.instrument.InstrumentUsageAdapter
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -45,10 +50,12 @@ import java.io.File
 import java.io.IOException
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import kotlin.compareTo
 import kotlin.div
+import kotlin.text.compareTo
 import kotlin.text.format
 import kotlin.text.toDouble
 
@@ -56,6 +63,7 @@ class CreateAnnotationDialogHandler(
     private val fragment: Fragment,
     private val lifecycleOwner: LifecycleOwner,
     private val instrumentRepository: InstrumentRepository,
+    private val instrumentUsageRepository: InstrumentUsageRepository,
     private val onAnnotationCreated: (request: CreateAnnotationRequest, filePart: MultipartBody.Part?) -> Unit
 ) {
     private var isRecording = false
@@ -70,7 +78,12 @@ class CreateAnnotationDialogHandler(
     private var hasMoreInstruments = false
     private var currentSearchQuery = ""
 
-    private var instrumentListAdapter: InstrumentAdapter? = null
+    private var instrumentBookings: List<InstrumentUsage> = emptyList()
+    private var selectedStartTime: Long? = null
+    private var selectedEndTime: Long? = null
+
+    private lateinit var instrumentListAdapter: InstrumentAdapter
+
     private var photoUri: Uri? = null
     private var videoFile: File? = null
     private var videoUri: Uri? = null
@@ -93,7 +106,11 @@ class CreateAnnotationDialogHandler(
     private lateinit var selectFileLauncher: ActivityResultLauncher<String>
     private lateinit var takeVideoLauncher: ActivityResultLauncher<Uri>
 
+
     private var dialogView: View? = null
+    private var instrumentBookingDialogView: View? = null
+    private var instrumentSelectionDialogView: View? = null
+
 
     init {
         // Initialize permission launchers
@@ -142,6 +159,7 @@ class CreateAnnotationDialogHandler(
             }
         }
     }
+
 
     private fun initActivityResultLaunchers() {
         takePictureLauncher = fragment.registerForActivityResult(
@@ -275,9 +293,23 @@ class CreateAnnotationDialogHandler(
                 // Add additional data for specific annotation types
                 when (selectedType) {
                     "Instrument" -> {
-                        selectedInstrument?.let { instrument ->
+                        if (selectedStartTime == null || selectedEndTime == null || selectedInstrument == null) {
+                            Toast.makeText(fragment.requireContext(), "Please select an instrument and time range", Toast.LENGTH_SHORT).show()
+                        } else {
                             request = request.copy(
-                                instrument = instrument.id
+                                instrument = selectedInstrument?.id,
+                                timeStarted = selectedStartTime?.let {
+                                    SimpleDateFormat(
+                                        "yyyy-MM-dd'T'HH:mm:ss",
+                                        Locale.getDefault()
+                                    ).format(Date(it))
+                                },
+                                timeEnded = selectedEndTime?.let {
+                                    SimpleDateFormat(
+                                        "yyyy-MM-dd'T'HH:mm:ss",
+                                        Locale.getDefault()
+                                    ).format(Date(it))
+                                }
                             )
                         }
                     }
@@ -435,6 +467,7 @@ class CreateAnnotationDialogHandler(
     private fun showInstrumentSelectionDialog(textSelectedInstrument: TextView) {
         val dialogView = LayoutInflater.from(fragment.requireContext())
             .inflate(R.layout.dialog_instrument_selection, null)
+        this.instrumentSelectionDialogView = dialogView
 
         val searchView = dialogView.findViewById<SearchView>(R.id.searchInstrument)
         val recyclerView = dialogView.findViewById<RecyclerView>(R.id.recyclerViewInstruments)
@@ -446,23 +479,27 @@ class CreateAnnotationDialogHandler(
         // Setup recycler view
         recyclerView.layoutManager = LinearLayoutManager(fragment.requireContext())
         instrumentListAdapter = InstrumentAdapter { instrumentId ->
-            // Handle instrument selection
             lifecycleOwner.lifecycleScope.launch {
-                progressBar.visibility = View.VISIBLE
-                val result = instrumentRepository.getInstrument(instrumentId)
-                progressBar.visibility = View.GONE
-                result.collect {
-                    it.onSuccess { instrument ->
-                        selectedInstrument = instrument
-                        textSelectedInstrument.text = "Selected: ${instrument.instrumentName}"
-                        textSelectedInstrument.visibility = View.VISIBLE
+                val progressBar = dialogView?.findViewById<View>(R.id.progressBar)
+                progressBar?.visibility = View.VISIBLE
 
+                // Get instrument details
+                val instrumentResult = instrumentRepository.getInstrument(instrumentId)
+                instrumentResult.collect { result ->
+                    result.onSuccess { instrument ->
+                        selectedInstrument = instrument
+                        val textSelectedInstrument = dialogView?.findViewById<TextView>(R.id.textSelectedInstrument)
+                        textSelectedInstrument?.text = "Selected: ${instrument.instrumentName}"
+                        textSelectedInstrument?.visibility = View.VISIBLE
+
+                        // Get upcoming bookings
+                        fetchUpcomingBookings(instrument.id)
                     }
-                    it.onFailure { error ->
+                    result.onFailure { error ->
                         Toast.makeText(fragment.requireContext(), "Error: ${error.message}", Toast.LENGTH_SHORT).show()
                     }
                 }
-
+                progressBar?.visibility = View.GONE
             }
         }
         recyclerView.adapter = instrumentListAdapter
@@ -507,7 +544,20 @@ class CreateAnnotationDialogHandler(
         val dialog = AlertDialog.Builder(fragment.requireContext())
             .setTitle("Select Instrument")
             .setView(dialogView)
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton("Cancel", { dialog, _ ->
+                selectedInstrument = null
+                selectedStartTime = null
+                selectedEndTime = null
+                dialog.dismiss()
+            })
+            .setPositiveButton("Select", { dialog, _ ->
+                if (selectedInstrument == null || selectedStartTime == null || selectedEndTime == null) {
+                    Toast.makeText(fragment.requireContext(), "Please select an instrument", Toast.LENGTH_SHORT).show()
+                } else {
+                    updateMainDialogInstrumentInfo()
+                    dialog.dismiss()
+                }
+            })
             .create()
 
         dialog.show()
@@ -907,5 +957,195 @@ class CreateAnnotationDialogHandler(
         mediaRecorder = null
     }
 
+    private fun fetchUpcomingBookings(instrumentId: Int) {
+        // Calculate date range for next 2 weeks
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+        val startDate = Calendar.getInstance()
+        val endDate = Calendar.getInstance()
+        endDate.add(Calendar.DAY_OF_MONTH, 14) // 2 weeks from now
+
+        val timeStarted = dateFormat.format(startDate.time)
+        val timeEnded = dateFormat.format(endDate.time)
+
+        lifecycleOwner.lifecycleScope.launch {
+            instrumentUsageRepository.getInstrumentUsages(
+                limit = 10,
+                timeStarted = timeStarted,
+                timeEnded = timeEnded,
+                instrument = instrumentId.toString(),
+                searchType = "usage"
+            ).collect { result ->
+                result.onSuccess { response ->
+                    instrumentBookings = response.results
+                    showBookingDialog()
+                }
+                result.onFailure { error ->
+                    Toast.makeText(fragment.requireContext(),
+                        "Failed to load bookings: ${error.message}",
+                        Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun showBookingDialog() {
+        // Create dialog layout
+        val bookingDialogView = LayoutInflater.from(fragment.requireContext())
+            .inflate(R.layout.dialog_instrument_booking, null)
+
+        instrumentBookingDialogView = bookingDialogView
+
+        // Setup booking list
+        val recyclerViewBookings = bookingDialogView.findViewById<RecyclerView>(R.id.recyclerViewBookings)
+        recyclerViewBookings.layoutManager = LinearLayoutManager(fragment.requireContext())
+
+        // Create adapter for bookings
+        val bookingsAdapter = InstrumentUsageAdapter(instrumentBookings)
+        recyclerViewBookings.adapter = bookingsAdapter
+
+        // Setup date/time pickers
+        val buttonStartTime = bookingDialogView.findViewById<Button>(R.id.buttonStartTime)
+        val buttonEndTime = bookingDialogView.findViewById<Button>(R.id.buttonEndTime)
+        val textNoBookings = bookingDialogView.findViewById<TextView>(R.id.textNoBookings)
+
+        // Show appropriate message if no bookings
+        if (instrumentBookings.isEmpty()) {
+            recyclerViewBookings.visibility = View.GONE
+            textNoBookings.visibility = View.VISIBLE
+        } else {
+            recyclerViewBookings.visibility = View.VISIBLE
+            textNoBookings.visibility = View.GONE
+        }
+
+        // Setup time selection buttons
+        buttonStartTime.setOnClickListener { showDateTimePicker(true) }
+        buttonEndTime.setOnClickListener { showDateTimePicker(false) }
+
+        // Create and show dialog
+        AlertDialog.Builder(fragment.requireContext())
+            .setTitle("Schedule Instrument Time")
+            .setView(bookingDialogView)
+            .setPositiveButton("Confirm") { _, _ ->
+                if (validateTimeSelection()) {
+
+                    Toast.makeText(fragment.requireContext(),
+                        "Time slot selected successfully",
+                        Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(fragment.requireContext(),
+                        "Please select valid start and end times that don't overlap with existing bookings",
+                        Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun updateMainDialogInstrumentInfo() {
+        val textSelectedInstrument = dialogView?.findViewById<TextView>(R.id.textSelectedInstrument)
+        if (textSelectedInstrument != null && selectedInstrument != null) {
+            val dateFormat = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault())
+            val startStr = selectedStartTime?.let { dateFormat.format(Date(it)) } ?: "Not set"
+            val endStr = selectedEndTime?.let { dateFormat.format(Date(it)) } ?: "Not set"
+
+            textSelectedInstrument.text = "Selected: ${selectedInstrument?.instrumentName}\n" +
+                "Time: $startStr to $endStr"
+            textSelectedInstrument.visibility = View.VISIBLE
+        }
+    }
+
+    private fun showDateTimePicker(isStartTime: Boolean) {
+        val calendar = Calendar.getInstance()
+
+        // Show date picker
+        DatePickerDialog(
+            fragment.requireContext(),
+            { _, year, month, day ->
+                calendar.set(Calendar.YEAR, year)
+                calendar.set(Calendar.MONTH, month)
+                calendar.set(Calendar.DAY_OF_MONTH, day)
+
+                // After date is selected, show time picker
+                TimePickerDialog(
+                    fragment.requireContext(),
+                    { _, hourOfDay, minute ->
+                        calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
+                        calendar.set(Calendar.MINUTE, minute)
+
+                        // Update selected time
+                        if (isStartTime) {
+                            selectedStartTime = calendar.timeInMillis
+                        } else {
+                            selectedEndTime = calendar.timeInMillis
+                        }
+                        updateTimeDisplay(isStartTime)
+                    },
+                    calendar.get(Calendar.HOUR_OF_DAY),
+                    calendar.get(Calendar.MINUTE),
+                    true
+                ).show()
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        ).show()
+    }
+
+    private fun updateTimeDisplay(isStartTime: Boolean) {
+        val buttonToUpdate = if (isStartTime)
+            instrumentBookingDialogView?.findViewById<Button>(R.id.buttonStartTime)
+        else
+            instrumentBookingDialogView?.findViewById<Button>(R.id.buttonEndTime)
+
+        val time = if (isStartTime) selectedStartTime else selectedEndTime
+        if (time != null) {
+            val dateFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
+            buttonToUpdate?.text = dateFormat.format(Date(time))
+        }
+
+        // Update the display of selected time period
+        updateSelectedTimePeriodDisplay()
+    }
+
+    private fun updateSelectedTimePeriodDisplay() {
+        if (selectedStartTime != null && selectedEndTime != null) {
+            val dateFormat = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault())
+            val startStr = dateFormat.format(Date(selectedStartTime!!))
+            val endStr = dateFormat.format(Date(selectedEndTime!!))
+
+            val selectedInstrumentNameText = instrumentSelectionDialogView?.findViewById<TextView>(R.id.textSelectedInstrument)
+            if (selectedInstrumentNameText != null && selectedInstrument != null) {
+                Log.d("CreateAnnotationDialog", "Selected instrument: ${selectedInstrument?.instrumentName}, Start: $startStr, End: $endStr")
+                selectedInstrumentNameText.text = "${selectedInstrument?.instrumentName}\nSelected: $startStr to $endStr"
+            }
+        }
+    }
+
+    private fun validateTimeSelection(): Boolean {
+        val start = selectedStartTime ?: return false
+        val end = selectedEndTime ?: return false
+
+        // Basic validation
+        if (end <= start) return false
+
+        // Check for conflicts with existing bookings
+        return instrumentBookings.none { booking ->
+            val bookingStart = parseApiDateTime(booking.timeStarted)
+            val bookingEnd = parseApiDateTime(booking.timeEnded)
+
+            // Check if there's overlap
+            (start < bookingEnd && end > bookingStart)
+        }
+    }
+
+    private fun parseApiDateTime(dateTimeString: String?): Long {
+        if (dateTimeString == null) return 0L
+        return try {
+            val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+            format.parse(dateTimeString)?.time ?: 0L
+        } catch (e: Exception) {
+            0L
+        }
+    }
 
 }

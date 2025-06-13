@@ -25,6 +25,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import kotlin.text.format
 
 class InstrumentAnnotationHandler(
     private val context: Context,
@@ -229,9 +230,9 @@ class InstrumentAnnotationHandler(
             fun bind(item: BookingItem) {
                 instrumentName.text = item.instrument.instrumentName ?: "Unknown Instrument"
 
-                val startTime = parseAndFormatDate(item.usage.timeStarted)
-                val endTime = parseAndFormatDate(item.usage.timeEnded)
-                bookingTime.text = "From: $startTime\nTo: $endTime"
+                val startTime = parseApiDateTime(item.usage.timeStarted)
+                val endTime = parseApiDateTime(item.usage.timeEnded)
+                bookingTime.text = "From: ${formatDateForDisplay(startTime)}\nTo: ${formatDateForDisplay(endTime)}"
 
                 val isApproved = item.usage.approved == true
                 bookingStatus.text = if (isApproved) "Approved" else "Pending Approval"
@@ -246,15 +247,29 @@ class InstrumentAnnotationHandler(
                 bookingDescription.text = item.usage.description ?: "No description provided"
             }
 
-            private fun parseAndFormatDate(dateString: String?): String {
-                if (dateString == null) return "N/A"
-
+            private fun parseApiDateTime(dateTimeString: String?): Long {
+                if (dateTimeString == null) return 0L
                 return try {
-                    val date = dateFormat.parse(dateString)
-                    displayDateFormat.format(date ?: Date())
+                    // Handle both formats with and without milliseconds
+                    val format = if (dateTimeString.contains(".")) {
+                        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+                    } else {
+                        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+                    }
+                    // Set timezone to UTC for parsing
+                    format.timeZone = TimeZone.getTimeZone("UTC")
+                    // The resulting Date.time will be in local device time
+                    format.parse(dateTimeString)?.time ?: 0L
                 } catch (e: Exception) {
-                    dateString
+                    Log.e("DateParsing", "Error parsing date: $dateTimeString", e)
+                    0L
                 }
+            }
+
+            private fun formatDateForDisplay(timestamp: Long): String {
+                val displayFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
+                // This will use device's local timezone by default
+                return displayFormat.format(Date(timestamp))
             }
         }
     }

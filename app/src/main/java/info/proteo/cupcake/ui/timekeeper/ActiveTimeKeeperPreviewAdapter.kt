@@ -1,5 +1,6 @@
 package info.proteo.cupcake.ui.timekeeper
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
@@ -8,8 +9,10 @@ import androidx.recyclerview.widget.RecyclerView
 import info.proteo.cupcake.data.remote.model.protocol.TimeKeeper
 import info.proteo.cupcake.databinding.ItemActiveTimeKeeperPreviewBinding
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import kotlin.text.format
 
 class ActiveTimeKeeperPreviewAdapter(
     private val onItemClick: (TimeKeeper) -> Unit
@@ -45,11 +48,8 @@ class ActiveTimeKeeperPreviewAdapter(
                 // Handle start time display
                 timeKeeper.startTime?.let {
                     try {
-                        val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.getDefault())
-                        inputFormat.timeZone = TimeZone.getTimeZone("UTC")
-                        val outputFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-                        val date = inputFormat.parse(it)
-                        textViewStartTime.text = date?.let { it1 -> outputFormat.format(it1) } ?: it
+                        val date = parseApiDateTime(it)
+                        textViewStartTime.text = formatDateForDisplay(date)
                     } catch (e: Exception) {
                         textViewStartTime.text = it
                     }
@@ -98,7 +98,33 @@ class ActiveTimeKeeperPreviewAdapter(
             val secs = seconds % 60
             return String.format("%02d:%02d:%02d", hours, mins, secs)
         }
+
+        private fun parseApiDateTime(dateTimeString: String?): Long {
+            if (dateTimeString == null) return 0L
+            return try {
+                val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
+                format.timeZone = TimeZone.getTimeZone("UTC")
+                format.parse(dateTimeString)?.time ?: 0L
+            } catch (e: Exception) {
+                try {
+                    val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+                    format.timeZone = TimeZone.getTimeZone("UTC")
+                    format.parse(dateTimeString)?.time ?: 0L
+                } catch (e: Exception) {
+                    Log.e("DateParsing", "Error parsing date: $dateTimeString", e)
+                    0L
+                }
+            }
+        }
+
+        private fun formatDateForDisplay(timestamp: Long): String {
+            val displayFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
+            // This will use device's local timezone by default
+            return displayFormat.format(Date(timestamp))
+        }
     }
+
+
 
     companion object {
         private val DIFF_CALLBACK = object : DiffUtil.ItemCallback<TimeKeeper>() {

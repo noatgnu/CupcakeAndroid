@@ -387,11 +387,12 @@ class InstrumentUsageServiceImpl @Inject constructor(
         return this.map { it.toEntity() }
     }
 
-    private suspend fun getUserIdByUsername(username: String): Int {
-        return userDao.getByUsername(username)?.id ?: throw IllegalArgumentException("User not found")
+    private suspend fun getUserIdByUsername(username: String): Int? {
+        return userDao.getByUsername(username)?.id ?: null
     }
 
     private suspend fun InstrumentUsage.toEntity(): InstrumentUsageEntity {
+
         val userId = user?.let { getUserIdByUsername(it) }
 
         return InstrumentUsageEntity(
