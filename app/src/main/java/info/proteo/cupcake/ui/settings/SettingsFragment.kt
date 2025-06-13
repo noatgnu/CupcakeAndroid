@@ -46,6 +46,11 @@ class SettingsFragment : Fragment() {
                 "User Profiles",
                 R.drawable.ic_person
             ),
+            SettingsCategoryAdapter.SettingsCategory(
+                R.id.action_settings_to_update_metadata,
+                "Update Metadata Tables",
+                R.drawable.outline_deployed_code_update_24
+            )
         )
 
         binding.settingsCategories.apply {
@@ -55,6 +60,8 @@ class SettingsFragment : Fragment() {
             }
         }
     }
+
+
 
     override fun onDestroyView() {
         super.onDestroyView()

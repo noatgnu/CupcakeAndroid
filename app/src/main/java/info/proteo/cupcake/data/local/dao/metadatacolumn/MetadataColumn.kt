@@ -18,6 +18,11 @@ import info.proteo.cupcake.data.local.entity.metadatacolumn.TissueEntity
 import info.proteo.cupcake.data.local.entity.metadatacolumn.UnimodEntity
 import kotlinx.coroutines.flow.Flow
 
+enum class SearchMode {
+    CONTAINS,
+    STARTS_WITH
+}
+
 @Dao
 interface MetadataColumnDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -61,6 +66,18 @@ interface MSUniqueVocabulariesDao {
     fun getAllVocabularies(): Flow<List<MSUniqueVocabulariesEntity>>
     @Query("DELETE FROM ms_unique_vocabularies")
     suspend fun deleteAll()
+
+    @Query("""
+        SELECT * FROM ms_unique_vocabularies 
+        WHERE (:mode = 0 AND (
+            name LIKE '%' || :query || '%'
+        )) OR (:mode = 1 AND (
+            name LIKE :query || '%'
+        ))
+        AND (:termType = '' OR term_type = :termType)
+    """)
+    fun searchVocabularies(query: String, mode: Int, termType: String = ""): Flow<List<MSUniqueVocabulariesEntity>>
+
 }
 
 @Dao
@@ -81,6 +98,21 @@ interface HumanDiseaseDao {
     fun getAllDiseases(): Flow<List<HumanDiseaseEntity>>
     @Query("DELETE FROM human_disease")
     suspend fun deleteAll()
+
+    @Query("""
+        SELECT * FROM human_disease 
+        WHERE (:mode = 0 AND (
+            identifier LIKE '%' || :query || '%' OR
+            acronym LIKE '%' || :query || '%' OR
+            synonyms LIKE '%' || :query || '%'
+        )) OR (:mode = 1 AND (
+            identifier LIKE :query || '%' OR
+            acronym LIKE :query || '%' OR
+            synonyms LIKE :query || '%'
+        ))
+    """)
+    fun searchDiseases(query: String, mode: Int): Flow<List<HumanDiseaseEntity>>
+
 
 }
 
@@ -110,6 +142,19 @@ interface TissueDao {
 
     @Query("DELETE FROM tissue")
     suspend fun deleteAll()
+
+    @Query("""
+        SELECT * FROM tissue 
+        WHERE (:mode = 0 AND (
+            identifier LIKE '%' || :query || '%' OR
+            synonyms LIKE '%' || :query || '%'
+        )) OR (:mode = 1 AND (
+            identifier LIKE :query || '%' OR
+            synonyms LIKE :query || '%'
+        ))
+    """)
+    fun searchTissues(query: String, mode: Int): Flow<List<TissueEntity>>
+
 }
 
 @Dao
@@ -137,6 +182,19 @@ interface SubcellularLocationDao {
 
     @Query("DELETE FROM subcellular_location")
     suspend fun deleteAll()
+
+    @Query("""
+        SELECT * FROM subcellular_location 
+        WHERE (:mode = 0 AND (
+            location_identifier LIKE '%' || :query || '%' OR
+            synonyms LIKE '%' || :query || '%'
+        )) OR (:mode = 1 AND (
+            location_identifier LIKE :query || '%' OR
+            synonyms LIKE :query || '%'
+        ))
+    """)
+    fun searchLocations(query: String, mode: Int): Flow<List<SubcellularLocationEntity>>
+
 }
 
 @Dao
@@ -164,6 +222,19 @@ interface SpeciesDao {
 
     @Query("DELETE FROM species")
     suspend fun deleteAll()
+
+    @Query("""
+        SELECT * FROM species 
+        WHERE (:mode = 0 AND (
+            common_name LIKE '%' || :query || '%' OR
+            official_name LIKE '%' || :query || '%'
+        )) OR (:mode = 1 AND (
+            common_name LIKE :query || '%' OR
+            official_name LIKE :query || '%'
+        ))
+    """)
+    fun searchSpecies(query: String, mode: Int): Flow<List<SpeciesEntity>>
+
 }
 
 @Dao
@@ -191,6 +262,25 @@ interface UnimodDao {
 
     @Query("DELETE FROM unimod")
     suspend fun deleteAll()
+
+
+    @Query("""
+        SELECT * FROM unimod 
+        WHERE (:mode = 0 AND (
+            name LIKE '%' || :query || '%' OR
+            definition LIKE '%' || :query || '%' OR
+            accession LIKE '%' || :query || '%'
+        )) OR (:mode = 1 AND (
+            name LIKE :query || '%' OR
+            definition LIKE :query || '%' OR
+            accession LIKE :query || '%'
+        ))
+    """)
+    fun searchUnimods(query: String, mode: Int): Flow<List<UnimodEntity>>
+
+
+
+
 }
 
 @Dao

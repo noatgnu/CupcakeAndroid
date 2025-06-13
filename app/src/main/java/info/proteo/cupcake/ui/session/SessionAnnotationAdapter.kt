@@ -1,10 +1,13 @@
 package info.proteo.cupcake.ui.session
 
 import android.content.Context
+import android.graphics.Color
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.media.MediaPlayer
 import android.text.InputType
 import android.util.Log
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -19,6 +22,7 @@ import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -208,6 +212,7 @@ class SessionAnnotationAdapter(
 
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val metadataContainer = itemView.findViewById<ViewGroup>(R.id.metadata_container)
         private val textAnnotation: TextView = itemView.findViewById(R.id.annotation_text)
         private val createdDate: TextView = itemView.findViewById(R.id.annotation_created_date)
         private val textUsername: TextView = itemView.findViewById(R.id.annotation_username)
@@ -233,6 +238,7 @@ class SessionAnnotationAdapter(
         private val mcalculatorContainer = itemView.findViewById<ViewGroup>(R.id.molarityCalculatorContainer)
 
         fun bind(annotationWithPermissions: AnnotationWithPermissions) {
+            metadataContainer.removeAllViews()
             val annotation = annotationWithPermissions.annotation
             menuButton.setOnClickListener { view ->
                 showPopupMenu(view, annotationWithPermissions)
@@ -337,10 +343,9 @@ class SessionAnnotationAdapter(
                     transcriptionContainer.visibility = View.GONE
                 }
                 "image" -> {
-                    textAnnotation.visibility = View.VISIBLE // Or GONE if only image is shown
+                    textAnnotation.visibility = View.VISIBLE
                     imageContainer.visibility = View.VISIBLE
-                    annotationImage.visibility = View.VISIBLE // Make sure ImageView itself is visible
-                    // Ensure image is reset for recycled views
+                    annotationImage.visibility = View.VISIBLE
                     annotationImage.setImageDrawable(null)
                     getImageAnnotationHandler(itemView.context).displayImage(annotation, annotationImage, imageContainer)
                 }
@@ -367,8 +372,56 @@ class SessionAnnotationAdapter(
                     transcriptionContainer.visibility = View.GONE
                 }
             }
+            displayMetadataBadges(annotation, itemView, metadataContainer)
 
             //itemView.setOnClickListener { onItemClick(annotation) }
+        }
+    }
+
+    private fun displayMetadataBadges(annotation: Annotation, itemView: View, metadataContainer: ViewGroup) {
+        val metadataColumns = annotation.metadataColumns ?: return
+
+        if (metadataColumns.isEmpty()) {
+            metadataContainer.visibility = View.GONE
+            return
+        }
+
+        metadataContainer.visibility = View.VISIBLE
+
+        val context = itemView.context
+        val layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            setMargins(0, 0, 8.dpToPx(context), 4.dpToPx(context))
+        }
+
+        for (metadata in metadataColumns) {
+            if (metadata.value.isNullOrEmpty()) continue
+
+            val badge = TextView(context).apply {
+                text = "${metadata.name}: ${metadata.value}"
+                setTextColor(Color.WHITE)
+                setPadding(8.dpToPx(context), 4.dpToPx(context), 8.dpToPx(context), 4.dpToPx(context))
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+
+                // Set background color based on type
+                background = when (metadata.type) {
+                    "Characteristics" -> getBackgroundDrawable(context, R.color.primary)
+                    "Comment" -> getBackgroundDrawable(context, R.color.secondary)
+                    "Factor value" -> getBackgroundDrawable(context, R.color.success)
+                    else -> getBackgroundDrawable(context, R.color.danger)
+                }
+            }
+
+            metadataContainer.addView(badge, layoutParams)
+        }
+    }
+
+    private fun getBackgroundDrawable(context: Context, colorResId: Int): GradientDrawable {
+        return GradientDrawable().apply {
+            cornerRadius = 16f
+            setColor(ContextCompat.getColor(context, colorResId))
         }
     }
 

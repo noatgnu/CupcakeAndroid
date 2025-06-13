@@ -20,4 +20,8 @@
         android:id="@+id/nav_protocols"
         android:icon="@drawable/ic_session"
         android:title="@string/protocols" />
+    <item
+        android:id="@+id/nav_metadata"
+        android:icon="@drawable/outline_feature_search_24"
+        android:title="Metadata Search" />
 </menu>

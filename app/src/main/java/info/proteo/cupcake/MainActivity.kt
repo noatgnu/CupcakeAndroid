@@ -65,6 +65,12 @@ class MainActivity : AppCompatActivity() {
                     binding.drawerLayout?.closeDrawers()
                     true
                 }
+                R.id.nav_metadata -> {
+                    val intent = Intent(this, MetadataActivity::class.java)
+                    startActivity(intent)
+                    binding.drawerLayout?.closeDrawers()
+                    true
+                }
                 R.id.nav_protocols -> {
                     val intent = Intent(this, ProtocolActivity::class.java)
                     startActivity(intent)

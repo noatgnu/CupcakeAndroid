@@ -20,6 +20,10 @@
         <action
             android:id="@+id/action_settings_to_profile_management"
             app:destination="@id/profileManagementFragment" />
+        <action
+            android:id="@+id/action_settings_to_update_metadata"
+            app:destination="@id/update_metadata_fragment" />
+
     </fragment>
 
     <fragment
@@ -30,6 +34,7 @@
         <action
             android:id="@+id/action_profile_management_to_settings"
             app:destination="@id/nav_settings" />
+
     </fragment>
 
 
@@ -101,6 +106,11 @@
         android:name="info.proteo.cupcake.ui.instrument.InstrumentFragment"
         android:label="Instruments"
         tools:layout="@layout/fragment_instrument" />
+
+    <fragment
+        android:id="@+id/update_metadata_fragment"
+        android:name="info.proteo.cupcake.ui.metadata.UpdateMetadataFragment"
+        android:label="Update Metadata" />
 
     <activity
         android:id="@+id/messageActivity"
