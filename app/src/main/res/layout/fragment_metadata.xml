@@ -56,7 +56,6 @@
             android:layout_marginStart="16dp" />
     </RadioGroup>
 
-    <!-- Add term type filter for MS Unique Vocabularies -->
     <LinearLayout
         android:id="@+id/termTypeFilterLayout"
         android:layout_width="match_parent"
@@ -73,43 +72,11 @@
             android:textStyle="bold"
             android:layout_marginBottom="4dp"/>
 
-        <RadioGroup
-            android:id="@+id/termTypeRadioGroup"
+        <Spinner
+            android:id="@+id/termTypeSpinner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <RadioButton
-                android:id="@+id/allTypesRadioButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="All Types"
-                android:checked="true"/>
-
-            <RadioButton
-                android:id="@+id/labelRadioButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Label"/>
-
-            <RadioButton
-                android:id="@+id/cleavageAgentRadioButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Cleavage agent details"/>
-
-            <RadioButton
-                android:id="@+id/instrumentRadioButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Instrument"/>
-
-            <RadioButton
-                android:id="@+id/dissociationMethodRadioButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Dissociation method"/>
-        </RadioGroup>
+            android:layout_marginTop="4dp"/>
     </LinearLayout>
 
     <TextView

@@ -16,6 +16,7 @@ import info.proteo.cupcake.data.remote.model.annotation.Annotation
 import info.proteo.cupcake.data.remote.model.annotation.AnnotationWithPermissions
 import info.proteo.cupcake.data.remote.model.instrument.Instrument
 import info.proteo.cupcake.data.remote.model.reagent.StoredReagent
+import info.proteo.cupcake.data.remote.model.user.User
 import info.proteo.cupcake.data.remote.service.CreateAnnotationRequest
 import info.proteo.cupcake.data.remote.service.SessionService
 import info.proteo.cupcake.data.repository.AnnotationRepository
@@ -31,6 +32,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import okhttp3.MultipartBody
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -420,6 +422,24 @@ class SessionViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
 
+            }
+        }
+    }
+
+    fun getRecentSession(userId: Int, sessionId: String, protocolId: Int): RecentSessionEntity? {
+        return runBlocking {
+            try {
+                // Get the most recent session for this user
+                val recentSession = recentSessionDao.getMostRecentSession(userId)
+
+                // Check if it matches our current session and protocol
+                if (recentSession?.sessionId == sessionId.toInt() && recentSession.protocolId == protocolId) {
+                    return@runBlocking recentSession
+                }
+                null
+            } catch (e: Exception) {
+                Log.e("SessionViewModel", "Error getting recent session: ${e.message}")
+                null
             }
         }
     }

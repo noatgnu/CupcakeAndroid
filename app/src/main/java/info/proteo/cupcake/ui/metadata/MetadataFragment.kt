@@ -42,6 +42,7 @@ class MetadataFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupTypeSpinner()
+        setupTermTypeFilter()
         setupSearchView()
         setupTermTypeFilter()
         setupRecyclerView()
@@ -82,8 +83,39 @@ class MetadataFragment : Fragment() {
     }
 
     private fun setupTermTypeFilter() {
-        binding.termTypeRadioGroup.setOnCheckedChangeListener { _, _ ->
-            performSearch(binding.searchView.query.toString())
+        val termTypes = arrayOf(
+            "All Types",
+            "Label",
+            "Cleavage agent details",
+            "Instrument",
+            "Dissociation method",
+            "MS2 analyzer type",
+            "Enrichment process",
+            "Fractionation method",
+            "Proteomics data acquisition method",
+            "Reduction reagent",
+            "Alkylation reagent"
+        )
+
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, termTypes)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.termTypeSpinner.adapter = adapter
+
+        // Show the term type filter only when MS_UNIQUE_VOCABULARIES is selected
+        binding.metadataTypeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                updateCurrentAdapter(position)
+                binding.termTypeFilterLayout.visibility = if (position == 3) View.VISIBLE else View.GONE
+
+                // Reset search if the metadata type changes
+                if (binding.searchView.query.isNotEmpty()) {
+                    performSearch(binding.searchView.query.toString())
+                }
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+                // Do nothing
+            }
         }
     }
 
@@ -150,11 +182,18 @@ class MetadataFragment : Fragment() {
 
         var termType = ""
         if (metadataType == MetadataType.MS_UNIQUE_VOCABULARIES) {
-            termType = when (binding.termTypeRadioGroup.checkedRadioButtonId) {
-                R.id.labelRadioButton -> "sample attribute"
-                R.id.cleavageAgentRadioButton -> "cleavage agent"
-                R.id.instrumentRadioButton -> "instrument"
-                R.id.dissociationMethodRadioButton -> "dissociation method"
+            termType = when (binding.termTypeSpinner.selectedItemPosition) {
+                0 -> "" // All Types
+                1 -> "sample attribute" // Label
+                2 -> "cleavage agent" // Cleavage agent details
+                3 -> "instrument" // Instrument
+                4 -> "dissociation method" // Dissociation method
+                5 -> "mass analyzer type" // Mass analyzer type
+                6 -> "enrichment process" // Enrichment process
+                7 -> "fractionation method" // Fractionation method
+                8 -> "proteomics data acquisition method" // Proteomics data acquisition method
+                9 -> "reduction reagent" // Reduction reagent
+                10 -> "alkylation reagent" // Alkylation reagent
                 else -> ""
             }
         }

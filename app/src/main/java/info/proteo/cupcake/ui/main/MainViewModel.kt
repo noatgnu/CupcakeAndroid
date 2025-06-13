@@ -1,5 +1,6 @@
 package info.proteo.cupcake.ui.main
 
+import android.os.CountDownTimer
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -57,6 +58,8 @@ class MainViewModel @Inject constructor(
     private val _recentSessions = MutableStateFlow<List<RecentSessionEntity>>(emptyList())
     val recentSessions: StateFlow<List<RecentSessionEntity>> = _recentSessions.asStateFlow()
 
+    private var countDownTimer: CountDownTimer? = null
+    private val timerUpdateIntervalMs = 1000L
 
     private var timerJob: Job? = null
     private var webSocketListenerJob: Job? = null
@@ -180,53 +183,67 @@ class MainViewModel @Inject constructor(
 
 
     private fun startTimerUpdates() {
-        timerJob?.cancel()
-        timerJob = viewModelScope.launch {
-            while (true) {
-                delay(1000)
+        stopTimerUpdates() // Ensure any existing timer is stopped
+
+        countDownTimer = object : CountDownTimer(Long.MAX_VALUE, timerUpdateIntervalMs) {
+            override fun onTick(millisUntilFinished: Long) {
                 updateTimerStates()
             }
-        }
+
+            override fun onFinish() {
+                // This won't be called unless we approach Long.MAX_VALUE
+            }
+        }.start()
     }
 
-    private fun updateTimerStates() {
-        val currentActiveTimekeepers = _activeTimekeepers.value
-        val newActiveTimerStates = mutableMapOf<Int, TimerState>()
+    private fun stopTimerUpdates() {
+        countDownTimer?.cancel()
+        countDownTimer = null
+    }
 
-        currentActiveTimekeepers.forEach { timeKeeper ->
-            if (timeKeeper.started == true && timeKeeper.startTime != null) {
+
+
+    private fun updateTimerStates() {
+        val currentTimekeepers = _activeTimekeepers.value
+        if (currentTimekeepers.isEmpty()) return
+
+        val updatedTimerStates = mutableMapOf<Int, TimerState>()
+        val currentTime = System.currentTimeMillis()
+
+        currentTimekeepers.forEach { timekeeper ->
+            if (timekeeper.started == true && timekeeper.startTime != null) {
                 try {
                     val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.getDefault())
                     formatter.timeZone = TimeZone.getTimeZone("UTC")
-                    val startTime = formatter.parse(timeKeeper.startTime)?.time ?: 0L
+                    val startTime = formatter.parse(timekeeper.startTime)?.time ?: 0L
 
-                    val elapsedSeconds = ((System.currentTimeMillis() - startTime) / 1000).toInt()
-
-                    val initialDuration = timeKeeper.currentDuration ?: 0
-
+                    val elapsedSeconds = ((currentTime - startTime) / 1000).toInt()
+                    val initialDuration = timekeeper.currentDuration ?: 0
                     val remainingDuration = (initialDuration - elapsedSeconds).coerceAtLeast(0)
 
-                    newActiveTimerStates[timeKeeper.id] = TimerState(
-                        id = timeKeeper.id,
+                    updatedTimerStates[timekeeper.id] = TimerState(
+                        started = true,
                         currentDuration = remainingDuration,
-                        started = remainingDuration > 0
+                        id = timekeeper.id
                     )
                 } catch (e: Exception) {
-                    Log.e("MainViewModel", "Error calculating timer duration for ID ${timeKeeper.id}", e)
-                    _activeTimerStates.value[timeKeeper.id]?.let {
-                        newActiveTimerStates[timeKeeper.id] = it
-                    }
+                    // Fallback if date parsing fails
+                    updatedTimerStates[timekeeper.id] = TimerState(
+                        started = true,
+                        currentDuration = timekeeper.currentDuration ?: 0,
+                        id = timekeeper.id
+                    )
                 }
             } else {
-                newActiveTimerStates[timeKeeper.id] = TimerState(
-                    id = timeKeeper.id,
-                    currentDuration = timeKeeper.currentDuration ?: 0,
-                    started = false
+                updatedTimerStates[timekeeper.id] = TimerState(
+                    started = true,
+                    currentDuration = timekeeper.currentDuration ?: 0,
+                    id = timekeeper.id
                 )
             }
         }
 
-        _activeTimerStates.value = newActiveTimerStates
+        _activeTimerStates.value = updatedTimerStates
     }
 
 
@@ -308,13 +325,14 @@ class MainViewModel @Inject constructor(
                     fetchLatestMessageThreads()
                     fetchActiveTimekeepers()
                     fetchRecentSessions()
+                    startTimerUpdates()
                 } else {
                     Log.d("MainViewModel", "No active user found")
                     _messageThreads.value = emptyList()
                     _activeTimekeepers.value = emptyList()
                     _activeTimekeepersCount.value = 0
                     _activeTimerStates.value = emptyMap()
-                    timerJob?.cancel()
+                    stopTimerUpdates()
                 }
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Error loading user data", e)
@@ -325,6 +343,8 @@ class MainViewModel @Inject constructor(
             }
         }
     }
+
+
 
     fun fetchLatestMessageThreads() {
         Log.d("MainViewModel", "Fetching latest message threads")
@@ -346,7 +366,7 @@ class MainViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        timerJob?.cancel()
+        stopTimerUpdates()
         webSocketListenerJob?.cancel() // Clean up WebSocket listener
         Log.d("MainViewModel", "ViewModel cleared, jobs cancelled.")
     }

@@ -2,6 +2,7 @@ package info.proteo.cupcake.ui.session
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -9,8 +10,13 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.media.MediaRecorder
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.os.Environment
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.Log
@@ -34,11 +40,7 @@ import android.widget.Spinner
 import androidx.appcompat.widget.SearchView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.core.view.GravityCompat
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
@@ -56,6 +58,7 @@ import info.proteo.cupcake.data.remote.model.protocol.ProtocolSection
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
 import info.proteo.cupcake.data.remote.model.protocol.StepReagent
 import info.proteo.cupcake.data.remote.model.annotation.Annotation
+import info.proteo.cupcake.data.remote.model.protocol.TimeKeeper
 import info.proteo.cupcake.data.remote.service.CreateAnnotationRequest
 import info.proteo.cupcake.data.remote.service.SessionCreateRequest
 import info.proteo.cupcake.data.remote.service.SessionService
@@ -66,6 +69,7 @@ import info.proteo.cupcake.data.repository.InstrumentUsageRepository
 import info.proteo.cupcake.data.repository.ProtocolStepRepository
 import info.proteo.cupcake.data.repository.StorageRepository
 import info.proteo.cupcake.data.repository.StoredReagentRepository
+import info.proteo.cupcake.data.repository.TimeKeeperRepository
 import info.proteo.cupcake.data.repository.UserRepository
 import info.proteo.cupcake.databinding.FragmentSessionBinding
 import info.proteo.cupcake.util.ProtocolHtmlRenderer.renderAsHtml
@@ -76,12 +80,14 @@ import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.File
-import java.io.IOException
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 import javax.inject.Inject
+import kotlin.compareTo
+import kotlin.div
+import kotlin.text.toInt
+import kotlin.times
 
 @AndroidEntryPoint
 class SessionFragment : Fragment() {
@@ -102,6 +108,13 @@ class SessionFragment : Fragment() {
     lateinit var instrumentRepository: InstrumentRepository
     @Inject
     lateinit var instrumentUsageRepository: InstrumentUsageRepository
+    @Inject
+    lateinit var timeKeeperRepository: TimeKeeperRepository
+
+    private var currentTimeKeeper: TimeKeeper? = null
+    private var countDownTimer: CountDownTimer? = null
+    private var timeRemainingMillis: Long = 0
+    private var isTimerRunning = false
 
     private var protocolId: Int = -1
     private var sessionId: String = ""
@@ -220,6 +233,175 @@ class SessionFragment : Fragment() {
             }
         )
 
+    }
+
+    private fun setupStepTimer(step: ProtocolStep) {
+        // Cancel any existing timer
+        countDownTimer?.cancel()
+
+        // Reset UI
+        binding.timerCard.visibility = View.GONE
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                Log.d("SessionFragment", "session ${viewModel.session.value}")
+                val existingTimeKeeper = viewModel.session.value?.timeKeeper?.firstOrNull {
+                    it.step == step.id
+                }
+                val timeKeeper = if (existingTimeKeeper != null) {
+                    Log.d("SessionFragment", "Using existing TimeKeeper: ${existingTimeKeeper.id}")
+                    existingTimeKeeper
+                } else {
+                    Log.d("SessionFragment", "Fetching TimeKeeper for step: ${step.id}")
+                    val result = protocolStepRepository.getTimeKeeper(
+                        id = step.id,
+                        session = sessionId
+                    )
+                    result.getOrNull()
+                }
+                if (timeKeeper != null) {
+                    currentTimeKeeper = timeKeeper
+
+                    timeRemainingMillis = if (timeKeeper.currentDuration == null) {
+                        (step.stepDuration ?: 0) * 1000L
+                    } else {
+                        (timeKeeper.currentDuration) * 1000L
+                    }
+                    if (timeKeeper.started) {
+                        val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.getDefault())
+                        formatter.timeZone = TimeZone.getTimeZone("UTC")
+                        val startTime = formatter.parse(timeKeeper.startTime)?.time ?: 0L
+
+                        val elapsedSeconds = ((System.currentTimeMillis() - startTime) / 1000).toInt()
+                        val initialDuration = timeKeeper.currentDuration ?: 0
+                        val remainingDuration = (initialDuration - elapsedSeconds).coerceAtLeast(0)
+                        timeRemainingMillis = remainingDuration * 1000L
+                    }
+
+
+                    // Only show timer if step has a duration
+                    if ((step.stepDuration ?: 0) > 0) {
+                        binding.timerCard.visibility = View.VISIBLE
+                        updateTimerDisplay(timeRemainingMillis)
+
+                        // Set button state
+                        val buttonIcon = if (timeKeeper.started) R.drawable.ic_pause else R.drawable.ic_play_arrow
+                        binding.timerPlayPauseButton.setImageResource(buttonIcon)
+                        isTimerRunning = timeKeeper.started
+
+                        // Start timer if it was already running
+                        if (timeKeeper.started && timeRemainingMillis > 0) {
+                            startCountdownTimer(timeRemainingMillis)
+                        }
+                    }
+                }
+
+            } catch (e: Exception) {
+                Log.e("SessionFragment", "Exception getting timekeeper", e)
+            }
+        }
+
+        // Set up play/pause button click listener
+        binding.timerPlayPauseButton.setOnClickListener {
+            toggleTimer()
+        }
+    }
+
+    private fun toggleTimer() {
+        currentTimeKeeper?.let { timeKeeper ->
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    if (isTimerRunning) {
+                        // Pause timer
+                        countDownTimer?.cancel()
+                        binding.timerPlayPauseButton.setImageResource(R.drawable.ic_play_arrow)
+
+                        // Update TimeKeeper with the current remaining duration in seconds
+                        val updatedTimeKeeper = timeKeeper.copy(
+                            started = false,
+                            currentDuration = (timeRemainingMillis / 1000).toInt() // Convert ms to seconds
+                        )
+                        val result = timeKeeperRepository.updateTimeKeeper(timeKeeper.id, updatedTimeKeeper)
+                        result.onSuccess {
+                            currentTimeKeeper = it
+                        }
+                    } else {
+                        // Start timer
+                        startCountdownTimer(timeRemainingMillis)
+                        binding.timerPlayPauseButton.setImageResource(R.drawable.ic_pause)
+
+                        // Update TimeKeeper - just set started flag
+                        val updatedTimeKeeper = timeKeeper.copy(started = true)
+                        val result = timeKeeperRepository.updateTimeKeeper(timeKeeper.id, updatedTimeKeeper)
+                        result.onSuccess {
+                            currentTimeKeeper = it
+                        }
+                    }
+                    isTimerRunning = !isTimerRunning
+                } catch (e: Exception) {
+                    Log.e("SessionFragment", "Error toggling timer: ${e.message}")
+                }
+            }
+        }
+    }
+
+    private fun startCountdownTimer(milliseconds: Long) {
+        countDownTimer?.cancel()
+
+        countDownTimer = object : CountDownTimer(milliseconds, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                timeRemainingMillis = millisUntilFinished
+                updateTimerDisplay(millisUntilFinished)
+            }
+
+            override fun onFinish() {
+                timeRemainingMillis = 0
+                updateTimerDisplay(0)
+                isTimerRunning = false
+                binding.timerPlayPauseButton.setImageResource(R.drawable.ic_play_arrow)
+
+                // Update TimeKeeper to store 0 remaining time
+                currentTimeKeeper?.let { timeKeeper ->
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        val updatedTimeKeeper = timeKeeper.copy(
+                            started = false,
+                            currentDuration = 0
+                        )
+                        timeKeeperRepository.updateTimeKeeper(timeKeeper.id, updatedTimeKeeper)
+                            .onSuccess {
+                                currentTimeKeeper = it
+                            }
+                    }
+                }
+
+                // Alert the user that time is up with vibration
+                val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val vibratorManager = requireContext().getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                    vibratorManager.defaultVibrator
+                } else {
+                    @Suppress("DEPRECATION")
+                    requireContext().getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+                }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
+                } else {
+                    @Suppress("DEPRECATION")
+                    vibrator.vibrate(500)
+                }
+
+                Toast.makeText(requireContext(), "Step timer completed!", Toast.LENGTH_SHORT).show()
+            }
+        }.start()
+    }
+
+    private fun updateTimerDisplay(milliseconds: Long) {
+        val hours = milliseconds / (1000 * 60 * 60)
+        val minutes = (milliseconds % (1000 * 60 * 60)) / (1000 * 60)
+        val seconds = (milliseconds % (1000 * 60)) / 1000
+
+        val timeString = String.format("%02d:%02d:%02d", hours, minutes, seconds)
+        binding.timerText.text = timeString
     }
 
     private fun toggleReagentsSection() {
@@ -344,7 +526,7 @@ class SessionFragment : Fragment() {
                         val relevantProtocolId = protocols[0].id
                         this@SessionFragment.protocolId = relevantProtocolId
                         viewModel.loadProtocolDetails(relevantProtocolId)
-
+                        checkAndNavigateToRecentStep(sessionId, relevantProtocolId)
                     } else {
                         showError("No protocols associated with this session")
                         binding.progressBar.visibility = View.GONE
@@ -358,6 +540,41 @@ class SessionFragment : Fragment() {
             } catch (e: Exception) {
                 showError("Error loading session: ${e.message}")
                 binding.progressBar.visibility = View.GONE
+            }
+        }
+    }
+
+    private fun checkAndNavigateToRecentStep(sessionId: String, protocolId: Int) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val user = userRepository.getUserFromActivePreference()
+                if (user != null) {
+                    val recentSession = viewModel.getRecentSession(user.id, sessionId, protocolId)
+
+                    if (recentSession != null && recentSession.stepId != null) {
+                        viewModel.protocol.collectLatest { protocol ->
+                            if (protocol != null) {
+                                val stepId = recentSession.stepId
+                                val step = protocol.steps?.find { it.id == stepId }
+
+                                if (step != null) {
+                                    val sectionId = step.stepSection
+                                    val section = protocol.sections?.find { it.id == sectionId }
+
+                                    if (section != null) {
+                                        displayStepContent(step, section)
+                                        sidebarAdapter.setSelectedStep(step.id, section.id)
+                                        Log.d("SessionFragment", "Navigated to recent step: ${step.id}")
+                                        return@collectLatest
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+            } catch (e: Exception) {
+                Log.e("SessionFragment", "Error retrieving recent step: ${e.message}")
             }
         }
     }
@@ -457,8 +674,8 @@ class SessionFragment : Fragment() {
         binding.currentSectionTitle.text = section.sectionDescription
         binding.currentSectionTitle.visibility = View.VISIBLE
 
-        viewModel.loadReagentInfoForStep(step, sessionId) // This will trigger updateReagentViews
-
+        viewModel.loadReagentInfoForStep(step, sessionId)
+        setupStepTimer(step)
         if (!isReagentAdapterInitialized) {
             setupReagentAdapter()
         }
@@ -508,6 +725,9 @@ class SessionFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        countDownTimer?.cancel()
+        countDownTimer = null
+
         super.onDestroyView()
         _binding = null
     }

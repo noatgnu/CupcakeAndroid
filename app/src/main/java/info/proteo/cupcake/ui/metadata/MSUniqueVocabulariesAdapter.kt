@@ -31,7 +31,7 @@ class MSUniqueVocabulariesAdapter : ListAdapter<MSUniqueVocabulariesEntity, MSUn
         fun bind(item: MSUniqueVocabulariesEntity) {
             title.text = item.accession
             subtitle.text = item.name ?: ""
-            description.text = item.definition ?: ""
+            description.text = "${item.definition} (${item.termType})"
         }
     }
 

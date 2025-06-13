@@ -168,21 +168,23 @@ class SessionServiceImpl @Inject constructor(
 
     override suspend fun getSessionByUniqueId(uniqueId: String): Result<Session> {
         return try {
+            val apiSession = sessionApiService.getSessionByUniqueId(uniqueId)
+
+            withContext(dispatcherProvider) {
+                sessionDao.insert(apiSession.toEntity())
+            }
+
+            Result.success(apiSession)
+
+        } catch (e: Exception) {
             val cachedSession = sessionDao.getByUniqueId(uniqueId)?.toDomainModel()
 
             if (cachedSession != null) {
                 Result.success(cachedSession)
             } else {
-                val apiSession = sessionApiService.getSessionByUniqueId(uniqueId)
-
-                withContext(dispatcherProvider) {
-                    sessionDao.insert(apiSession.toEntity())
-                }
-
-                Result.success(apiSession)
+                Result.failure(e)
             }
-        } catch (e: Exception) {
-            Result.failure(e)
+
         }
     }
 

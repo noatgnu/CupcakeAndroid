@@ -68,16 +68,15 @@ interface MSUniqueVocabulariesDao {
     suspend fun deleteAll()
 
     @Query("""
-        SELECT * FROM ms_unique_vocabularies 
-        WHERE (:mode = 0 AND (
-            name LIKE '%' || :query || '%'
-        )) OR (:mode = 1 AND (
-            name LIKE :query || '%'
-        ))
-        AND (:termType = '' OR term_type = :termType)
+    SELECT * FROM ms_unique_vocabularies 
+    WHERE ((:mode = 0 AND (
+        name LIKE '%' || :query || '%'
+    )) OR (:mode = 1 AND (
+        name LIKE :query || '%'
+    )))
+    AND (:termType = '' OR term_type = :termType)
     """)
     fun searchVocabularies(query: String, mode: Int, termType: String = ""): Flow<List<MSUniqueVocabulariesEntity>>
-
 }
 
 @Dao
