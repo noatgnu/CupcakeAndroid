@@ -1,42 +1,19 @@
 package info.proteo.cupcake.ui.metadata
 
+import android.content.Context
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import info.proteo.cupcake.R
 import info.proteo.cupcake.data.local.entity.metadatacolumn.HumanDiseaseEntity
+import info.proteo.cupcake.databinding.ItemMetadataBinding
 
-class HumanDiseaseAdapter : ListAdapter<HumanDiseaseEntity, HumanDiseaseAdapter.ViewHolder>(DiffCallback()) {
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_metadata, parent, false)
-        return ViewHolder(view)
-    }
-
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val item = getItem(position)
-        holder.bind(item)
-    }
-
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        private val title: TextView = view.findViewById(R.id.titleText)
-        private val subtitle: TextView = view.findViewById(R.id.subtitleText)
-        private val description: TextView = view.findViewById(R.id.descriptionText)
-
-        fun bind(item: HumanDiseaseEntity) {
-            val titleText = item.accession.let { "$it ${item.identifier}" }
-            title.text = titleText
-            subtitle.text = item.acronym ?: ""
-            description.text = item.definition ?: item.synonyms ?: ""
-        }
-    }
-
-    class DiffCallback : DiffUtil.ItemCallback<HumanDiseaseEntity>() {
+class HumanDiseaseAdapter : ListAdapter<HumanDiseaseEntity, HumanDiseaseAdapter.ViewHolder>(
+    object : DiffUtil.ItemCallback<HumanDiseaseEntity>() {
         override fun areItemsTheSame(oldItem: HumanDiseaseEntity, newItem: HumanDiseaseEntity): Boolean {
             return oldItem.id == newItem.id
         }
@@ -44,5 +21,43 @@ class HumanDiseaseAdapter : ListAdapter<HumanDiseaseEntity, HumanDiseaseAdapter.
         override fun areContentsTheSame(oldItem: HumanDiseaseEntity, newItem: HumanDiseaseEntity): Boolean {
             return oldItem == newItem
         }
+    }
+) {
+    class ViewHolder(val binding: ItemMetadataBinding) : RecyclerView.ViewHolder(binding.root)
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val binding = ItemMetadataBinding.inflate(
+            LayoutInflater.from(parent.context), parent, false
+        )
+        return ViewHolder(binding)
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val disease = getItem(position)
+
+        with(holder.binding) {
+            titleText.text = disease.identifier
+            subtitleText.text = disease.acronym ?: ""
+            descriptionText.text = disease.definition ?: disease.synonyms ?: ""
+
+            sdrfButton.setOnClickListener {
+                val converter = SDRFConverter()
+
+                val (columnName, sdrfValue) = converter.convertHumanDisease(disease.identifier?:"")
+                showSdrfDialog(holder.itemView.context, columnName, sdrfValue)
+            }
+        }
+    }
+
+    private fun showSdrfDialog(context: Context, columnName: String, sdrfValue: String) {
+        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_sdrf, null)
+        dialogView.findViewById<TextView>(R.id.sdrfColumnNameText).text = columnName
+        dialogView.findViewById<TextView>(R.id.sdrfValueText).text = sdrfValue
+
+        AlertDialog.Builder(context)
+            .setTitle("SDRF Format")
+            .setView(dialogView)
+            .setPositiveButton("Close", null)
+            .show()
     }
 }

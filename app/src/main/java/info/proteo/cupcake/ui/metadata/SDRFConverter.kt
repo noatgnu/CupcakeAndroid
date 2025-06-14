@@ -56,6 +56,46 @@ class SDRFConverter {
         return Pair(columnName, value)
     }
 
+
+    fun convertUnimodSpec(unimod: UnimodEntity, spec: UnimodSpec): Pair<String, String> {
+        val columnName = "modification parameters"
+        val accession = unimod.accession
+        val name = unimod.name
+
+        var value = if (name?.contains("AC=") == true || name?.contains("ac=") == true) {
+            "NT=$name"
+        } else {
+            "AC=$accession;NT=$name"
+        }
+
+        // Add modification type if available
+        spec.modificationType?.let {
+            value += ";mt=$it"
+        }
+
+        // Add position if available
+        spec.position?.let {
+            value += ";pp=$it"
+        }
+
+        // Add amino acid target if available
+        spec.aa?.let {
+            value += ";ta=$it"
+        }
+
+        // Add target site if available
+        spec.targetSite?.let {
+            value += ";ts=$it"
+        }
+
+        // Add mono mass if available
+        spec.monoMass?.let {
+            value += ";mm=$it"
+        }
+
+        return Pair(columnName, value)
+    }
+
     fun convertHumanDisease(disease: String): Pair<String, String> {
         val columnName = "disease"
         val value = "NT=$disease"
