@@ -57,18 +57,33 @@ class StoredReagentActivity : AppCompatActivity() {
     }
 
     private fun openBarcodeScanner(storageObjectId: Int) {
-        val barcodeFragment = BarcodeScannerFragment()
+        // Set up result listener before navigating to the fragment
+        supportFragmentManager.setFragmentResultListener(
+            "barcode_result",
+            this
+        ) { _, bundle ->
+            val barcode = bundle.getString("barcode")
+            barcode?.let {
+                // Handle the scanned barcode here
+                binding.textViewSearchIndicator.visibility = View.VISIBLE
+                binding.textViewSearchIndicator.text = "Searching: $it"
 
-        barcodeFragment.setOnBarcodeDetectedListener { barcode ->
-            supportFragmentManager.setFragmentResult(
-                "barcode_result",
-                Bundle().apply {
-                    putString("barcode", barcode)
-                    putInt("storage_object_id", storageObjectId)
+                // Refresh the fragment with search term
+                val fragment = StoredReagentFragment().apply {
+                    arguments = Bundle().apply {
+                        putInt("STORAGE_OBJECT_ID", storageObjectId)
+                        putString("SEARCH_TERM", it)
+                    }
                 }
-            )
-            supportFragmentManager.popBackStack()
+
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, fragment)
+                    .commit()
+            }
         }
+
+        // Navigate to barcode scanner fragment
+        val barcodeFragment = BarcodeScannerFragment()
 
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, barcodeFragment)

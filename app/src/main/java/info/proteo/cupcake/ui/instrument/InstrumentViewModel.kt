@@ -67,6 +67,7 @@ class InstrumentViewModel @Inject constructor(
         if (refresh) {
             currentOffset = 0
         }
+        Log.d("InstrumentViewModel", "Loading instruments with query: $searchQuery, serialNumber: $serialNumber, offset: $currentOffset")
 
         repository.getInstruments(
             search = searchQuery,

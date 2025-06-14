@@ -108,6 +108,20 @@
         tools:layout="@layout/fragment_instrument" />
 
     <fragment
+        android:id="@+id/barcodeScannerFragment"
+        android:name="info.proteo.cupcake.ui.barcode.BarcodeScannerFragment"
+        android:label="Scan Barcode">
+        <argument
+            android:name="storage_object_id"
+            app:argType="integer"
+            android:defaultValue="-1" />
+    </fragment>
+
+    <action
+        android:id="@+id/action_global_barcodeScannerFragment"
+        app:destination="@id/barcodeScannerFragment" />
+
+    <fragment
         android:id="@+id/update_metadata_fragment"
         android:name="info.proteo.cupcake.ui.metadata.UpdateMetadataFragment"
         android:label="Update Metadata" />

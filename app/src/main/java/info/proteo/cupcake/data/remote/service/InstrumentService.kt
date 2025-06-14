@@ -1,5 +1,6 @@
 package info.proteo.cupcake.data.remote.service
 
+import android.util.Log
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 import info.proteo.cupcake.data.local.dao.instrument.InstrumentDao
@@ -189,6 +190,7 @@ class InstrumentServiceImpl @Inject constructor(
         return withContext(Dispatchers.IO) {
             try {
                 val response = apiService.getInstruments(search, ordering, limit, offset, serialNumber)
+                Log.d("InstrumentService", "Fetched ${response.results.size} instruments from API")
                 response.results.forEach { instrument ->
                     cacheInstrument(instrument)
                 }

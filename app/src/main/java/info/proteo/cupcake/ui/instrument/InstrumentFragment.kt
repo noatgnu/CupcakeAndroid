@@ -1,6 +1,7 @@
 package info.proteo.cupcake.ui.instrument
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
 // Instrument import is no longer needed for navigation action if passing only ID
 import info.proteo.cupcake.databinding.FragmentInstrumentBinding
+import info.proteo.cupcake.ui.barcode.BarcodeScannerFragment
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -48,8 +50,8 @@ class InstrumentFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        instrumentAdapter = InstrumentAdapter { instrumentId -> // Listener now receives instrumentId (Int)
-            navigateToDetail(instrumentId)
+        instrumentAdapter = InstrumentAdapter { instrumentId ->
+
         }
         binding.recyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext())
@@ -79,6 +81,26 @@ class InstrumentFragment : Fragment() {
     }
 
     private fun setupSearch() {
+        binding.btnScanBarcode.setOnClickListener {
+            requireActivity().supportFragmentManager.setFragmentResultListener(
+                "barcode_result",
+                viewLifecycleOwner
+            ) { _, bundle ->
+                val barcode = bundle.getString("barcode")
+                Log.d("InstrumentFragment", "Barcode scanned: $barcode")
+                barcode?.let {
+                    viewModel.search(it, true)
+                }
+            }
+
+            // Use activity's FragmentManager instead of parent's
+            val scannerFragment = BarcodeScannerFragment()
+
+            requireActivity().supportFragmentManager.beginTransaction()
+                .add(android.R.id.content, scannerFragment, "barcode_scanner")
+                .addToBackStack("barcode_scanner")
+                .commit()
+        }
         binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 viewModel.search(query)
@@ -92,14 +114,13 @@ class InstrumentFragment : Fragment() {
                 return true
             }
         })
+
+
     }
 
 
 
-    private fun navigateToDetail(instrumentId: Int) {
-        val action = InstrumentFragmentDirections.actionInstrumentFragmentToInstrumentDetailFragment(instrumentId)
-        findNavController().navigate(action)
-    }
+
 
     private fun setupSwipeRefresh() {
         binding.swipeRefreshLayout.setOnRefreshListener {

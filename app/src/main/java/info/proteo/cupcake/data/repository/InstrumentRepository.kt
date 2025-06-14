@@ -17,7 +17,7 @@ class InstrumentRepository @Inject constructor(
     private val instrumentService: InstrumentService
 ) {
     fun getInstruments(search: String? = null, ordering: String? = null, limit: Int? = null, offset: Int? = null, serialNumber: String? = null): Flow<Result<LimitOffsetResponse<Instrument>>> = flow {
-        emit(instrumentService.getInstruments(search, ordering))
+        emit(instrumentService.getInstruments(search, ordering, limit, offset, serialNumber))
     }
 
     fun getInstrument(id: Int): Flow<Result<Instrument>> = flow {

@@ -14,6 +14,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.setFragmentResult
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
@@ -68,6 +69,20 @@ class BarcodeScannerFragment : Fragment() {
             )
             .build()
         barcodeScanner = BarcodeScanning.getClient(options)
+
+        // Add confirm button click listener
+        binding.btnConfirm.setOnClickListener {
+            val barcode = binding.barcodeValue.text.toString()
+            if (barcode.isNotEmpty()) {
+                setFragmentResult(
+                    "barcode_result",
+                    Bundle().apply {
+                        putString("barcode", barcode)
+                    }
+                )
+                parentFragmentManager.popBackStack()
+            }
+        }
 
         // Request camera permission
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
