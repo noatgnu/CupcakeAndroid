@@ -19,6 +19,8 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import android.app.AlertDialog
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.text.Editable
@@ -42,6 +44,7 @@ import info.proteo.cupcake.R
 import info.proteo.cupcake.SessionManager
 import info.proteo.cupcake.SupportInformationActivity
 import info.proteo.cupcake.data.remote.model.annotation.AnnotationFolder
+import info.proteo.cupcake.data.remote.model.instrument.CreateInstrumentUsageRequest
 import info.proteo.cupcake.data.remote.model.instrument.Instrument
 import info.proteo.cupcake.databinding.FragmentInstrumentDetailBinding
 import info.proteo.cupcake.ui.user.UserSearchAdapter
@@ -49,6 +52,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import javax.inject.Inject
@@ -64,6 +69,9 @@ class InstrumentDetailFragment : Fragment() {
 
     private lateinit var annotationAdapter: InstrumentAnnotationAdapter
     private var currentSelectedFolderId: Int? = null
+
+    private lateinit var bookingAdapter: InstrumentUsageAdapter
+
 
     private val pickImageRequest = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let {
@@ -108,9 +116,11 @@ class InstrumentDetailFragment : Fragment() {
 
         setupRecyclerView()
         setupMenu()
+        setupBookingsView()
         observeViewModel()
 
         viewModel.loadInstrumentDetailsAndPermissions(args.instrumentId)
+
 
         binding.tabLayoutAnnotationFolders.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
@@ -134,6 +144,26 @@ class InstrumentDetailFragment : Fragment() {
                 }
             }
         })
+    }
+
+    private fun setupBookingsView() {
+        bookingAdapter = InstrumentUsageAdapter(emptyList())
+        binding.recyclerViewBookings.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = bookingAdapter
+            addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
+        }
+
+        binding.btnPreviousPeriod.setOnClickListener {
+            viewModel.navigateToPreviousPeriod()
+        }
+
+        binding.btnNextPeriod.setOnClickListener {
+            viewModel.navigateToNextPeriod()
+        }
+        binding.fabBookUsage.setOnClickListener {
+            showBookUsageDialog()
+        }
     }
 
 
@@ -209,6 +239,9 @@ class InstrumentDetailFragment : Fragment() {
     }
 
     private fun observeViewModel() {
+        viewModel.canBookInstrument.observe(viewLifecycleOwner) { canBook ->
+            binding.fabBookUsage.isVisible = canBook
+        }
         viewModel.isLoadingInstrument.observe(viewLifecycleOwner) { isLoading ->
             binding.progressBarInstrument.isVisible = isLoading
             if (!isLoading) {
@@ -328,6 +361,56 @@ class InstrumentDetailFragment : Fragment() {
                 }
             )
         }
+
+        viewModel.startDate.observe(viewLifecycleOwner) {
+            updateDateRangeDisplay()
+        }
+
+        viewModel.endDate.observe(viewLifecycleOwner) {
+            updateDateRangeDisplay()
+        }
+
+        viewModel.isLoadingBookings.observe(viewLifecycleOwner) { isLoading ->
+            binding.progressBarBookings.isVisible = isLoading
+            if (isLoading) {
+                binding.recyclerViewBookings.isVisible = false
+                binding.textViewEmptyBookings.isVisible = false
+            }
+        }
+
+        viewModel.bookings.observe(viewLifecycleOwner) { result ->
+            result.fold(
+                onSuccess = { response ->
+                    val bookings = response.results
+                    if (bookings.isNullOrEmpty()) {
+                        binding.textViewEmptyBookings.isVisible = true
+                        binding.recyclerViewBookings.isVisible = false
+                    } else {
+                        bookingAdapter = InstrumentUsageAdapter(bookings)
+                        binding.recyclerViewBookings.adapter = bookingAdapter
+                        binding.textViewEmptyBookings.isVisible = false
+                        binding.recyclerViewBookings.isVisible = true
+                    }
+                },
+                onFailure = { error ->
+                    binding.textViewEmptyBookings.text = "Error loading bookings: ${error.message}"
+                    binding.textViewEmptyBookings.isVisible = true
+                    binding.recyclerViewBookings.isVisible = false
+                }
+            )
+        }
+    }
+
+    private fun updateDateRangeDisplay() {
+        val startDate = viewModel.startDate.value
+        val endDate = viewModel.endDate.value
+
+        if (startDate != null && endDate != null) {
+            val dateFormat = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
+            val startStr = dateFormat.format(startDate.time)
+            val endStr = dateFormat.format(endDate.time)
+            binding.tvDateRange.text = "$startStr - $endStr"
+        }
     }
 
     private fun setupAnnotationFolderTabs(folders: List<AnnotationFolder>?, canManage: Boolean) {
@@ -422,6 +505,7 @@ class InstrumentDetailFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         binding.recyclerViewAnnotations.adapter = null
+        binding.recyclerViewBookings.adapter = null
         _binding = null
     }
 
@@ -677,5 +761,219 @@ class InstrumentDetailFragment : Fragment() {
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    private fun showBookUsageDialog() {
+        val dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_book_instrument_usage, null)
+
+        val startDateEditText = dialogView.findViewById<TextInputEditText>(R.id.edit_text_start_date)
+        val startTimeEditText = dialogView.findViewById<TextInputEditText>(R.id.edit_text_start_time)
+        val endDateEditText = dialogView.findViewById<TextInputEditText>(R.id.edit_text_end_date)
+        val endTimeEditText = dialogView.findViewById<TextInputEditText>(R.id.edit_text_end_time)
+        val descriptionEditText = dialogView.findViewById<TextInputEditText>(R.id.edit_text_description)
+
+        setupDateTimePickers(startDateEditText, startTimeEditText, endDateEditText, endTimeEditText)
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle("Book Instrument Usage")
+            .setView(dialogView)
+            .setPositiveButton("Book", null) // We'll set the listener later
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        dialog.setOnShowListener {
+            val bookButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            bookButton.setOnClickListener {
+                val startDateTime = parseDateTime(startDateEditText.text.toString(), startTimeEditText.text.toString())
+                val endDateTime = parseDateTime(endDateEditText.text.toString(), endTimeEditText.text.toString())
+                val description = descriptionEditText.text.toString()
+
+                if (startDateTime == null || endDateTime == null) {
+                    Toast.makeText(context, "Please enter valid dates and times", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+
+                if (startDateTime >= endDateTime) {
+                    Toast.makeText(context, "End time must be after start time", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+
+                if (description.isBlank()) {
+                    Toast.makeText(context, "Please enter a description", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+
+                if (isTimeOverlapping(startDateTime, endDateTime)) {
+                    Toast.makeText(context, "This time overlaps with an existing booking", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+
+                createBooking(startDateTime, endDateTime, description)
+                dialog.dismiss()
+            }
+        }
+
+        dialog.show()
+    }
+
+    private fun setupDateTimePickers(
+        startDateEditText: TextInputEditText,
+        startTimeEditText: TextInputEditText,
+        endDateEditText: TextInputEditText,
+        endTimeEditText: TextInputEditText
+    ) {
+        val today = Calendar.getInstance()
+
+        // Set default values to current time + 1 hour
+        val startDate = Calendar.getInstance()
+        startDate.add(Calendar.HOUR, 1)
+        val endDate = Calendar.getInstance()
+        endDate.add(Calendar.HOUR, 2)
+
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+
+        startDateEditText.setText(dateFormat.format(startDate.time))
+        startTimeEditText.setText(timeFormat.format(startDate.time))
+        endDateEditText.setText(dateFormat.format(endDate.time))
+        endTimeEditText.setText(timeFormat.format(endDate.time))
+
+        // Set up date pickers
+        startDateEditText.setOnClickListener {
+            showDatePicker(startDate) { calendar ->
+                startDate.set(Calendar.YEAR, calendar.get(Calendar.YEAR))
+                startDate.set(Calendar.MONTH, calendar.get(Calendar.MONTH))
+                startDate.set(Calendar.DAY_OF_MONTH, calendar.get(Calendar.DAY_OF_MONTH))
+                startDateEditText.setText(dateFormat.format(startDate.time))
+            }
+        }
+
+        endDateEditText.setOnClickListener {
+            showDatePicker(endDate) { calendar ->
+                endDate.set(Calendar.YEAR, calendar.get(Calendar.YEAR))
+                endDate.set(Calendar.MONTH, calendar.get(Calendar.MONTH))
+                endDate.set(Calendar.DAY_OF_MONTH, calendar.get(Calendar.DAY_OF_MONTH))
+                endDateEditText.setText(dateFormat.format(endDate.time))
+            }
+        }
+
+        // Set up time pickers
+        startTimeEditText.setOnClickListener {
+            showTimePicker(startDate) { hourOfDay, minute ->
+                startDate.set(Calendar.HOUR_OF_DAY, hourOfDay)
+                startDate.set(Calendar.MINUTE, minute)
+                startTimeEditText.setText(timeFormat.format(startDate.time))
+            }
+        }
+
+        endTimeEditText.setOnClickListener {
+            showTimePicker(endDate) { hourOfDay, minute ->
+                endDate.set(Calendar.HOUR_OF_DAY, hourOfDay)
+                endDate.set(Calendar.MINUTE, minute)
+                endTimeEditText.setText(timeFormat.format(endDate.time))
+            }
+        }
+    }
+
+    private fun showDatePicker(initialDate: Calendar, onDateSelected: (Calendar) -> Unit) {
+        val year = initialDate.get(Calendar.YEAR)
+        val month = initialDate.get(Calendar.MONTH)
+        val day = initialDate.get(Calendar.DAY_OF_MONTH)
+
+        DatePickerDialog(requireContext(), { _, selectedYear, selectedMonth, selectedDay ->
+            val calendar = Calendar.getInstance()
+            calendar.set(selectedYear, selectedMonth, selectedDay)
+            onDateSelected(calendar)
+        }, year, month, day).show()
+    }
+
+    private fun showTimePicker(initialTime: Calendar, onTimeSelected: (Int, Int) -> Unit) {
+        val hour = initialTime.get(Calendar.HOUR_OF_DAY)
+        val minute = initialTime.get(Calendar.MINUTE)
+
+        TimePickerDialog(requireContext(), { _, selectedHour, selectedMinute ->
+            onTimeSelected(selectedHour, selectedMinute)
+        }, hour, minute, true).show()
+    }
+
+    private fun parseDateTime(dateStr: String, timeStr: String): Calendar? {
+        return try {
+            val dateTimeStr = "$dateStr $timeStr"
+            val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+            val date = formatter.parse(dateTimeStr)
+            if (date != null) {
+                val calendar = Calendar.getInstance()
+                calendar.time = date
+                calendar
+            } else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun isTimeOverlapping(startDateTime: Calendar, endDateTime: Calendar): Boolean {
+        viewModel.bookings.value?.getOrNull()?.results?.forEach { booking ->
+            val bookingStart = booking.timeStarted?.let { parseApiDateTime(it) }
+            val bookingEnd = booking.timeEnded?.let { parseApiDateTime(it) }
+
+            if (bookingStart != null && bookingEnd != null) {
+                // Check if new booking overlaps with existing booking
+                if (!(endDateTime.time.before(bookingStart) || startDateTime.time.after(bookingEnd))) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    private fun parseApiDateTime(dateTimeString: String): Date? {
+        return try {
+            val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+            format.parse(dateTimeString)
+        } catch (e: Exception) {
+            try {
+                val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.getDefault())
+                format.timeZone = TimeZone.getTimeZone("UTC")
+                format.parse(dateTimeString)
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
+    private fun createBooking(startDateTime: Calendar, endDateTime: Calendar, description: String) {
+        val instrumentId = viewModel.instrument.value?.getOrNull()?.id ?: return
+
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+        val startDateTimeStr = dateFormat.format(startDateTime.time)
+        val endDateTimeStr = dateFormat.format(endDateTime.time)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val usageRequest = CreateInstrumentUsageRequest(
+                    instrument = instrumentId,
+                    timeStarted = startDateTimeStr,
+                    timeEnded = endDateTimeStr,
+                    description = description
+                )
+
+                val result = viewModel.createInstrumentUsage(usageRequest)
+
+                result.fold(
+                    onSuccess = {
+                        Toast.makeText(context, "Booking created successfully", Toast.LENGTH_SHORT).show()
+                        viewModel.loadBookings() // Refresh the bookings list
+                    },
+                    onFailure = { error ->
+                        Toast.makeText(context, "Error creating booking: ${error.message}", Toast.LENGTH_LONG).show()
+                        Log.e("InstrumentDetail", "Error creating booking", error)
+                    }
+                )
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                Log.e("InstrumentDetail", "Exception creating booking", e)
+            }
+        }
     }
 }

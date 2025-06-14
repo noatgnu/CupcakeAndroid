@@ -23,7 +23,7 @@ class InstrumentViewModel @Inject constructor(
         Result.success(LimitOffsetResponse(count = 0, next = null, previous = null, results = emptyList()))
     )
     val instruments: StateFlow<Result<LimitOffsetResponse<Instrument>>> = _instruments
-
+    private var serialNumber: String? = null
     private var currentOffset = 0
     private val pageSize = 20
     private var _hasMoreData = true
@@ -32,6 +32,17 @@ class InstrumentViewModel @Inject constructor(
     private var ordering: String? = null
 
     init {
+        loadInitialInstruments()
+    }
+
+    fun search(query: String?, isSerialNumber: Boolean = false) {
+        if (isSerialNumber) {
+            searchQuery = null
+            serialNumber = query
+        } else {
+            searchQuery = query
+            serialNumber = null
+        }
         loadInitialInstruments()
     }
 
@@ -61,7 +72,8 @@ class InstrumentViewModel @Inject constructor(
             search = searchQuery,
             ordering = ordering,
             limit = pageSize,
-            offset = currentOffset
+            offset = currentOffset,
+            serialNumber = serialNumber
         ).onEach { result ->
             result.onSuccess { response ->
                 Log.d("InstrumentViewModel", "Fetched instruments: ${response.results.size} items")

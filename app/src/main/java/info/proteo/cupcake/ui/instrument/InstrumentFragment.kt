@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -42,6 +43,7 @@ class InstrumentFragment : Fragment() {
 
         setupRecyclerView()
         setupSwipeRefresh()
+        setupSearch()
         observeInstruments()
     }
 
@@ -75,6 +77,24 @@ class InstrumentFragment : Fragment() {
             })
         }
     }
+
+    private fun setupSearch() {
+        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                viewModel.search(query)
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                if (newText.isNullOrBlank()) {
+                    viewModel.search(null)
+                }
+                return true
+            }
+        })
+    }
+
+
 
     private fun navigateToDetail(instrumentId: Int) {
         val action = InstrumentFragmentDirections.actionInstrumentFragmentToInstrumentDetailFragment(instrumentId)

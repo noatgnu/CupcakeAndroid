@@ -16,7 +16,7 @@ import javax.inject.Singleton
 class InstrumentRepository @Inject constructor(
     private val instrumentService: InstrumentService
 ) {
-    fun getInstruments(search: String? = null, ordering: String? = null, limit: Int? = null, offset: Int? = null): Flow<Result<LimitOffsetResponse<Instrument>>> = flow {
+    fun getInstruments(search: String? = null, ordering: String? = null, limit: Int? = null, offset: Int? = null, serialNumber: String? = null): Flow<Result<LimitOffsetResponse<Instrument>>> = flow {
         emit(instrumentService.getInstruments(search, ordering))
     }
 

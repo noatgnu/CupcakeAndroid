@@ -39,7 +39,9 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import androidx.core.view.get
 import androidx.core.view.size
+import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlin.collections.remove
 
 @AndroidEntryPoint
 class StorageFragment : Fragment() {
@@ -316,10 +318,18 @@ class StorageFragment : Fragment() {
         }
     }
 
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
+
+
+
+    companion object {
+        const val BARCODE_SCAN_REQUEST = 100
+    }
+
 
 
 }

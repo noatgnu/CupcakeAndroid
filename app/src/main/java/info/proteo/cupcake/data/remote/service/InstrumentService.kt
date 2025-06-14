@@ -82,7 +82,8 @@ interface InstrumentApiService {
         @Query("search") search: String? = null,
         @Query("ordering") ordering: String? = null,
         @Query("limit") limit: Int? = null,
-        @Query("offset") offset: Int? = null
+        @Query("offset") offset: Int? = null,
+        @Query("serial_number") serialNumber: String? = null
     ): LimitOffsetResponse<Instrument>
 
     @GET("api/instrument/{id}/")
@@ -158,7 +159,7 @@ interface InstrumentApiService {
 }
 
 interface InstrumentService {
-    suspend fun getInstruments(search: String? = null, ordering: String? = null, limit: Int? = null, offset: Int? = null): Result<LimitOffsetResponse<Instrument>>
+    suspend fun getInstruments(search: String? = null, ordering: String? = null, limit: Int? = null, offset: Int? = null, serialNumber: String? = null): Result<LimitOffsetResponse<Instrument>>
     suspend fun getInstrument(id: Int): Result<Instrument>
     suspend fun createInstrument(name: String, description: String): Result<Instrument>
     suspend fun updateInstrument(id: Int, instrument: Instrument): Result<Instrument>
@@ -184,10 +185,10 @@ class InstrumentServiceImpl @Inject constructor(
     private val supportInformationDao: SupportInformationDao
 ) : InstrumentService {
 
-    override suspend fun getInstruments(search: String?, ordering: String?, limit: Int?, offset: Int?): Result<LimitOffsetResponse<Instrument>> {
+    override suspend fun getInstruments(search: String?, ordering: String?, limit: Int?, offset: Int?, serialNumber: String?): Result<LimitOffsetResponse<Instrument>> {
         return withContext(Dispatchers.IO) {
             try {
-                val response = apiService.getInstruments(search, ordering, limit, offset)
+                val response = apiService.getInstruments(search, ordering, limit, offset, serialNumber)
                 response.results.forEach { instrument ->
                     cacheInstrument(instrument)
                 }
