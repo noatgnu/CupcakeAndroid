@@ -1,14 +1,20 @@
 package info.proteo.cupcake.ui.settings
 
+import android.app.Dialog
+import android.content.DialogInterface
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.WebView
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import info.proteo.cupcake.R
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.databinding.FragmentSettingsBinding
 
@@ -50,15 +56,38 @@ class SettingsFragment : Fragment() {
                 R.id.action_settings_to_update_metadata,
                 "Update Metadata Tables",
                 R.drawable.outline_deployed_code_update_24
+            ),
+            SettingsCategoryAdapter.SettingsCategory(
+                -1,
+                "Open Source Licenses",
+                R.drawable.outline_info_24
             )
         )
 
         binding.settingsCategories.apply {
-            layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
+            layoutManager = LinearLayoutManager(requireContext())
             adapter = SettingsCategoryAdapter(categories) { category ->
-                findNavController().navigate(category.id)
+                if (category.id == -1) {
+                    openLicensesDialog()
+                } else {
+                    findNavController().navigate(category.id)
+                }
             }
         }
+    }
+
+    private fun openLicensesDialog() {
+        val webView = WebView(requireActivity())
+        webView.loadUrl("file:///android_asset/open_source_licenses.html")
+
+        val dialog = AlertDialog.Builder(requireActivity())
+            .setTitle("Open Source Licenses")
+            .setView(webView)
+            .setPositiveButton("OK"
+            ) { dialog: DialogInterface, _: Int -> dialog.dismiss() }
+            .create()
+        dialog.show()
+
     }
 
 
