@@ -45,6 +45,20 @@ class LoginViewModel @Inject constructor(
                             authToken = authToken,
                             lastLoginTimestamp = System.currentTimeMillis(),
                             rememberCredentials = true,
+                            sessionToken = "",
+                            theme = "system",
+                            notificationsEnabled = true,
+                            syncFrequency = 15,
+                            syncOnWifiOnly = true,
+                            lastSyncTimestamp = System.currentTimeMillis(),
+                            isActive = true,
+                            allowOverlapBookings = false,
+                            useCoturn = false,
+                            useLlm = false,
+                            useOcr = false,
+                            useWhisper = false,
+                            defaultServiceLabGroup = "MS Facilty",
+                            canSendEmail = false,
                         )
                         Log.d("LoginViewModel", "UserPrefs to save: $userPrefs")
 
@@ -75,6 +89,21 @@ class LoginViewModel @Inject constructor(
                     val userResult = userRepository.getCurrentUser()
                     if (userResult.isSuccess) {
                         _loginState.postValue(LoginState.Success(userResult.getOrNull()!!))
+                        val activePref = userPreferencesDao.getCurrentlyActivePreference()
+                        val serverSettings = userRepository.getServerSettings()
+                        activePref?.let { prefs ->
+                            val pref = prefs.copy(
+                                isActive = true,
+                                allowOverlapBookings = serverSettings.allowOverlapBookings,
+                                useCoturn = serverSettings.useCoturn,
+                                useLlm = serverSettings.useLlm,
+                                useOcr = serverSettings.useOcr,
+                                useWhisper = serverSettings.useWhisper,
+                                defaultServiceLabGroup = serverSettings.defaultServiceLabGroup,
+                                canSendEmail = serverSettings.canSendEmail,
+                            )
+                            userPreferencesDao.insertOrUpdate(pref)
+                        }
                     } else {
                         val error = userResult.exceptionOrNull()
                         Log.e("LoginViewModel", "Token verification failed", error)
@@ -99,6 +128,18 @@ class LoginViewModel @Inject constructor(
                     for (hostname in hostnames) {
                         val preference = userPreferencesDao.getCurrentlyActivePreferences(hostname)
                         if (preference != null && preference.isActive) {
+                            val serverSettings = userRepository.getServerSettings()
+                            val pref = preference.copy(
+                                isActive = true,
+                                allowOverlapBookings = serverSettings.allowOverlapBookings,
+                                useCoturn = serverSettings.useCoturn,
+                                useLlm = serverSettings.useLlm,
+                                useOcr = serverSettings.useOcr,
+                                useWhisper = serverSettings.useWhisper,
+                                defaultServiceLabGroup = serverSettings.defaultServiceLabGroup,
+                                canSendEmail = serverSettings.canSendEmail,
+                            )
+                            userPreferencesDao.insertOrUpdate(pref)
                             _loginState.postValue(LoginState.ExistingLoginFound)
                             return@launch
                         }

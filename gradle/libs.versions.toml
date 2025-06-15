@@ -13,28 +13,37 @@ coreKtx = "1.16.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
-appcompat = "1.7.0"
-lifecycleLivedataKtxVersion = "2.9.0"
+appcompat = "1.7.1"
+lifecycleLivedataKtxVersion = "2.9.1"
 material = "1.12.0"
-moshi = "1.15.0"
-navigationFragmentKtxVersion = "2.7.7"
-navigationUiKtxVersion = "2.7.7"
-okhttp = "4.11.0"
+moshi = "1.15.2"
+navigationFragmentKtxVersion = "2.9.0"
+navigationUiKtxVersion = "2.9.0"
+okhttp = "4.12.0"
 recyclerview = "1.4.0"
 constraintlayout = "2.2.1"
-lifecycleLivedataKtx = "2.9.0"
-lifecycleViewmodelKtx = "2.9.0"
+lifecycleLivedataKtx = "2.9.1"
+lifecycleViewmodelKtx = "2.9.1"
 navigationFragmentKtx = "2.9.0"
 navigationUiKtx = "2.9.0"
-retrofit = "2.9.0"
+retrofit = "3.0.0"
 richeditorAndroid = "2.0.0"
 roomVersion = "2.7.1"
 hilt = "2.56.2"
 legacySupportV4 = "1.0.0"
-fragmentKtx = "1.8.6"
-activity = "1.8.0"
+fragmentKtx = "1.8.8"
+activity = "1.10.1"
+tiles = "1.5.0"
 uiAndroid = "1.8.2"
 scenecore = "1.0.0-alpha04"
+playServicesWearable = "19.0.0"
+androidxTestExtJunit = "1.2.1"
+androidxWear = "1.3.0"
+androidxWearOngoing = "1.0.0"
+androidxWearCompose = "1.4.1"
+androidxWearRemoteInteractions = "1.1.0"
+androidxWearPhoneInteractions = "1.1.0"
+kotlinxCoroutinesPlayServices = "1.8.1"
 
 [libraries]
 androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "cameraCore" }
@@ -49,6 +58,7 @@ androidx-navigation-ui-ktx-v277 = { module = "androidx.navigation:navigation-ui-
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomVersion" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomVersion" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomVersion" }
+androidx-tiles = { module = "androidx.wear.tiles:tiles", version.ref = "tiles" }
 barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "barcodeScanning" }
 coil = { module = "io.coil-kt:coil", version.ref = "coil" }
 converter-moshi = { module = "com.squareup.retrofit2:converter-moshi", version.ref = "retrofit" }
@@ -84,10 +94,22 @@ richeditor-android = { module = "jp.wasabeef:richeditor-android", version.ref = 
 zxing-core = { module = "com.google.zxing:core", version.ref = "coreVersion" }
 androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "uiAndroid" }
 androidx-scenecore = { group = "androidx.xr.scenecore", name = "scenecore", version.ref = "scenecore" }
+play-services-wearable = { module = "com.google.android.gms:play-services-wearable", version.ref = "playServicesWearable" }
+androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestExtJunit" }
+androidx-wear = { group = "androidx.wear", name = "wear", version.ref = "androidxWear" }
+androidx-wear-ongoing = { group = "androidx.wear", name = "wear-ongoing", version.ref = "androidxWearOngoing" }
+androidx-wear-remote-interactions = { group = "androidx.wear", name = "wear-remote-interactions", version.ref = "androidxWearRemoteInteractions" }
+androidx-wear-phone-interactions = { group = "androidx.wear", name = "wear-phone-interactions", version.ref = "androidxWearPhoneInteractions" }
+androidx-wear-compose-foundation = { group = "androidx.wear.compose", name = "compose-foundation", version.ref = "androidxWearCompose" }
+androidx-wear-compose-material = { group = "androidx.wear.compose", name = "compose-material", version.ref = "androidxWearCompose" }
+androidx-wear-compose-navigation = { group = "androidx.wear.compose", name = "compose-navigation", version.ref = "androidxWearCompose" }
+kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version = "2.1.0-1.0.29" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
-
 

@@ -22,3 +22,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "Cupcake"
 include(":app")
+include(":wearos")
+include(":shared")
+include(":communication")

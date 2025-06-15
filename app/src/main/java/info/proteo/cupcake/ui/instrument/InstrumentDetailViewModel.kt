@@ -6,6 +6,8 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import info.proteo.cupcake.data.local.dao.user.UserPreferencesDao
+import info.proteo.cupcake.data.local.entity.user.UserPreferencesEntity
 import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
 import info.proteo.cupcake.data.remote.model.annotation.Annotation
 import info.proteo.cupcake.data.remote.model.instrument.CreateInstrumentUsageRequest
@@ -36,7 +38,8 @@ class InstrumentDetailViewModel @Inject constructor(
     private val instrumentRepository: InstrumentRepository,
     private val annotationRepository: AnnotationRepository,
     private val userRepository: UserRepository,
-    private val instrumentUsageRepository: InstrumentUsageRepository
+    private val instrumentUsageRepository: InstrumentUsageRepository,
+    private val userPreferencesDao: UserPreferencesDao
 ) : ViewModel() {
 
     private val _instrument = MutableLiveData<Result<Instrument>>()
@@ -86,6 +89,25 @@ class InstrumentDetailViewModel @Inject constructor(
 
     private val _isLoadingBookings = MutableLiveData<Boolean>()
     val isLoadingBookings: LiveData<Boolean> = _isLoadingBookings
+
+    private val _userPreferences = MutableLiveData<UserPreferencesEntity>()
+    val userPreferences: LiveData<UserPreferencesEntity> = _userPreferences
+
+    init {
+        // Load user preferences when ViewModel is initialized
+        viewModelScope.launch {
+            try {
+                val preferences = userPreferencesDao.getCurrentlyActivePreference()
+                if (preferences != null) {
+                    _userPreferences.value = preferences
+                } else {
+                    Log.w("InstrumentDetailVM", "User preferences are null")
+                }
+            } catch (e: Exception) {
+                Log.e("InstrumentDetailVM", "Failed to load user preferences", e)
+            }
+        }
+    }
 
     fun initializeBookingDates() {
         val now = Calendar.getInstance()

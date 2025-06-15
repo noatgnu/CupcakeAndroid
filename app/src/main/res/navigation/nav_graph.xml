@@ -101,11 +101,6 @@
             app:argType="integer" />
     </fragment>
 
-    <fragment
-        android:id="@+id/nav_instruments"
-        android:name="info.proteo.cupcake.ui.instrument.InstrumentFragment"
-        android:label="Instruments"
-        tools:layout="@layout/fragment_instrument" />
 
     <fragment
         android:id="@+id/barcodeScannerFragment"

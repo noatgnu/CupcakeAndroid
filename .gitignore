@@ -13,3 +13,5 @@
 .externalNativeBuild
 .cxx
 local.properties
+/communication/build/
+/shared/build/

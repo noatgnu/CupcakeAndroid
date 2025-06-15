@@ -32,6 +32,17 @@ data class AnnotationsPermissionRequest(
 )
 
 @JsonClass(generateAdapter = true)
+data class ServerSettings(
+    @Json(name = "allow_overlap_bookings") val allowOverlapBookings: Boolean,
+    @Json(name = "use_coturn") val useCoturn: Boolean,
+    @Json(name = "use_llm") val useLlm: Boolean,
+    @Json(name = "use_ocr") val useOcr: Boolean,
+    @Json(name = "use_whisper") val useWhisper: Boolean,
+    @Json(name = "default_service_lab_group") val defaultServiceLabGroup: String,
+    @Json(name = "can_send_email") val canSendEmail: Boolean
+)
+
+@JsonClass(generateAdapter = true)
 data class UserPermissionResponse(
     val edit: Boolean = false,
     val view: Boolean = false,
@@ -71,6 +82,9 @@ interface UserApiService {
 
     @POST("api/user/check_annotation_permission/")
     suspend fun checkAnnotationsPermission(@Body request: AnnotationsPermissionRequest): List<AnnotationsPermissionResponse>
+
+    @GET("api/user/get_server_settings/")
+    suspend fun getServerSettings(): ServerSettings
 }
 
 interface UserService {
@@ -83,6 +97,7 @@ interface UserService {
     suspend fun checkSessionPermission(request: SessionPermissionRequest): UserPermissionResponse
     suspend fun checkProtocolPermission(request: ProtocolPermissionRequest): UserPermissionResponse
     suspend fun checkAnnotationsPermission(request: AnnotationsPermissionRequest): List<AnnotationsPermissionResponse>
+    suspend fun getServerSettings(): ServerSettings
 }
 
 @Singleton
@@ -124,5 +139,9 @@ class UserServiceImpl @Inject constructor(
 
     override suspend fun checkAnnotationsPermission(request: AnnotationsPermissionRequest): List<AnnotationsPermissionResponse> {
         return userApiService.checkAnnotationsPermission(request)
+    }
+
+    override suspend fun getServerSettings(): ServerSettings {
+        return userApiService.getServerSettings()
     }
 }

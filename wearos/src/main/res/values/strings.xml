@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Cupcake</string>
+    <string name="timekeeper_complication_label">TimeKeeper</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+    <string name="reset">Reset</string>
+    <string name="no_active_timekeeper">No active timer</string>
+    <string name="session_format">Session: %s</string>
+    <string name="step_format">Step: %s</string>
+</resources>
+

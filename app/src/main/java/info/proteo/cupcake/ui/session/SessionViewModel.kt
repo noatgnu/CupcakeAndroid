@@ -7,6 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import info.proteo.cupcake.SessionManager
 import info.proteo.cupcake.data.local.dao.protocol.RecentSessionDao
 import info.proteo.cupcake.data.local.entity.protocol.RecentSessionEntity
+import info.proteo.cupcake.data.local.entity.user.UserPreferencesEntity
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolModel
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
 import info.proteo.cupcake.data.remote.model.protocol.Session
@@ -86,6 +87,21 @@ class SessionViewModel @Inject constructor(
     private val _instruments = MutableStateFlow<List<Instrument>>(emptyList())
     val instruments: StateFlow<List<Instrument>> = _instruments.asStateFlow()
 
+    private val _currentUserPreference = MutableStateFlow<UserPreferencesEntity?>(null)
+    val currentUserPreference: StateFlow<UserPreferencesEntity?> = _currentUserPreference.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            try {
+                val activeUser = userRepository.getActiveUserPreference()
+                if (activeUser != null) {
+                    _currentUserPreference.value = activeUser
+                }
+            } catch (e: Exception) {
+                Log.e("SessionViewModel", "Error loading user preferences: ${e.message}")
+            }
+        }
+    }
 
 
     fun updateRecentSession(session: Session, protocolId: Int, protocolName: String?, stepId: Int?) {
@@ -433,7 +449,7 @@ class SessionViewModel @Inject constructor(
                 val recentSession = recentSessionDao.getMostRecentSession(userId)
 
                 // Check if it matches our current session and protocol
-                if (recentSession?.sessionId == sessionId.toInt() && recentSession.protocolId == protocolId) {
+                if (recentSession?.sessionUniqueId == sessionId && recentSession.protocolId == protocolId) {
                     return@runBlocking recentSession
                 }
                 null
@@ -443,4 +459,6 @@ class SessionViewModel @Inject constructor(
             }
         }
     }
+
+
 }

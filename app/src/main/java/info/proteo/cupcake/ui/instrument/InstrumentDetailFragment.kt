@@ -43,6 +43,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.R
 import info.proteo.cupcake.SessionManager
 import info.proteo.cupcake.SupportInformationActivity
+import info.proteo.cupcake.data.local.entity.user.UserPreferencesEntity
 import info.proteo.cupcake.data.remote.model.annotation.AnnotationFolder
 import info.proteo.cupcake.data.remote.model.instrument.CreateInstrumentUsageRequest
 import info.proteo.cupcake.data.remote.model.instrument.Instrument
@@ -71,6 +72,8 @@ class InstrumentDetailFragment : Fragment() {
     private var currentSelectedFolderId: Int? = null
 
     private lateinit var bookingAdapter: InstrumentUsageAdapter
+
+    private var userPreferencesEntity: UserPreferencesEntity? = null
 
 
     private val pickImageRequest = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -118,7 +121,6 @@ class InstrumentDetailFragment : Fragment() {
         setupMenu()
         setupBookingsView()
         observeViewModel()
-
         viewModel.loadInstrumentDetailsAndPermissions(args.instrumentId)
 
 
@@ -239,6 +241,9 @@ class InstrumentDetailFragment : Fragment() {
     }
 
     private fun observeViewModel() {
+        viewModel.userPreferences.observe(viewLifecycleOwner) { preferences ->
+            userPreferencesEntity = preferences
+        }
         viewModel.canBookInstrument.observe(viewLifecycleOwner) { canBook ->
             binding.fabBookUsage.isVisible = canBook
         }
@@ -763,6 +768,8 @@ class InstrumentDetailFragment : Fragment() {
             .show()
     }
 
+
+
     private fun showBookUsageDialog() {
         val dialogView = LayoutInflater.from(requireContext())
             .inflate(R.layout.dialog_book_instrument_usage, null)
@@ -805,7 +812,11 @@ class InstrumentDetailFragment : Fragment() {
                 }
 
                 if (isTimeOverlapping(startDateTime, endDateTime)) {
-                    Toast.makeText(context, "This time overlaps with an existing booking", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        "This time overlaps with an existing booking. Please choose a different time slot.",
+                        Toast.LENGTH_SHORT
+                    ).show()
                     return@setOnClickListener
                 }
 
@@ -913,13 +924,21 @@ class InstrumentDetailFragment : Fragment() {
     }
 
     private fun isTimeOverlapping(startDateTime: Calendar, endDateTime: Calendar): Boolean {
+        if (userPreferencesEntity?.allowOverlapBookings == true) {
+            return false
+        }
+
         viewModel.bookings.value?.getOrNull()?.results?.forEach { booking ->
             val bookingStart = booking.timeStarted?.let { parseApiDateTime(it) }
             val bookingEnd = booking.timeEnded?.let { parseApiDateTime(it) }
 
             if (bookingStart != null && bookingEnd != null) {
-                // Check if new booking overlaps with existing booking
-                if (!(endDateTime.time.before(bookingStart) || startDateTime.time.after(bookingEnd))) {
+                val bookingStartTime = bookingStart.time
+                val bookingEndTime = bookingEnd.time
+                val newStartTime = startDateTime.timeInMillis
+                val newEndTime = endDateTime.timeInMillis
+
+                if (newStartTime < bookingEndTime && newEndTime > bookingStartTime) {
                     return true
                 }
             }

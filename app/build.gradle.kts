@@ -4,7 +4,6 @@ plugins {
     id("com.google.devtools.ksp") version "2.1.0-1.0.29"
     alias(libs.plugins.hilt)
     id ("androidx.navigation.safeargs.kotlin")
-    id("com.jaredsburrows.license") version "0.9.8"
 }
 
 hilt {
@@ -46,31 +45,10 @@ android {
     }
 }
 
-licenseReport {
-    // Generate reports
-    generateCsvReport = false
-    generateHtmlReport = true
-    generateJsonReport = false
-    generateTextReport = false
-
-    // Copy reports - These options are ignored for Java projects
-    copyCsvReportToAssets = false
-    copyHtmlReportToAssets = true
-    copyJsonReportToAssets = false
-    copyTextReportToAssets = false
-    useVariantSpecificAssetDirs = false
-
-
-    // Show versions in the report - default is false
-    showVersions = true
-}
-
-tasks.named("preBuild") {
-    dependsOn("licenseDebugReport")
-}
-
 dependencies {
     implementation(libs.javapoet)
+    implementation(project(":shared"))
+    implementation(project(":communication"))  // Add communication module dependency
 
     implementation(libs.retrofit)
     implementation(libs.okhttp)

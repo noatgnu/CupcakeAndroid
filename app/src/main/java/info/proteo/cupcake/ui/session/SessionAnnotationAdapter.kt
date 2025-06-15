@@ -42,6 +42,7 @@ import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.target.Target
 import com.bumptech.glide.request.RequestListener
+import info.proteo.cupcake.data.local.entity.user.UserPreferencesEntity
 import info.proteo.cupcake.data.remote.model.annotation.AnnotationWithPermissions
 import info.proteo.cupcake.data.repository.InstrumentRepository
 import info.proteo.cupcake.data.repository.InstrumentUsageRepository
@@ -91,6 +92,7 @@ class SessionAnnotationAdapter(
     private val annotationRepository: AnnotationRepository,
     private val instrumentRepository: InstrumentRepository,
     private val instrumentUsageRepository: InstrumentUsageRepository,
+    private val userPreferencesEntity: UserPreferencesEntity,
 
     private val baseUrl: String
 ) : ListAdapter<AnnotationWithPermissions, SessionAnnotationAdapter.ViewHolder>(DIFF_CALLBACK) {
@@ -284,7 +286,7 @@ class SessionAnnotationAdapter(
                     textAnnotation.visibility = View.GONE
                     instrumentContainer.visibility = View.VISIBLE
                     getInstrumentAnnotationHandler(itemView.context)
-                        .displayInstrumentBooking(annotation, instrumentContainer)
+                        .displayInstrumentBooking(annotation, instrumentContainer, userPreferencesEntity)
                 }
                 "alignment" -> {
                     textAnnotation.visibility = View.GONE
@@ -434,7 +436,7 @@ class SessionAnnotationAdapter(
         popup.menu.findItem(R.id.action_download).isVisible = annotation.file != null
         popup.menu.findItem(R.id.action_retranscribe).isVisible =
             (annotation.annotationType == "audio" || annotation.annotationType == "video") &&
-                !annotation.transcription.isNullOrBlank()
+                !annotation.transcription.isNullOrBlank() && userPreferencesEntity.useWhisper
 
         popup.menu.findItem(R.id.action_edit).isVisible = false
 
@@ -584,7 +586,7 @@ class SessionAnnotationAdapter(
         return try {
             if (dateString == null) return ""
 
-            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
             inputFormat.timeZone = TimeZone.getTimeZone("UTC")
             val date = inputFormat.parse(dateString)
 

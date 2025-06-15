@@ -12,6 +12,7 @@ import info.proteo.cupcake.data.remote.model.user.UserBasic
 import info.proteo.cupcake.data.remote.service.AnnotationsPermissionRequest
 import info.proteo.cupcake.data.remote.service.AnnotationsPermissionResponse
 import info.proteo.cupcake.data.remote.service.ProtocolPermissionRequest
+import info.proteo.cupcake.data.remote.service.ServerSettings
 import info.proteo.cupcake.data.remote.service.SessionPermissionRequest
 import info.proteo.cupcake.data.remote.service.StoredReagentPermissionRequest
 import info.proteo.cupcake.data.remote.service.UserPermissionResponse
@@ -162,6 +163,15 @@ class UserRepository @Inject constructor(
         } catch (e: Exception) {
             Log.e("UserRepository", "Error checking annotations permission: ${e.message}")
             Result.failure(e)
+        }
+    }
+
+    suspend fun getServerSettings(): ServerSettings {
+        return try {
+            userService.getServerSettings()
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Error fetching server settings: ${e.message}")
+            throw e
         }
     }
 

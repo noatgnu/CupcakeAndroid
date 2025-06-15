@@ -53,6 +53,7 @@ import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.R
 import info.proteo.cupcake.SessionManager
+import info.proteo.cupcake.data.local.entity.user.UserPreferencesEntity
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolModel
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolSection
 import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
@@ -73,8 +74,10 @@ import info.proteo.cupcake.data.repository.TimeKeeperRepository
 import info.proteo.cupcake.data.repository.UserRepository
 import info.proteo.cupcake.databinding.FragmentSessionBinding
 import info.proteo.cupcake.util.ProtocolHtmlRenderer.renderAsHtml
+import info.proteo.cupcake.wearos.TimeKeeperSyncService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -84,10 +87,7 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
 import javax.inject.Inject
-import kotlin.compareTo
-import kotlin.div
-import kotlin.text.toInt
-import kotlin.times
+import kotlin.collections.isNotEmpty
 
 @AndroidEntryPoint
 class SessionFragment : Fragment() {
@@ -110,6 +110,8 @@ class SessionFragment : Fragment() {
     lateinit var instrumentUsageRepository: InstrumentUsageRepository
     @Inject
     lateinit var timeKeeperRepository: TimeKeeperRepository
+    @Inject
+    lateinit var timeKeeperSyncService: TimeKeeperSyncService
 
     private var currentTimeKeeper: TimeKeeper? = null
     private var countDownTimer: CountDownTimer? = null
@@ -140,6 +142,8 @@ class SessionFragment : Fragment() {
     @Inject lateinit var protocolStepRepository: ProtocolStepRepository
     @Inject lateinit var userRepository: UserRepository
     @Inject lateinit var annotationRepository: AnnotationRepository
+
+    private var userPreference: UserPreferencesEntity? = null
 
 
     private var currentAnnotationOffset = 0
@@ -210,7 +214,7 @@ class SessionFragment : Fragment() {
         }
 
         observeViewModel()
-        setupAnnotationsSection()
+
         setupPaginationButtons()
         binding.reagentsSectionHeader.setOnClickListener {
             toggleReagentsSection()
@@ -261,6 +265,7 @@ class SessionFragment : Fragment() {
                 }
                 if (timeKeeper != null) {
                     currentTimeKeeper = timeKeeper
+                    //timeKeeperSyncService.syncTimeKeeper(currentTimeKeeper!!)
 
                     timeRemainingMillis = if (timeKeeper.currentDuration == null) {
                         (step.stepDuration ?: 0) * 1000L
@@ -324,6 +329,9 @@ class SessionFragment : Fragment() {
                         val result = timeKeeperRepository.updateTimeKeeper(timeKeeper.id, updatedTimeKeeper)
                         result.onSuccess {
                             currentTimeKeeper = it
+                            //timeKeeperSyncService.syncTimeKeeper(
+                            //    it
+                            //)
                         }
                     } else {
                         // Start timer
@@ -335,6 +343,9 @@ class SessionFragment : Fragment() {
                         val result = timeKeeperRepository.updateTimeKeeper(timeKeeper.id, updatedTimeKeeper)
                         result.onSuccess {
                             currentTimeKeeper = it
+                            //timeKeeperSyncService.syncTimeKeeper(
+                            //    it
+                            //)
                         }
                     }
                     isTimerRunning = !isTimerRunning
@@ -370,6 +381,7 @@ class SessionFragment : Fragment() {
                         timeKeeperRepository.updateTimeKeeper(timeKeeper.id, updatedTimeKeeper)
                             .onSuccess {
                                 currentTimeKeeper = it
+                                //timeKeeperSyncService.syncTimeKeeper(it)
                             }
                     }
                 }
@@ -518,28 +530,20 @@ class SessionFragment : Fragment() {
         binding.progressBar.visibility = View.VISIBLE
         viewLifecycleOwner.lifecycleScope.launch {
             try {
+                Log.d("SessionFragment", "Loading existing session: $sessionId")
+
                 viewModel.loadSessionDetails(sessionId)
 
                 val protocolsResult = sessionService.getAssociatedProtocolTitles(sessionId)
                 protocolsResult.onSuccess { protocols ->
                     if (protocols.isNotEmpty()) {
-                        val relevantProtocolId = protocols[0].id
-                        this@SessionFragment.protocolId = relevantProtocolId
-                        viewModel.loadProtocolDetails(relevantProtocolId)
-                        checkAndNavigateToRecentStep(sessionId, relevantProtocolId)
-                    } else {
-                        showError("No protocols associated with this session")
-                        binding.progressBar.visibility = View.GONE
+                        Log.d("SessionFragment", "Loading protocol with ID: ${protocols[0].id}")
+                        viewModel.loadProtocolDetails(protocols[0].id)
+                        checkAndNavigateToRecentStep(sessionId, protocols[0].id)
                     }
                 }
-
-                protocolsResult.onFailure { error ->
-                    showError("Failed to load protocols for session: ${error.message}")
-                    binding.progressBar.visibility = View.GONE
-                }
             } catch (e: Exception) {
-                showError("Error loading session: ${e.message}")
-                binding.progressBar.visibility = View.GONE
+                Log.e("SessionFragment", "Error loading session", e)
             }
         }
     }
@@ -551,28 +555,25 @@ class SessionFragment : Fragment() {
                 if (user != null) {
                     val recentSession = viewModel.getRecentSession(user.id, sessionId, protocolId)
 
-                    if (recentSession != null && recentSession.stepId != null) {
-                        viewModel.protocol.collectLatest { protocol ->
-                            if (protocol != null) {
-                                val stepId = recentSession.stepId
-                                val step = protocol.steps?.find { it.id == stepId }
+                    if (recentSession?.stepId != null) {
+                        // Use first() instead of collectLatest to wait for protocol once
+                        // without setting up a permanent collector
+                        val protocol = viewModel.protocol.first { it != null }
 
-                                if (step != null) {
-                                    val sectionId = step.stepSection
-                                    val section = protocol.sections?.find { it.id == sectionId }
-
-                                    if (section != null) {
-                                        displayStepContent(step, section)
-                                        sidebarAdapter.setSelectedStep(step.id, section.id)
-                                        Log.d("SessionFragment", "Navigated to recent step: ${step.id}")
-                                        return@collectLatest
-                                    }
-                                }
-                            }
+                        val stepId = recentSession.id
+                        val step = protocol?.steps?.find { it.id == stepId }
+                        val sectionId = step?.stepSection
+                        val section = protocol?.sections?.find { it.id == sectionId }
+                        Log.d("SessionFragment", "Recent step found: $stepId in section: $sectionId")
+                        if (step != null && section != null) {
+                            displayStepContent(step, section)
+                            sidebarAdapter.setSelectedStep(step.id, section.id)
+                            Log.d("SessionFragment", "Navigated to recent step: ${step.id}")
+                            return@launch // Exit after successful navigation
                         }
                     }
+                    // No return here - let the fallback in observeViewModel handle it
                 }
-
             } catch (e: Exception) {
                 Log.e("SessionFragment", "Error retrieving recent step: ${e.message}")
             }
@@ -581,7 +582,18 @@ class SessionFragment : Fragment() {
 
     private fun observeViewModel() {
         viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.currentUserPreference.collectLatest { preference ->
+                userPreference = preference
+                setupAnnotationsSection()
+                // You might want to add a log here to confirm preference collection
+                Log.d("SessionFragment", "UserPreference updated: $preference")
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+
             viewModel.protocol.collectLatest { protocol ->
+                Log.d("SessionFragment", "Protocol updated: ${protocol?.protocolTitle}")
                 if (protocol != null) {
                     binding.protocolTitle.text = protocol.protocolTitle
                     requireActivity().title = protocol.protocolTitle ?: getString(R.string.session_activity_title_placeholder)
@@ -595,12 +607,12 @@ class SessionFragment : Fragment() {
                     }
 
                     sidebarAdapter.updateData(sections, stepsMap)
-
+                    Log.d("SessionFragment", "Protocol loaded: ${protocol.protocolTitle}, Sections: ${sections.size}, Steps: ${stepsMap.size}")
                     var stepDisplayed = false
                     if (sections.isNotEmpty()) {
                         val firstSection = sections[0]
                         val firstSectionSteps = stepsMap[firstSection.id]
-
+                        Log.d("SessionFragment", "First section: ${firstSection.sectionDescription}, Steps: ${firstSectionSteps?.size ?: 0}")
                         if (firstSectionSteps?.isNotEmpty() == true) {
                             val firstStep = firstSectionSteps[0]
                             sidebarAdapter.setSelectedStep(firstStep.id, firstSection.id)
@@ -624,14 +636,24 @@ class SessionFragment : Fragment() {
                     binding.reagentsSectionCard.visibility = View.GONE // Hide reagents if no protocol
                 }
             }
+
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.session.collectLatest { session ->
                 session?.let {
                     Log.d("SessionFragment", "Session loaded: ${it.uniqueId}")
+                    try {
+                        //checkAndNavigateToRecentStep(it.uniqueId, protocolId)
+                    } catch (e: Exception) {
 
-                    viewModel.updateRecentSession(session, protocolId, null, stepId = currentStep?.id)
+                    }
+                    if (currentStep != null) {
+                        viewModel.updateRecentSession(session, protocolId, null, stepId = currentStep!!.id)
+                    } else {
+                        viewModel.updateRecentSession(session, protocolId, null, stepId = null)
+                    }
+
                 }
             }
         }
@@ -1121,7 +1143,7 @@ class SessionFragment : Fragment() {
 
         val baseUrl = sessionManager.getBaseUrl()
 
-        if (annotationAdapter == null) {
+        if (annotationAdapter == null && userPreference != null) {
             annotationAdapter = SessionAnnotationAdapter(
                 onItemClick = { annotation -> handleAnnotationClick(annotation) },
                 onRetranscribeClick = { annotation -> handleRetranscribeClick(annotation) },
@@ -1137,6 +1159,7 @@ class SessionFragment : Fragment() {
                 annotationRepository = annotationRepository,
                 instrumentRepository = instrumentRepository,
                 instrumentUsageRepository = instrumentUsageRepository,
+                userPreferencesEntity = userPreference!!,
                 baseUrl
 
             )

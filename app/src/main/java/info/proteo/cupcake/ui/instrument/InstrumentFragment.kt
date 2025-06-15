@@ -51,7 +51,9 @@ class InstrumentFragment : Fragment() {
 
     private fun setupRecyclerView() {
         instrumentAdapter = InstrumentAdapter { instrumentId ->
-
+            findNavController().navigate(
+                InstrumentFragmentDirections.actionInstrumentFragmentToInstrumentDetailFragment(instrumentId)
+            )
         }
         binding.recyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext())
