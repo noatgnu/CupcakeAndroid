@@ -23,20 +23,40 @@
         <item name="colorControlNormal">@color/white</item>
         <item name="actionMenuTextColor">@color/white</item>
         <item name="drawerArrowStyle">@style/DrawerArrowStyle</item>
+        <!-- Set popup menu theme -->
+        <item name="popupMenuStyle">@style/Widget.App.PopupMenu</item>
+        <item name="actionOverflowMenuStyle">@style/Widget.App.PopupMenu</item>
     </style>
+
     <style name="DrawerArrowStyle" parent="Widget.AppCompat.DrawerArrowToggle">
         <item name="color">@color/white</item>
     </style>
+
     <style name="Widget.App.Toolbar" parent="Widget.MaterialComponents.Toolbar.Primary">
         <item name="titleTextColor">@color/white</item>
-        <item name="subtitleTextColor">@color/light</item>
-        <item name="colorControlNormal">@color/white</item>
-        <item name="android:tint">@color/white</item>
-        <item name="iconTint">@color/white</item>
+        <item name="subtitleTextColor">@color/white</item>
+        <item name="android:background">?attr/colorPrimary</item>
     </style>
 
-    <style name="Theme.Cupcake.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
-    <style name="Theme.Cupcake.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+    <!-- Popup menu theme for light mode (dark text) -->
+    <style name="Widget.App.PopupMenu" parent="Widget.MaterialComponents.PopupMenu">
+        <item name="android:textColor">@color/dark</item>
+        <item name="android:itemBackground">@color/white</item>
+    </style>
+
+    <!-- Theme for AppBar overlays -->
+    <style name="Theme.Cupcake.AppBarOverlay" parent="ThemeOverlay.MaterialComponents.Dark.ActionBar">
+        <item name="android:textColorPrimary">@color/white</item>
+        <item name="android:textColorSecondary">@color/light</item>
+        <item name="colorControlNormal">@color/white</item>
+    </style>
+
+    <!-- Theme for popup menu overlays -->
+    <style name="Theme.Cupcake.PopupOverlay" parent="ThemeOverlay.MaterialComponents.Light">
+        <item name="android:textColor">@color/dark</item>
+        <item name="android:textColorPrimary">@color/dark</item>
+        <item name="android:textColorSecondary">@color/secondary</item>
+    </style>
 
     <style name="Theme.Cupcake.NoActionBar" parent="Theme.Cupcake">
         <item name="windowActionBar">false</item>

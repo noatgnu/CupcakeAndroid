@@ -22,6 +22,7 @@ import info.proteo.cupcake.R
 import info.proteo.cupcake.databinding.FragmentCreateStoredReagentBinding
 import info.proteo.cupcake.shared.data.model.reagent.Reagent
 import info.proteo.cupcake.shared.data.model.reagent.StoredReagentCreateRequest
+import info.proteo.cupcake.ui.barcode.BarcodeScannerFragment
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -61,6 +62,33 @@ class CreateStoredReagentFragment : Fragment() {
         setupUi()
         observeViewModel()
         setupListeners()
+        setupBarcodeScanning()
+    }
+
+    private fun setupBarcodeScanning() {
+        // Setup fragment result listener for barcode scanner
+        requireActivity().supportFragmentManager.setFragmentResultListener(
+            "barcode_result",
+            viewLifecycleOwner
+        ) { _, bundle ->
+            val barcode = bundle.getString("barcode")
+            Log.d(TAG, "Barcode scanned: $barcode")
+            barcode?.let {
+                binding.barcodeInput.setText(it)
+            }
+        }
+
+        // Add click listener to barcode layout's end icon
+        binding.barcodeLayout.setEndIconOnClickListener {
+            // Launch barcode scanner
+            Log.d(TAG, "Opening barcode scanner")
+            val scannerFragment = BarcodeScannerFragment()
+
+            requireActivity().supportFragmentManager.beginTransaction()
+                .add(android.R.id.content, scannerFragment, "barcode_scanner")
+                .addToBackStack("barcode_scanner")
+                .commit()
+        }
     }
 
     private fun setupUi() {
@@ -69,14 +97,17 @@ class CreateStoredReagentFragment : Fragment() {
             binding.storageAutocomplete.setText(storageName)
         }
 
-        // Create custom adapter that doesn't filter locally (server does filtering)
+        // Configure barcode input field with scan icon
+        binding.barcodeLayout.setEndIconDrawable(R.drawable.ic_barcode_scan)
+        binding.barcodeLayout.setEndIconContentDescription("Scan Barcode")
+        binding.barcodeLayout.isEndIconVisible = true
+
+
         reagentAdapter = ReagentAdapter(requireContext())
         binding.reagentAutocomplete.setAdapter(reagentAdapter)
 
-        // Use threshold of 2 characters to start showing suggestions
         binding.reagentAutocomplete.threshold = 2
 
-        // Handle reagent selection
         binding.reagentAutocomplete.setOnItemClickListener { _, _, position, _ ->
             val selectedReagent = reagentAdapter.getItem(position)
             Log.d(TAG, "Selected reagent: ${selectedReagent.name} (${selectedReagent.unit})")
@@ -93,13 +124,11 @@ class CreateStoredReagentFragment : Fragment() {
     }
 
     private fun observeViewModel() {
-        // Observe search results
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.searchResults.collectLatest { reagents ->
                 Log.d(TAG, "Received ${reagents.size} search results in fragment")
                 reagentAdapter.updateReagents(reagents)
 
-                // Force dropdown to show if we have results and input has focus
                 if (reagents.isNotEmpty() && binding.reagentAutocomplete.hasFocus()) {
                     binding.reagentAutocomplete.post {
                         if (!binding.reagentAutocomplete.isPopupShowing) {
@@ -110,14 +139,12 @@ class CreateStoredReagentFragment : Fragment() {
             }
         }
 
-        // Observe loading state
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.isLoading.collectLatest { isLoading ->
                 binding.progressIndicator.isVisible = isLoading
             }
         }
 
-        // Observe error messages
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.error.collectLatest { errorMessage ->
                 errorMessage?.let {

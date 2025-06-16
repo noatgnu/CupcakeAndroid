@@ -26,7 +26,15 @@ class StorageActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "Storage"
+
+        // Make all toolbar elements white
         binding.toolbar.navigationIcon?.setTint(
+            ContextCompat.getColor(this, R.color.white)
+        )
+        binding.toolbar.setTitleTextColor(
+            ContextCompat.getColor(this, R.color.white)
+        )
+        binding.toolbar.overflowIcon?.setTint(
             ContextCompat.getColor(this, R.color.white)
         )
 

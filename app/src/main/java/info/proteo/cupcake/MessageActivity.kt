@@ -3,6 +3,7 @@ package info.proteo.cupcake
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
@@ -24,6 +25,18 @@ class MessageActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = getString(R.string.messages)
+
+        // Make all toolbar elements white
+        binding.toolbar.apply {
+            // Set title text color to white
+            setTitleTextColor(ContextCompat.getColor(context, R.color.white))
+
+            // Set navigation icon (back button) to white
+            navigationIcon?.setTint(ContextCompat.getColor(context, R.color.white))
+
+            // Set overflow menu icon (three dots) to white
+            overflowIcon?.setTint(ContextCompat.getColor(context, R.color.white))
+        }
 
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment

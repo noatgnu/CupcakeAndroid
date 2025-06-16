@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.databinding.ActivityStoredReagentBinding
@@ -106,6 +107,21 @@ class StoredReagentActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowTitleEnabled(true)
         supportActionBar?.title = "Stored Reagents"
+
+        // Set navigation icon color to white
+        binding.toolbar.navigationIcon?.setTint(
+            ContextCompat.getColor(this, R.color.white)
+        )
+
+        // Set title text color to white
+        binding.toolbar.setTitleTextColor(
+            ContextCompat.getColor(this, R.color.white)
+        )
+
+        // Set overflow icon color to white
+        binding.toolbar.overflowIcon?.setTint(
+            ContextCompat.getColor(this, R.color.white)
+        )
 
         binding.toolbar.setNavigationOnClickListener {
             finish()

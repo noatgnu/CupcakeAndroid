@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -17,14 +16,13 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
-// Instrument import is no longer needed for navigation action if passing only ID
+import info.proteo.cupcake.InstrumentActivity
 import info.proteo.cupcake.databinding.FragmentInstrumentBinding
-import info.proteo.cupcake.ui.barcode.BarcodeScannerFragment
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class InstrumentFragment : Fragment() {
+class InstrumentFragment : Fragment(), InstrumentActivity.SearchQueryListener {
 
     private var _binding: FragmentInstrumentBinding? = null
     private val binding get() = _binding!!
@@ -45,7 +43,6 @@ class InstrumentFragment : Fragment() {
 
         setupRecyclerView()
         setupSwipeRefresh()
-        setupSearch()
         observeInstruments()
     }
 
@@ -82,47 +79,11 @@ class InstrumentFragment : Fragment() {
         }
     }
 
-    private fun setupSearch() {
-        binding.btnScanBarcode.setOnClickListener {
-            requireActivity().supportFragmentManager.setFragmentResultListener(
-                "barcode_result",
-                viewLifecycleOwner
-            ) { _, bundle ->
-                val barcode = bundle.getString("barcode")
-                Log.d("InstrumentFragment", "Barcode scanned: $barcode")
-                barcode?.let {
-                    viewModel.search(it, true)
-                }
-            }
-
-            // Use activity's FragmentManager instead of parent's
-            val scannerFragment = BarcodeScannerFragment()
-
-            requireActivity().supportFragmentManager.beginTransaction()
-                .add(android.R.id.content, scannerFragment, "barcode_scanner")
-                .addToBackStack("barcode_scanner")
-                .commit()
-        }
-        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                viewModel.search(query)
-                return true
-            }
-
-            override fun onQueryTextChange(newText: String?): Boolean {
-                if (newText.isNullOrBlank()) {
-                    viewModel.search(null)
-                }
-                return true
-            }
-        })
-
-
+    // Implement the SearchQueryListener interface
+    override fun onSearchQuery(query: String?, isBarcode: Boolean) {
+        Log.d("InstrumentFragment", "Search query received: $query, isBarcode: $isBarcode")
+        viewModel.search(query, isBarcode)
     }
-
-
-
-
 
     private fun setupSwipeRefresh() {
         binding.swipeRefreshLayout.setOnRefreshListener {

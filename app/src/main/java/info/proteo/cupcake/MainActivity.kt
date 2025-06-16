@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
@@ -38,6 +39,18 @@ class MainActivity : AppCompatActivity() {
 
         setupActionBarWithNavController(navController, appBarConfiguration)
         binding.navView?.setupWithNavController(navController)
+
+        // Make all toolbar elements white
+        binding.appBarMain.toolbar.apply {
+            // Set title text color to white
+            setTitleTextColor(ContextCompat.getColor(context, R.color.white))
+
+            // Set navigation icon (hamburger menu) to white
+            navigationIcon?.setTint(ContextCompat.getColor(context, R.color.white))
+
+            // Set overflow menu icon (three dots) to white
+            overflowIcon?.setTint(ContextCompat.getColor(context, R.color.white))
+        }
 
         binding.navView?.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
@@ -94,8 +107,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
+
+        // Apply white tint to all menu items
+        for (i in 0 until menu.size()) {
+            val item = menu.getItem(i)
+            item.icon?.setTint(ContextCompat.getColor(this, R.color.white))
+        }
+
         return true
     }
-
-
 }

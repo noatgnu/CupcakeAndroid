@@ -29,6 +29,9 @@ import android.util.Base64
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toolbar
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import info.proteo.cupcake.databinding.DialogEditInstrumentBinding
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -174,6 +177,46 @@ class InstrumentDetailFragment : Fragment() {
         requireActivity().addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.menu_instrument_detail, menu)
+
+                // Make all menu icons white for visibility against toolbar background
+                for (i in 0 until menu.size()) {
+                    val item = menu.getItem(i)
+                    item.icon?.setTint(ContextCompat.getColor(requireContext(), R.color.white))
+                }
+
+                // Make the toolbar title and other elements white
+                (requireActivity() as? AppCompatActivity)?.supportActionBar?.let { actionBar ->
+                    // Set title text color programmatically (if not already set in theme)
+                    val titleTextColor = ContextCompat.getColor(requireContext(), R.color.white)
+                    val titleId = androidx.appcompat.R.id.action_bar_title
+                    val titleView = requireActivity().findViewById<TextView>(titleId)
+                    titleView?.setTextColor(titleTextColor)
+                }
+
+                // Make sure the overflow menu icon is white
+                val toolbar = (requireActivity() as? AppCompatActivity)?.supportActionBar?.customView as? androidx.appcompat.widget.Toolbar
+                    ?: requireActivity().findViewById(R.id.toolbar) as? androidx.appcompat.widget.Toolbar
+                toolbar?.overflowIcon?.setTint(ContextCompat.getColor(requireContext(), R.color.white))
+                toolbar?.navigationIcon?.setTint(ContextCompat.getColor(requireContext(), R.color.white))
+
+                try {
+                    val inflater = menuInflater as? MenuInflater
+                    val menuPopupHelper = inflater?.javaClass?.getDeclaredField("mPopupContext")?.apply {
+                        isAccessible = true
+                    }?.get(inflater)
+
+                    if (menuPopupHelper != null) {
+                        val contextThemeWrapper = androidx.appcompat.view.ContextThemeWrapper(
+                            requireContext(),
+                            R.style.Theme_Cupcake_PopupOverlay
+                        )
+                        menuPopupHelper.javaClass.getDeclaredField("mContext")?.apply {
+                            isAccessible = true
+                            set(menuPopupHelper, contextThemeWrapper)
+                        }
+                    }
+                } catch (e: Exception) {
+                }
             }
 
             override fun onPrepareMenu(menu: Menu) {
@@ -997,3 +1040,4 @@ class InstrumentDetailFragment : Fragment() {
         }
     }
 }
+
