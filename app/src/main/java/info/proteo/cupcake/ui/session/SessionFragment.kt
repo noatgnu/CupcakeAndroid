@@ -444,6 +444,8 @@ class SessionFragment : Fragment() {
             }
         }
 
+
+
         updateAnnotationPaginationButtons()
     }
 
@@ -682,6 +684,12 @@ class SessionFragment : Fragment() {
             viewModel.hasMoreAnnotations.collectLatest { hasMore ->
                 hasMoreAnnotations = hasMore
                 updateAnnotationPaginationButtons(hasMore)
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.currentAnnotationOffset.collect { offset ->
+                binding.fabPrevAnnotation.visibility = if (offset > 0) View.VISIBLE else View.GONE
             }
         }
     }

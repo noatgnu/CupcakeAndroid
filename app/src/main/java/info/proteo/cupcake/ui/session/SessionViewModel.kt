@@ -90,6 +90,9 @@ class SessionViewModel @Inject constructor(
     private val _currentUserPreference = MutableStateFlow<UserPreferencesEntity?>(null)
     val currentUserPreference: StateFlow<UserPreferencesEntity?> = _currentUserPreference.asStateFlow()
 
+    private val _currentAnnotationOffset = MutableStateFlow(0)
+    val currentAnnotationOffset: StateFlow<Int> = _currentAnnotationOffset.asStateFlow()
+
     init {
         viewModelScope.launch {
             try {
@@ -154,6 +157,7 @@ class SessionViewModel @Inject constructor(
     }
 
     fun loadAnnotationsForStep(stepId: Int, sessionId: String, offset: Int =0, limit: Int = 10) {
+        _currentAnnotationOffset.value = offset
         viewModelScope.launch {
             _isLoading.value = true
             try {
