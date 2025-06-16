@@ -6,7 +6,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import info.proteo.cupcake.R
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolTag
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolTag
 
 class ProtocolTagSearchAdapter(
     private var tags: List<ProtocolTag>,

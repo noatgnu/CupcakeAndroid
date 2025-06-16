@@ -38,7 +38,7 @@ import com.google.android.material.textfield.TextInputEditText
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.R
 import info.proteo.cupcake.SessionManager
-import info.proteo.cupcake.data.remote.model.reagent.StoredReagent
+import info.proteo.cupcake.shared.data.model.reagent.StoredReagent
 import info.proteo.cupcake.databinding.FragmentStoredReagentDetailBinding
 import info.proteo.cupcake.ui.barcode.BarcodeScannerFragment
 import kotlinx.coroutines.flow.collectLatest
@@ -561,7 +561,7 @@ class StoredReagentDetailFragment : Fragment() {
             binding.progressBarBarcode.visibility = View.VISIBLE
             binding.imageViewBarcode.visibility = View.GONE
             binding.textViewBarcodeError.visibility = View.GONE
-            viewModel.generateBarcode(reagent.barcode)
+            viewModel.generateBarcode(reagent.barcode!!)
         } else {
             binding.progressBarBarcode.visibility = View.GONE
             binding.imageViewBarcode.visibility = View.GONE

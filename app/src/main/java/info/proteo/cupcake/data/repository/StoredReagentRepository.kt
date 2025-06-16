@@ -1,8 +1,8 @@
 package info.proteo.cupcake.data.repository
 
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.reagent.ReagentAction
-import info.proteo.cupcake.data.remote.model.reagent.StoredReagent
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.reagent.ReagentAction
+import info.proteo.cupcake.shared.data.model.reagent.StoredReagent
 import info.proteo.cupcake.data.remote.service.StoredReagentService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

@@ -6,9 +6,10 @@ import com.squareup.moshi.JsonClass
 import info.proteo.cupcake.data.local.dao.instrument.InstrumentDao
 import info.proteo.cupcake.data.local.dao.instrument.SupportInformationDao
 import info.proteo.cupcake.data.local.entity.instrument.InstrumentEntity
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.instrument.Instrument
-import info.proteo.cupcake.data.remote.model.instrument.SupportInformation
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.instrument.DelayUsageRequest
+import info.proteo.cupcake.shared.data.model.instrument.Instrument
+import info.proteo.cupcake.shared.data.model.instrument.SupportInformation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -43,11 +44,7 @@ data class InstrumentPermission(
     @Json(name = "can_view") val canView: Boolean = false
 )
 
-@JsonClass(generateAdapter = true)
-data class DelayUsageRequest(
-    @Json(name = "start_date") val startDate: String,
-    val days: Int
-)
+
 
 @JsonClass(generateAdapter = true)
 data class SupportInformationIdRequest(

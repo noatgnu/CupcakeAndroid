@@ -4,9 +4,9 @@ import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 import info.proteo.cupcake.data.local.dao.protocol.SessionDao
 import info.proteo.cupcake.data.local.entity.protocol.SessionEntity
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolModel
-import info.proteo.cupcake.data.remote.model.protocol.Session
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolModel
+import info.proteo.cupcake.shared.data.model.protocol.Session
 import info.proteo.cupcake.data.repository.UserRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers

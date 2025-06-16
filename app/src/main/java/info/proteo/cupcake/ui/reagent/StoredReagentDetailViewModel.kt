@@ -6,13 +6,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 
-import info.proteo.cupcake.data.remote.model.reagent.ReagentAction
-import info.proteo.cupcake.data.remote.model.reagent.StoredReagent
-import info.proteo.cupcake.data.remote.model.reagent.StoredReagentPermission
+import info.proteo.cupcake.shared.data.model.reagent.ReagentAction
+import info.proteo.cupcake.shared.data.model.reagent.StoredReagent
+import info.proteo.cupcake.shared.data.model.reagent.StoredReagentPermission
 import info.proteo.cupcake.data.remote.service.BarcodeGenerator
 import info.proteo.cupcake.data.remote.service.StorageObjectService
 import info.proteo.cupcake.data.remote.service.StoredReagentPermissionRequest
-import info.proteo.cupcake.data.remote.model.annotation.Annotation
+import info.proteo.cupcake.shared.data.model.annotation.Annotation
 import info.proteo.cupcake.data.remote.service.AnnotationFolderDetails
 import info.proteo.cupcake.data.remote.service.DownloadTokenResponse
 import info.proteo.cupcake.data.repository.ReagentActionRepository

@@ -2,8 +2,8 @@ package info.proteo.cupcake.data.remote.model.instrument
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import info.proteo.cupcake.data.remote.model.annotation.AnnotationFolderDetails
-import info.proteo.cupcake.data.remote.model.user.UserBasic
+import info.proteo.cupcake.shared.data.model.annotation.AnnotationFolderDetails
+import info.proteo.cupcake.shared.data.model.user.UserBasic
 
 @JsonClass(generateAdapter = true)
 data class MaintenanceLog(

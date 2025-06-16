@@ -2,10 +2,10 @@ package info.proteo.cupcake.data.remote.service
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.reagent.StoredReagentPermission
-import info.proteo.cupcake.data.remote.model.user.User
-import info.proteo.cupcake.data.remote.model.user.UserBasic
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.reagent.StoredReagentPermission
+import info.proteo.cupcake.shared.data.model.user.User
+import info.proteo.cupcake.shared.data.model.user.UserBasic
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST

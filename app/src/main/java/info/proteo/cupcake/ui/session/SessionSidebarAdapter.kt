@@ -7,8 +7,8 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import info.proteo.cupcake.R
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolSection
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolSection
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolStep
 import info.proteo.cupcake.util.ProtocolHtmlRenderer.htmlToPlainText
 
 class SessionSidebarAdapter(private val onStepClick: (ProtocolStep, ProtocolSection) -> Unit) : // Changed lambda

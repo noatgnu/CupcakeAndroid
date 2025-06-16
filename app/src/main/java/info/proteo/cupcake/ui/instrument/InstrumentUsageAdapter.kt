@@ -6,7 +6,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import info.proteo.cupcake.R
-import info.proteo.cupcake.data.remote.model.instrument.InstrumentUsage
+import info.proteo.cupcake.shared.data.model.instrument.InstrumentUsage
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

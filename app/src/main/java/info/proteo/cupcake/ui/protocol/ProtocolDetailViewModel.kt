@@ -4,11 +4,11 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolModel
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolTag
-import info.proteo.cupcake.data.remote.model.protocol.Session
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolModel
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolStep
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolTag
+import info.proteo.cupcake.shared.data.model.protocol.Session
 import info.proteo.cupcake.data.repository.ProtocolRepository
 import info.proteo.cupcake.data.repository.TagRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,8 +44,8 @@ class ProtocolDetailViewModel @Inject constructor(
 
                     val stepsMap = mutableMapOf<Int, MutableList<ProtocolStep>>()
                     protocol.steps?.forEach { step ->
-                        if (step.stepSection != null) {
-                            val sectionSteps = stepsMap.getOrPut(step.stepSection) { mutableListOf() }
+                        step.stepSection?.let { sectionId ->
+                            val sectionSteps = stepsMap.getOrPut(sectionId) { mutableListOf() }
                             sectionSteps.add(step)
                         }
                     }

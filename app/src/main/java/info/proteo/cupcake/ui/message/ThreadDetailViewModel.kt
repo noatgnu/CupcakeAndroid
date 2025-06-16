@@ -3,9 +3,9 @@ package info.proteo.cupcake.ui.message
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import info.proteo.cupcake.data.remote.model.message.Message
-import info.proteo.cupcake.data.remote.model.message.MessageThreadDetail
-import info.proteo.cupcake.data.remote.model.message.ThreadMessage
+import info.proteo.cupcake.shared.data.model.message.Message
+import info.proteo.cupcake.shared.data.model.message.MessageThreadDetail
+import info.proteo.cupcake.shared.data.model.message.ThreadMessage
 import info.proteo.cupcake.data.repository.MessageRepository
 import info.proteo.cupcake.data.repository.MessageThreadRepository
 import info.proteo.cupcake.data.repository.UserRepository

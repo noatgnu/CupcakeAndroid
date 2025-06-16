@@ -1,7 +1,7 @@
 package info.proteo.cupcake.data.remote.service
 
-import info.proteo.cupcake.data.remote.model.LoginRequest
-import info.proteo.cupcake.data.remote.model.LoginResponse
+import info.proteo.cupcake.shared.data.model.LoginRequest
+import info.proteo.cupcake.shared.data.model.LoginResponse
 import retrofit2.http.Body
 import retrofit2.http.POST
 import javax.inject.Inject

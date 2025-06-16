@@ -19,7 +19,7 @@ import android.widget.Toast
 import androidx.core.graphics.toColorInt
 import info.proteo.cupcake.R
 import info.proteo.cupcake.data.repository.AnnotationRepository
-import info.proteo.cupcake.data.remote.model.annotation.Annotation
+import info.proteo.cupcake.shared.data.model.annotation.Annotation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -81,7 +81,7 @@ class MediaAnnotationHandler(
             transcriptionContainer.visibility = View.VISIBLE
             // Parse VTT cues only once when media is set up or changed
             if (currentVttCues.isEmpty() || annotation.id != currentPlayingAnnotationId) {
-                currentVttCues = parseVttContent(annotation.transcription)
+                currentVttCues = parseVttContent(annotation.transcription!!)
             }
             transcriptionText.text = buildFullTranscriptText(currentVttCues)
             // Initial highlight if media is already playing for this annotation
@@ -120,7 +120,7 @@ class MediaAnnotationHandler(
                 progressBar?.visibility = View.VISIBLE
                 playButton.isEnabled = false
                 // Parse VTT cues before requesting URL, as they are needed in prepareAndPlayMedia
-                currentVttCues = if (!annotation.transcription.isNullOrBlank()) parseVttContent(annotation.transcription) else emptyList()
+                currentVttCues = if (!annotation.transcription.isNullOrBlank()) parseVttContent(annotation.transcription!!) else emptyList()
                 requestSignedUrlAndPlay(annotation, playButton, mediaSeekBar, mediaTimerText, progressBar, transcriptionText, currentVttCues)
             }
             onMediaStateChanged?.invoke()

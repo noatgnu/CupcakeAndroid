@@ -6,8 +6,8 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import info.proteo.cupcake.data.remote.model.instrument.ExternalContact
-import info.proteo.cupcake.data.remote.model.instrument.SupportInformation
+import info.proteo.cupcake.shared.data.model.instrument.ExternalContact
+import info.proteo.cupcake.shared.data.model.instrument.SupportInformation
 import info.proteo.cupcake.data.repository.SupportInformationRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch

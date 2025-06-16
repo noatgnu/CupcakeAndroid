@@ -7,7 +7,7 @@ import android.widget.ArrayAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import info.proteo.cupcake.data.remote.model.instrument.ExternalContactDetails
+import info.proteo.cupcake.shared.data.model.instrument.ExternalContactDetails
 import info.proteo.cupcake.databinding.ItemContactDetailEditableBinding
 import kotlin.collections.get
 

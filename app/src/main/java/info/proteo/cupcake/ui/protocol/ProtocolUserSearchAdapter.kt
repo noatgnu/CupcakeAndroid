@@ -6,8 +6,8 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import info.proteo.cupcake.R
-import info.proteo.cupcake.data.remote.model.user.User
-import info.proteo.cupcake.data.remote.model.user.UserBasic
+import info.proteo.cupcake.shared.data.model.user.User
+import info.proteo.cupcake.shared.data.model.user.UserBasic
 
 class ProtocolUserListSearchAdapter(
     private val users: List<User>,

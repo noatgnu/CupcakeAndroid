@@ -6,7 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import info.proteo.cupcake.R
-import info.proteo.cupcake.data.remote.model.annotation.Annotation
+import info.proteo.cupcake.shared.data.model.annotation.Annotation
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject

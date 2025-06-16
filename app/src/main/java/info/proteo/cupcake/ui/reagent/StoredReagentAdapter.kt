@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import info.proteo.cupcake.R
-import info.proteo.cupcake.data.remote.model.reagent.StoredReagent
+import info.proteo.cupcake.shared.data.model.reagent.StoredReagent
 import info.proteo.cupcake.databinding.ItemStoredReagentBinding
 import java.text.SimpleDateFormat
 import java.util.Calendar

@@ -1,9 +1,9 @@
 package info.proteo.cupcake.data.repository
 
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolTag
-import info.proteo.cupcake.data.remote.model.protocol.StepTag
-import info.proteo.cupcake.data.remote.model.tag.Tag
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolTag
+import info.proteo.cupcake.shared.data.model.protocol.StepTag
+import info.proteo.cupcake.shared.data.model.tag.Tag
 import info.proteo.cupcake.data.remote.service.TagService
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject

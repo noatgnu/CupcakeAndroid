@@ -9,7 +9,7 @@ import info.proteo.cupcake.data.local.dao.user.UserDao
 import info.proteo.cupcake.data.local.entity.annotation.AnnotationEntity
 import info.proteo.cupcake.data.local.entity.annotation.AnnotationFolderPathEntity
 import info.proteo.cupcake.data.local.entity.user.UserEntity
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import okhttp3.ResponseBody
@@ -27,9 +27,9 @@ import retrofit2.http.Streaming
 import javax.inject.Inject
 import javax.inject.Singleton
 
-import info.proteo.cupcake.data.remote.model.annotation.Annotation
-import info.proteo.cupcake.data.remote.model.annotation.AnnotationFolderPath
-import info.proteo.cupcake.data.remote.model.user.UserBasic
+import info.proteo.cupcake.shared.data.model.annotation.Annotation
+import info.proteo.cupcake.shared.data.model.annotation.AnnotationFolderPath
+import info.proteo.cupcake.shared.data.model.user.UserBasic
 import kotlinx.coroutines.flow.firstOrNull
 
 @JsonClass(generateAdapter = true)

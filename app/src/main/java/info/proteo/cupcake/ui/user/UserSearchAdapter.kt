@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import info.proteo.cupcake.R
-import info.proteo.cupcake.data.remote.model.user.UserBasic
+import info.proteo.cupcake.shared.data.model.user.UserBasic
 
 class UserSearchAdapter(
     private val onUserSelected: (UserBasic) -> Unit

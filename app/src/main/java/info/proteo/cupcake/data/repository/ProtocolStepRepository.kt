@@ -1,11 +1,11 @@
 package info.proteo.cupcake.data.repository
 
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
-import info.proteo.cupcake.data.remote.model.protocol.StepReagent
-import info.proteo.cupcake.data.remote.model.protocol.StepTag
-import info.proteo.cupcake.data.remote.model.protocol.TimeKeeper
-import info.proteo.cupcake.data.remote.model.reagent.ReagentAction
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolStep
+import info.proteo.cupcake.shared.data.model.protocol.StepReagent
+import info.proteo.cupcake.shared.data.model.protocol.StepTag
+import info.proteo.cupcake.shared.data.model.protocol.TimeKeeper
+import info.proteo.cupcake.shared.data.model.reagent.ReagentAction
 import info.proteo.cupcake.data.remote.service.ExportAssociatedMetadataResponse
 import info.proteo.cupcake.data.remote.service.ProtocolStepService
 import info.proteo.cupcake.data.remote.service.SDRFConversionRequest

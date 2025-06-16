@@ -29,7 +29,7 @@ import com.google.android.material.chip.Chip
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.R
 import info.proteo.cupcake.StoredReagentActivity
-import info.proteo.cupcake.data.remote.model.storage.StorageObject
+import info.proteo.cupcake.shared.data.model.storage.StorageObject
 import info.proteo.cupcake.data.remote.service.StoredReagentService
 import info.proteo.cupcake.databinding.FragmentStorageBinding
 import info.proteo.cupcake.ui.barcode.BarcodeScannerFragment

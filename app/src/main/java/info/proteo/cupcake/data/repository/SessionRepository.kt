@@ -3,9 +3,9 @@ package info.proteo.cupcake.data.repository
 import com.squareup.moshi.Json
 import info.proteo.cupcake.data.local.dao.protocol.RecentSessionDao
 import info.proteo.cupcake.data.local.entity.protocol.RecentSessionEntity
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolModel
-import info.proteo.cupcake.data.remote.model.protocol.Session
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolModel
+import info.proteo.cupcake.shared.data.model.protocol.Session
 import info.proteo.cupcake.data.remote.service.SessionCreateRequest
 import info.proteo.cupcake.data.remote.service.SessionService
 import retrofit2.Response

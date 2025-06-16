@@ -13,7 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.R
-import info.proteo.cupcake.data.remote.model.protocol.TimeKeeper
+import info.proteo.cupcake.shared.data.model.protocol.TimeKeeper
 import info.proteo.cupcake.databinding.ActivityTimeKeeperBinding
 import info.proteo.cupcake.databinding.DialogAddTimeKeeperBinding
 import info.proteo.cupcake.ui.timekeeper.TimeKeeperAdapter

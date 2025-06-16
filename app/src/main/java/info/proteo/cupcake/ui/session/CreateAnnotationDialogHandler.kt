@@ -35,8 +35,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputEditText
 import info.proteo.cupcake.R
-import info.proteo.cupcake.data.remote.model.instrument.Instrument
-import info.proteo.cupcake.data.remote.model.instrument.InstrumentUsage
+import info.proteo.cupcake.shared.data.model.instrument.Instrument
+import info.proteo.cupcake.shared.data.model.instrument.InstrumentUsage
 import info.proteo.cupcake.data.remote.service.CreateAnnotationRequest
 import info.proteo.cupcake.data.repository.InstrumentRepository
 import info.proteo.cupcake.data.repository.InstrumentUsageRepository

@@ -12,7 +12,7 @@ import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import info.proteo.cupcake.R
-import info.proteo.cupcake.data.remote.model.annotation.Annotation
+import info.proteo.cupcake.shared.data.model.annotation.Annotation
 import info.proteo.cupcake.data.repository.AnnotationRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

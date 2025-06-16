@@ -6,7 +6,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import info.proteo.cupcake.data.remote.model.protocol.TimeKeeper
+import info.proteo.cupcake.shared.data.model.protocol.TimeKeeper
 import info.proteo.cupcake.databinding.ItemActiveTimeKeeperPreviewBinding
 import java.text.SimpleDateFormat
 import java.util.Date

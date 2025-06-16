@@ -6,8 +6,8 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import info.proteo.cupcake.data.remote.model.message.MessageThread
-import info.proteo.cupcake.data.remote.model.user.User
+import info.proteo.cupcake.shared.data.model.message.MessageThread
+import info.proteo.cupcake.shared.data.model.user.User
 import info.proteo.cupcake.data.repository.MessageThreadRepository
 import info.proteo.cupcake.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 import android.util.Log
 import info.proteo.cupcake.data.local.dao.protocol.RecentSessionDao
 import info.proteo.cupcake.data.local.entity.protocol.RecentSessionEntity
-import info.proteo.cupcake.data.remote.model.protocol.TimeKeeper
+import info.proteo.cupcake.shared.data.model.protocol.TimeKeeper
 import info.proteo.cupcake.data.remote.service.WebSocketService
 import info.proteo.cupcake.data.repository.TimeKeeperRepository
 import info.proteo.cupcake.ui.timekeeper.TimeKeeperViewModel.TimerState

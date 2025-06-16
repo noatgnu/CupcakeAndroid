@@ -1,13 +1,16 @@
-package info.proteo.cupcake.data.remote.model.instrument
+package info.proteo.cupcake.data.remote.service
 
 import android.util.Log
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
+import info.proteo.cupcake.shared.data.model.instrument.InstrumentUsage
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
 import info.proteo.cupcake.data.local.dao.instrument.InstrumentDao
 import info.proteo.cupcake.data.local.dao.instrument.InstrumentUsageDao
 import info.proteo.cupcake.data.local.dao.user.UserDao
 import info.proteo.cupcake.data.local.entity.instrument.InstrumentUsageEntity
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.instrument.DelayUsageRequest
+
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -52,10 +55,6 @@ data class PatchInstrumentUsageRequest(
     val maintenance: Boolean? = null
 )
 
-@JsonClass(generateAdapter = true)
-data class DelayUsageRequest(
-    val days: Int
-)
 
 @JsonClass(generateAdapter = true)
 data class ExportUsageRequest(

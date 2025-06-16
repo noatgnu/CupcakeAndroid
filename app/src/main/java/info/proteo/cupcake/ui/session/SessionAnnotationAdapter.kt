@@ -26,7 +26,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import info.proteo.cupcake.data.remote.model.annotation.Annotation
+import info.proteo.cupcake.shared.data.model.annotation.Annotation
 import info.proteo.cupcake.R
 import info.proteo.cupcake.data.repository.AnnotationRepository
 import kotlinx.coroutines.CoroutineScope
@@ -43,7 +43,7 @@ import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.target.Target
 import com.bumptech.glide.request.RequestListener
 import info.proteo.cupcake.data.local.entity.user.UserPreferencesEntity
-import info.proteo.cupcake.data.remote.model.annotation.AnnotationWithPermissions
+import info.proteo.cupcake.shared.data.model.annotation.AnnotationWithPermissions
 import info.proteo.cupcake.data.repository.InstrumentRepository
 import info.proteo.cupcake.data.repository.InstrumentUsageRepository
 import kotlin.or

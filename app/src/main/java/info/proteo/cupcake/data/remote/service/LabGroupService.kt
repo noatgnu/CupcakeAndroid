@@ -6,10 +6,10 @@ import info.proteo.cupcake.data.local.dao.user.UserDao
 import info.proteo.cupcake.data.local.entity.storage.StorageObjectEntity
 import info.proteo.cupcake.data.local.entity.user.LabGroupEntity
 import info.proteo.cupcake.data.local.entity.user.UserEntity
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.storage.StorageObjectBasic
-import info.proteo.cupcake.data.remote.model.user.LabGroup
-import info.proteo.cupcake.data.remote.model.user.User
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.storage.StorageObjectBasic
+import info.proteo.cupcake.shared.data.model.user.LabGroup
+import info.proteo.cupcake.shared.data.model.user.User
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.http.*

@@ -1,7 +1,7 @@
 package info.proteo.cupcake.data.repository
 
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.protocol.TimeKeeper
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.protocol.TimeKeeper
 import info.proteo.cupcake.data.remote.service.TimeKeeperService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

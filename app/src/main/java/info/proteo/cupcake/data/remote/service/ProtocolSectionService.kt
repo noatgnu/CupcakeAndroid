@@ -6,9 +6,9 @@ import info.proteo.cupcake.data.local.dao.protocol.ProtocolStepDao
 import info.proteo.cupcake.data.local.entity.protocol.ProtocolSectionEntity
 import info.proteo.cupcake.data.local.entity.protocol.ProtocolStepEntity
 import info.proteo.cupcake.data.local.entity.protocol.ProtocolStepNextRelation
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolSection
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolSection
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolStep
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map

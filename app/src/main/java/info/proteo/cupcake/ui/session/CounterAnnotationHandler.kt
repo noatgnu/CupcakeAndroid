@@ -8,7 +8,7 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import info.proteo.cupcake.data.remote.model.annotation.Annotation
+import info.proteo.cupcake.shared.data.model.annotation.Annotation
 import org.json.JSONObject
 
 class CounterAnnotationHandler(
@@ -25,7 +25,7 @@ class CounterAnnotationHandler(
         container.removeAllViews()
 
         try {
-            if (annotation.annotation == null || annotation.annotation.isBlank()) {
+            if (annotation.annotation == null || annotation.annotation!!.isBlank()) {
                 val errorText = TextView(container.context).apply {
                     text = "No counter data available"
                     setTextColor(Color.RED)
@@ -34,7 +34,7 @@ class CounterAnnotationHandler(
                 return
             }
 
-            val counterData = parseCounterData(annotation.annotation)
+            val counterData = parseCounterData(annotation.annotation!!)
 
             val mainLayout = LinearLayout(container.context).apply {
                 orientation = LinearLayout.VERTICAL
@@ -169,7 +169,7 @@ class CounterAnnotationHandler(
 
     private fun updateCounter(annotation: Annotation, newCurrent: Int, total: Int) {
         try {
-            if (annotation.annotation == null || annotation.annotation.isBlank()) {
+            if (annotation.annotation == null || annotation.annotation!!.isBlank()) {
                 Toast.makeText(
                     context,
                     "No counter data available to update",

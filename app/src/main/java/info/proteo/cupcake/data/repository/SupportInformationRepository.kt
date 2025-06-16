@@ -1,9 +1,9 @@
 package info.proteo.cupcake.data.repository
 
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.instrument.ExternalContact
-import info.proteo.cupcake.data.remote.model.instrument.ExternalContactDetails
-import info.proteo.cupcake.data.remote.model.instrument.SupportInformation
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.instrument.ExternalContact
+import info.proteo.cupcake.shared.data.model.instrument.ExternalContactDetails
+import info.proteo.cupcake.shared.data.model.instrument.SupportInformation
 import info.proteo.cupcake.data.remote.service.SupportInformationService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

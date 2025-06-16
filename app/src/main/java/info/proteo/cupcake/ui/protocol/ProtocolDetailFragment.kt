@@ -36,9 +36,9 @@ import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.R
 import info.proteo.cupcake.SessionActivity
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolModel
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
-import info.proteo.cupcake.data.remote.model.protocol.Session
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolModel
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolStep
+import info.proteo.cupcake.shared.data.model.protocol.Session
 import info.proteo.cupcake.data.remote.service.ProtocolService
 import info.proteo.cupcake.data.remote.service.UpdateProtocolRequest
 import info.proteo.cupcake.data.remote.service.UserPermissionResponse
@@ -193,7 +193,7 @@ class ProtocolDetailFragment : Fragment() {
                         binding.protocolTagsChipGroup.visibility = View.VISIBLE
                         binding.protocolTagsChipGroup.removeAllViews()
 
-                        it.tags.forEach { protocolTag ->
+                        it.tags?.forEach { protocolTag ->
                             val chip = Chip(requireContext())
                             chip.text = protocolTag.tag.tag
                             chip.isClickable = false
@@ -206,7 +206,7 @@ class ProtocolDetailFragment : Fragment() {
                         binding.protocolReagentsContainer.visibility = View.VISIBLE
                         binding.protocolReagentsContainer.removeAllViews()
 
-                        it.reagents.forEach { reagent ->
+                        it.reagents?.forEach { reagent ->
                             val reagentView = layoutInflater.inflate(
                                 R.layout.item_protocol_reagent,
                                 binding.protocolReagentsContainer,

@@ -11,8 +11,8 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import info.proteo.cupcake.R
-import info.proteo.cupcake.data.remote.model.reagent.StoredReagent
-import info.proteo.cupcake.data.remote.model.storage.StoragePathItem
+import info.proteo.cupcake.shared.data.model.reagent.StoredReagent
+import info.proteo.cupcake.shared.data.model.storage.StoragePathItem
 import info.proteo.cupcake.data.repository.StorageRepository
 import info.proteo.cupcake.databinding.ItemSessionStoredReagentSearchBinding
 import kotlinx.coroutines.CoroutineScope
@@ -151,7 +151,7 @@ class SessionStoredReagentSearchAdapter(
 
             if (!reagent.pngBase64.isNullOrEmpty()) {
                 try {
-                    val base64Content = reagent.pngBase64.replace("data:image/png;base64,", "")
+                    val base64Content = reagent.pngBase64!!.replace("data:image/png;base64,", "")
                     val imageBytes = Base64.decode(base64Content, Base64.DEFAULT)
                     val decodedImage = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
                     binding.reagentImageView.setImageBitmap(decodedImage)

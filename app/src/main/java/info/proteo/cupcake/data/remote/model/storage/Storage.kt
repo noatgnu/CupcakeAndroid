@@ -2,7 +2,7 @@ package info.proteo.cupcake.data.remote.model.storage
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import info.proteo.cupcake.data.remote.model.reagent.StoredReagent
+import info.proteo.cupcake.shared.data.model.reagent.StoredReagent
 
 @JsonClass(generateAdapter = true)
 data class StoragePathItem(

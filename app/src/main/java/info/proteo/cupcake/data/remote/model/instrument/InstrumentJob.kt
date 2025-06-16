@@ -2,14 +2,14 @@ package info.proteo.cupcake.data.remote.model.instrument
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import info.proteo.cupcake.data.remote.model.metadatacolumn.MetadataColumn
-import info.proteo.cupcake.data.remote.model.metadatacolumn.MetadataTableTemplate
-import info.proteo.cupcake.data.remote.model.project.Project
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolModel
-import info.proteo.cupcake.data.remote.model.protocol.Session
-import info.proteo.cupcake.data.remote.model.reagent.StoredReagent
-import info.proteo.cupcake.data.remote.model.user.LabGroupBasic
-import info.proteo.cupcake.data.remote.model.user.UserBasic
+import info.proteo.cupcake.shared.data.model.metadatacolumn.MetadataColumn
+import info.proteo.cupcake.shared.data.model.metadatacolumn.MetadataTableTemplate
+import info.proteo.cupcake.shared.data.model.project.Project
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolModel
+import info.proteo.cupcake.shared.data.model.protocol.Session
+import info.proteo.cupcake.shared.data.model.reagent.StoredReagent
+import info.proteo.cupcake.shared.data.model.user.LabGroupBasic
+import info.proteo.cupcake.shared.data.model.user.UserBasic
 
 @JsonClass(generateAdapter = true)
 data class InstrumentJob(

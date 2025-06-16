@@ -1,8 +1,8 @@
 package info.proteo.cupcake.data.repository
 
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.instrument.Instrument
-import info.proteo.cupcake.data.remote.model.instrument.SupportInformation
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.instrument.Instrument
+import info.proteo.cupcake.shared.data.model.instrument.SupportInformation
 import info.proteo.cupcake.data.remote.service.InstrumentPermission
 import info.proteo.cupcake.data.remote.service.InstrumentService
 import info.proteo.cupcake.data.remote.service.MaintenanceStatusResponse

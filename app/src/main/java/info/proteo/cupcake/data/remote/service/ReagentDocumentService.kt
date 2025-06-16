@@ -6,10 +6,10 @@ import info.proteo.cupcake.data.local.dao.annotation.AnnotationFolderPathDao
 import info.proteo.cupcake.data.local.dao.user.UserDao
 import info.proteo.cupcake.data.local.entity.annotation.AnnotationEntity
 import info.proteo.cupcake.data.local.entity.annotation.AnnotationFolderPathEntity
-import info.proteo.cupcake.data.remote.model.annotation.Annotation
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.annotation.AnnotationFolderPath
-import info.proteo.cupcake.data.remote.model.user.UserBasic
+import info.proteo.cupcake.shared.data.model.annotation.Annotation
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.annotation.AnnotationFolderPath
+import info.proteo.cupcake.shared.data.model.user.UserBasic
 import kotlinx.coroutines.flow.first
 import retrofit2.http.GET
 import retrofit2.http.Query

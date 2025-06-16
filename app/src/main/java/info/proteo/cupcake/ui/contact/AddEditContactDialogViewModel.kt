@@ -6,8 +6,8 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import info.proteo.cupcake.data.remote.model.instrument.ExternalContact
-import info.proteo.cupcake.data.remote.model.instrument.ExternalContactDetails
+import info.proteo.cupcake.shared.data.model.instrument.ExternalContact
+import info.proteo.cupcake.shared.data.model.instrument.ExternalContactDetails
 import info.proteo.cupcake.data.repository.SupportInformationRepository
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -116,7 +116,7 @@ class AddEditContactDialogViewModel @Inject constructor(
         val detailToRemove = currentDetails[position]
         if (detailToRemove.id != null && isEditingMode) {
             Log.d(TAG, "Detail to remove has ID ${detailToRemove.id}, marking for server deletion if necessary during save, or deleting explicitly.")
-            deleteContactDetailFromServer(detailToRemove.id)
+            deleteContactDetailFromServer(detailToRemove.id!!)
         }
 
         currentDetails.removeAt(position)

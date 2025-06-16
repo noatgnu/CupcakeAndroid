@@ -2,7 +2,7 @@ package info.proteo.cupcake.data.remote.model.user
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import info.proteo.cupcake.data.remote.model.storage.StorageObjectBasic
+import info.proteo.cupcake.shared.data.model.storage.StorageObjectBasic
 
 @JsonClass(generateAdapter = true)
 data class LabGroupBasic(

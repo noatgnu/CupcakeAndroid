@@ -236,5 +236,5 @@ interface ProtocolTagDao {
     fun deleteByProtocol(i: Int)
 
     @Query("SELECT * FROM protocol_tag WHERE tag = :i")
-    fun getByTag(i: Int) : Flow<List<ProtocolTagEntity>?>
+    fun getByTag(i: Int) : Flow<List<ProtocolTagEntity>>
 }

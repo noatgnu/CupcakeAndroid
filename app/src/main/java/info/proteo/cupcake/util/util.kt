@@ -2,7 +2,7 @@ package info.proteo.cupcake.util
 
 import android.content.res.Configuration
 import android.content.res.Resources
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolStep
 
 object ProtocolHtmlRenderer {
 
@@ -47,7 +47,7 @@ object ProtocolHtmlRenderer {
             description = description.replace("%${reagent.id}.quantity%", reagent.quantity.toString())
             description = description.replace("%${reagent.id}.unit%", reagent.reagent.unit)
             if (reagent.scalable && reagent.scalableFactor != null) {
-                val scaledQuantity = (reagent.quantity * reagent.scalableFactor)
+                val scaledQuantity = (reagent.quantity * reagent.scalableFactor!!)
                 description = description.replace(
                     "%${reagent.id}.scaled_quantity%",
                     "%.2f".format(scaledQuantity)

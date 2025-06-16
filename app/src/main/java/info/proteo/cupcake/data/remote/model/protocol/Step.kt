@@ -2,8 +2,8 @@ package info.proteo.cupcake.data.remote.model.protocol
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import info.proteo.cupcake.data.remote.model.reagent.Reagent
-import info.proteo.cupcake.data.remote.model.tag.Tag
+import info.proteo.cupcake.shared.data.model.reagent.Reagent
+import info.proteo.cupcake.shared.data.model.tag.Tag
 
 @JsonClass(generateAdapter = true)
 data class StepVariation(

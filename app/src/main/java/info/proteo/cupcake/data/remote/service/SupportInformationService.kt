@@ -3,15 +3,15 @@ package info.proteo.cupcake.data.remote.service
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 import info.proteo.cupcake.data.local.dao.instrument.ExternalContactDao
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.instrument.ExternalContact
-import info.proteo.cupcake.data.remote.model.instrument.SupportInformation
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.instrument.ExternalContact
+import info.proteo.cupcake.shared.data.model.instrument.SupportInformation
 import info.proteo.cupcake.data.local.dao.instrument.SupportInformationDao
 import info.proteo.cupcake.data.local.entity.instrument.ExternalContactEntity
 import info.proteo.cupcake.data.local.entity.instrument.SupportInformationEntity
 import info.proteo.cupcake.data.local.entity.instrument.SupportInformationManufacturerContactCrossRef
 import info.proteo.cupcake.data.local.entity.instrument.SupportInformationVendorContactCrossRef
-import info.proteo.cupcake.data.remote.model.instrument.ExternalContactDetails
+import info.proteo.cupcake.shared.data.model.instrument.ExternalContactDetails
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.Response
@@ -314,7 +314,7 @@ class SupportInformationServiceImpl @Inject constructor(
             externalContactDao.insert(contactEntity)
 
             supportInformationDao.insertVendorContactRef(
-                SupportInformationVendorContactCrossRef(supportInfo.id, contact.id)
+                SupportInformationVendorContactCrossRef(supportInfo.id, contact.id!!)
             )
         }
 
@@ -329,7 +329,7 @@ class SupportInformationServiceImpl @Inject constructor(
             externalContactDao.insert(contactEntity)
 
             supportInformationDao.insertManufacturerContactRef(
-                SupportInformationManufacturerContactCrossRef(supportInfo.id, contact.id)
+                SupportInformationManufacturerContactCrossRef(supportInfo.id, contact.id!!)
             )
         }
     }

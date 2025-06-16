@@ -3,8 +3,8 @@ package info.proteo.cupcake.data.remote.service
 import com.squareup.moshi.Json
 import info.proteo.cupcake.data.local.dao.reagent.ReagentActionDao
 import info.proteo.cupcake.data.local.entity.reagent.ReagentActionEntity
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.reagent.ReagentAction
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.reagent.ReagentAction
 import kotlinx.coroutines.flow.first
 import retrofit2.http.Body
 import retrofit2.http.DELETE

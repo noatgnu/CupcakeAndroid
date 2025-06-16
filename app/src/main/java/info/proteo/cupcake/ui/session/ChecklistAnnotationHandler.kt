@@ -10,7 +10,7 @@ import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import info.proteo.cupcake.data.remote.model.annotation.Annotation
+import info.proteo.cupcake.shared.data.model.annotation.Annotation
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -32,7 +32,7 @@ class ChecklistAnnotationHandler(
         container.removeAllViews()
 
         try {
-            if (annotation.annotation == null || annotation.annotation.isBlank()) {
+            if (annotation.annotation == null || annotation.annotation!!.isBlank()) {
                 val errorText = TextView(container.context).apply {
                     text = "No checklist data available"
                     setTextColor(Color.RED)
@@ -41,7 +41,7 @@ class ChecklistAnnotationHandler(
                 return
             }
 
-            val checklistData = parseChecklistData(annotation.annotation)
+            val checklistData = parseChecklistData(annotation.annotation!!)
 
             // Create title
             val titleText = TextView(container.context).apply {
@@ -79,7 +79,7 @@ class ChecklistAnnotationHandler(
 
     private fun updateChecklistItemState(annotation: Annotation, itemIndex: Int, isChecked: Boolean) {
         try {
-            if (annotation.annotation == null || annotation.annotation.isBlank()) {
+            if (annotation.annotation == null || annotation.annotation!!.isBlank()) {
                 Toast.makeText(
                     context,
                     "No checklist data available to update",
@@ -88,7 +88,7 @@ class ChecklistAnnotationHandler(
                 return
             }
 
-            val checklistData = parseChecklistData(annotation.annotation)
+            val checklistData = parseChecklistData(annotation.annotation!!)
             val updatedList = checklistData.checkList.toMutableList()
 
             if (itemIndex < updatedList.size) {

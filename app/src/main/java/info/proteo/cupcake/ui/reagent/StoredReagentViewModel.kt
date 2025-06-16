@@ -4,8 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import info.proteo.cupcake.data.remote.model.reagent.StoredReagent
-import info.proteo.cupcake.data.remote.model.storage.StorageObject
+import info.proteo.cupcake.shared.data.model.reagent.StoredReagent
+import info.proteo.cupcake.shared.data.model.storage.StorageObject
 import info.proteo.cupcake.data.remote.service.StorageObjectService
 import info.proteo.cupcake.data.remote.service.StoredReagentService
 import kotlinx.coroutines.flow.MutableStateFlow

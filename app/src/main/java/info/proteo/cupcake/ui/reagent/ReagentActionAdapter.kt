@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import info.proteo.cupcake.R
-import info.proteo.cupcake.data.remote.model.reagent.ReagentAction
+import info.proteo.cupcake.shared.data.model.reagent.ReagentAction
 import info.proteo.cupcake.databinding.ItemReagentActionBinding
 import java.text.SimpleDateFormat
 import java.util.Locale

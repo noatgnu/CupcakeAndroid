@@ -8,8 +8,8 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import info.proteo.cupcake.R
-import info.proteo.cupcake.data.remote.model.message.Message
-import info.proteo.cupcake.data.remote.model.message.ThreadMessage
+import info.proteo.cupcake.shared.data.model.message.Message
+import info.proteo.cupcake.shared.data.model.message.ThreadMessage
 import info.proteo.cupcake.databinding.ItemMessageBinding
 import java.text.SimpleDateFormat
 import java.util.Locale

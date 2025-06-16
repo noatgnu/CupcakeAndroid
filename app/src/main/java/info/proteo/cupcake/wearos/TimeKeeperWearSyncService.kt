@@ -1,7 +1,7 @@
 package info.proteo.cupcake.wearos
 
 import info.proteo.cupcake.communication.service.PhoneTimeKeeperCommunicationService
-import info.proteo.cupcake.data.remote.model.protocol.TimeKeeper
+import info.proteo.cupcake.shared.data.model.protocol.TimeKeeper
 import info.proteo.cupcake.data.repository.SessionRepository
 import info.proteo.cupcake.data.repository.TimeKeeperRepository
 import info.proteo.cupcake.shared.model.TimeKeeperData

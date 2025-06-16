@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import info.proteo.cupcake.data.local.dao.user.UserPreferencesDao
 import info.proteo.cupcake.data.local.entity.user.UserPreferencesEntity
-import info.proteo.cupcake.data.remote.model.user.User
+import info.proteo.cupcake.shared.data.model.user.User
 import info.proteo.cupcake.data.repository.AuthRepository
 import info.proteo.cupcake.data.repository.UserRepository
 import kotlinx.coroutines.Dispatchers

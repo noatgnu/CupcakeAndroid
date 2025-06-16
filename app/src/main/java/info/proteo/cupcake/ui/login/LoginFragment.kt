@@ -12,7 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.R
-import info.proteo.cupcake.data.remote.model.user.User
+import info.proteo.cupcake.shared.data.model.user.User
 import info.proteo.cupcake.databinding.FragmentLoginBinding
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

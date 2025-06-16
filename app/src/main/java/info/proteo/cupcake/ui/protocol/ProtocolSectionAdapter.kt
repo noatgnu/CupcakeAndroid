@@ -8,8 +8,8 @@ import android.view.ViewGroup
 import android.webkit.WebSettings
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolSection
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolSection
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolStep
 import info.proteo.cupcake.databinding.ItemProtocolSectionBinding
 import info.proteo.cupcake.databinding.ItemProtocolStepBinding
 
@@ -173,7 +173,8 @@ class ProtocolStepsAdapter(
             }
 
             binding.stepDuration.text = if (step.stepDuration != null) {
-                "Duration: ${formatDuration(step.stepDuration.toLong())}s"
+                val duration = step.stepDuration
+                "Duration: ${formatDuration(duration!!.toLong())}s"
             } else {
                 ""
             }

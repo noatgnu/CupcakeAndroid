@@ -2,9 +2,9 @@ package info.proteo.cupcake.data.remote.model.annotation
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import info.proteo.cupcake.data.remote.model.instrument.InstrumentUsage
-import info.proteo.cupcake.data.remote.model.metadatacolumn.MetadataColumn
-import info.proteo.cupcake.data.remote.model.user.UserBasic
+import info.proteo.cupcake.shared.data.model.instrument.InstrumentUsage
+import info.proteo.cupcake.shared.data.model.metadatacolumn.MetadataColumn
+import info.proteo.cupcake.shared.data.model.user.UserBasic
 
 @JsonClass(generateAdapter = true)
 data class Annotation(

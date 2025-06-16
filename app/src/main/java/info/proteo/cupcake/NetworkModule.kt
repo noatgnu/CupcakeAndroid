@@ -30,9 +30,9 @@ import info.proteo.cupcake.data.local.dao.user.UserPreferencesDao
 import info.proteo.cupcake.data.model.api.user.User
 import info.proteo.cupcake.data.remote.LimitOffsetResponseAdapterFactory
 import info.proteo.cupcake.data.remote.interceptor.AuthInterceptor
-import info.proteo.cupcake.data.remote.model.instrument.InstrumentUsageApiService
-import info.proteo.cupcake.data.remote.model.instrument.InstrumentUsageService
-import info.proteo.cupcake.data.remote.model.instrument.InstrumentUsageServiceImpl
+import info.proteo.cupcake.data.remote.service.InstrumentUsageApiService
+import info.proteo.cupcake.data.remote.service.InstrumentUsageService
+import info.proteo.cupcake.data.remote.service.InstrumentUsageServiceImpl
 import info.proteo.cupcake.data.remote.service.AnnotationApiService
 import info.proteo.cupcake.data.remote.service.AnnotationService
 import info.proteo.cupcake.data.remote.service.AnnotationServiceImpl

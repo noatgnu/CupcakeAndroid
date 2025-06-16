@@ -12,7 +12,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
-import info.proteo.cupcake.data.remote.model.annotation.Annotation
+import info.proteo.cupcake.shared.data.model.annotation.Annotation
 import org.json.JSONObject
 
 class TableAnnotationHandler(
@@ -41,7 +41,7 @@ class TableAnnotationHandler(
                 return
             }
 
-            val tableData = parseTableData(annotation.annotation)
+            val tableData = parseTableData(annotation.annotation!!)
             var isEditMode = false // Keep track of edit mode state
 
             val mainLayout = LinearLayout(container.context).apply {
@@ -140,7 +140,7 @@ class TableAnnotationHandler(
                 // Handle empty or invalid annotation case
                 return
             }
-            val tableData = parseTableData(annotation.annotation)
+            val tableData = parseTableData(annotation.annotation!!)
 
             for (i in 0 until tableData.nRow) {
                 val rowLayout = LinearLayout(container.context).apply {

@@ -3,8 +3,8 @@ package info.proteo.cupcake.data.remote.service
 import info.proteo.cupcake.data.local.dao.protocol.TimeKeeperDao
 import info.proteo.cupcake.data.local.dao.user.UserPreferencesDao
 import info.proteo.cupcake.data.local.entity.protocol.TimeKeeperEntity
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.protocol.TimeKeeper
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.protocol.TimeKeeper
 import info.proteo.cupcake.data.repository.UserRepository
 import kotlinx.coroutines.flow.first
 import retrofit2.Response

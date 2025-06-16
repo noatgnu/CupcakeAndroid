@@ -3,8 +3,8 @@ package info.proteo.cupcake.data.repository
 import android.util.Log
 import info.proteo.cupcake.SessionManager
 import info.proteo.cupcake.data.remote.service.AuthService
-import info.proteo.cupcake.data.remote.model.LoginRequest
-import info.proteo.cupcake.data.remote.model.LoginResponse
+import info.proteo.cupcake.shared.data.model.LoginRequest
+import info.proteo.cupcake.shared.data.model.LoginResponse
 import javax.inject.Inject
 
 class AuthRepository @Inject constructor(

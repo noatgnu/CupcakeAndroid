@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import info.proteo.cupcake.R
-import info.proteo.cupcake.data.remote.model.instrument.Instrument
+import info.proteo.cupcake.shared.data.model.instrument.Instrument
 import info.proteo.cupcake.databinding.ItemInstrumentBinding
 
 class InstrumentAdapter(
@@ -43,7 +43,7 @@ class InstrumentAdapter(
             if (!instrument.image.isNullOrEmpty()) {
                 try {
                     val base64Image = instrument.image
-                    val base64Content = if (base64Image.startsWith("data:image/png;base64,")) {
+                    val base64Content = if (base64Image!!.startsWith("data:image/png;base64,")) {
                         base64Image.substring("data:image/png;base64,".length)
                     } else {
                         base64Image

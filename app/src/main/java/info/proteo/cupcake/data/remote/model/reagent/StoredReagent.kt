@@ -2,10 +2,10 @@ package info.proteo.cupcake.data.remote.model.reagent
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import info.proteo.cupcake.data.remote.model.metadatacolumn.MetadataColumn
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
-import info.proteo.cupcake.data.remote.model.storage.StorageObjectBasic
-import info.proteo.cupcake.data.remote.model.user.UserBasic
+import info.proteo.cupcake.shared.data.model.metadatacolumn.MetadataColumn
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolStep
+import info.proteo.cupcake.shared.data.model.storage.StorageObjectBasic
+import info.proteo.cupcake.shared.data.model.user.UserBasic
 
 
 @JsonClass(generateAdapter = true)

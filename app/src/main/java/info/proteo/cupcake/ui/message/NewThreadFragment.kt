@@ -24,7 +24,7 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.R
-import info.proteo.cupcake.data.remote.model.user.UserBasic
+import info.proteo.cupcake.shared.data.model.user.UserBasic
 import info.proteo.cupcake.databinding.FragmentNewThreadBinding
 import jp.wasabeef.richeditor.RichEditor
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -31,7 +31,11 @@ data class ProtocolModelEntity(
 
 @Entity(
     tableName = "protocol_editor_cross_ref",
-    primaryKeys = ["protocolId", "userId"]
+    primaryKeys = ["protocolId", "userId"],
+    indices = [
+        Index("protocolId"),
+        Index("userId")
+    ]
 )
 data class ProtocolEditorCrossRef(
     val protocolId: Int,
@@ -40,7 +44,11 @@ data class ProtocolEditorCrossRef(
 
 @Entity(
     tableName = "protocol_viewer_cross_ref",
-    primaryKeys = ["protocolId", "userId"]
+    primaryKeys = ["protocolId", "userId"],
+    indices = [
+        Index("protocolId"),
+        Index("userId")
+    ]
 )
 data class ProtocolViewerCrossRef(
     val protocolId: Int,

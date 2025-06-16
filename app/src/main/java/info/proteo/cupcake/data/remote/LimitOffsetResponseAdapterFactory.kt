@@ -2,7 +2,7 @@ package info.proteo.cupcake.data.remote
 
 import android.util.Log
 import com.squareup.moshi.*
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 

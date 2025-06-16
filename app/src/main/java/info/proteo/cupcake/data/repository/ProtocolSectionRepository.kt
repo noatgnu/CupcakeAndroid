@@ -1,8 +1,8 @@
 package info.proteo.cupcake.data.repository
 
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolSection
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolSection
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolStep
 import info.proteo.cupcake.data.remote.service.ProtocolSectionService
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject

@@ -16,7 +16,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.R
-import info.proteo.cupcake.data.remote.model.message.MessageThread
+import info.proteo.cupcake.shared.data.model.message.MessageThread
 import info.proteo.cupcake.databinding.FragmentMessageBinding
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch

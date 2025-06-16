@@ -9,7 +9,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import info.proteo.cupcake.data.remote.model.message.MessageThread
+import info.proteo.cupcake.shared.data.model.message.MessageThread
 import info.proteo.cupcake.databinding.ItemMessageThreadBinding
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -39,10 +39,10 @@ class MessageThreadAdapter(
             binding.textViewThreadTitle.text = thread.title
 
             if (thread.latestMessage != null) {
-                binding.textViewLastMessage.text = fromHtml(thread.latestMessage.content.toString())
+                binding.textViewLastMessage.text = fromHtml(thread.latestMessage!!.content.toString())
                 binding.textViewLastMessage.visibility = View.VISIBLE
 
-                thread.latestMessage.createdAt?.let { timestamp ->
+                thread.latestMessage!!.createdAt?.let { timestamp ->
                     binding.textViewTimestamp.text = formatTimestamp(timestamp)
                     binding.textViewTimestamp.visibility = View.VISIBLE
                 } ?: run {

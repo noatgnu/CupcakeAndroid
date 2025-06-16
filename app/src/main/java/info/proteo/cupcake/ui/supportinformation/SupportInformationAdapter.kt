@@ -12,8 +12,8 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import info.proteo.cupcake.data.remote.model.instrument.SupportInformation
-import info.proteo.cupcake.data.remote.model.storage.StorageObject
+import info.proteo.cupcake.shared.data.model.instrument.SupportInformation
+import info.proteo.cupcake.shared.data.model.storage.StorageObject
 import info.proteo.cupcake.data.repository.StorageRepository
 import info.proteo.cupcake.data.repository.SupportInformationRepository
 import info.proteo.cupcake.databinding.DialogEditSupportInformationBinding

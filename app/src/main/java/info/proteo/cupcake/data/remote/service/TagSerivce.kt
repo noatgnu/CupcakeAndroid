@@ -7,10 +7,10 @@ import info.proteo.cupcake.data.local.dao.tag.TagDao
 import info.proteo.cupcake.data.local.entity.protocol.ProtocolTagEntity
 import info.proteo.cupcake.data.local.entity.protocol.StepTagEntity
 import info.proteo.cupcake.data.local.entity.tag.TagEntity
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolTag
-import info.proteo.cupcake.data.remote.model.protocol.StepTag
-import info.proteo.cupcake.data.remote.model.tag.Tag
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolTag
+import info.proteo.cupcake.shared.data.model.protocol.StepTag
+import info.proteo.cupcake.shared.data.model.tag.Tag
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine

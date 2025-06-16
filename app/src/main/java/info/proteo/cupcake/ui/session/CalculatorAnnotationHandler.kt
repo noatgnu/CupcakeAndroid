@@ -16,7 +16,7 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import info.proteo.cupcake.R
-import info.proteo.cupcake.data.remote.model.annotation.Annotation
+import info.proteo.cupcake.shared.data.model.annotation.Annotation
 import org.json.JSONObject
 import java.lang.reflect.Type
 import java.text.DecimalFormat

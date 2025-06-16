@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import info.proteo.cupcake.R
-import info.proteo.cupcake.data.remote.model.storage.StorageObject
+import info.proteo.cupcake.shared.data.model.storage.StorageObject
 
 class StorageObjectSuggestionAdapter(
     private val onItemSelected: (StorageObject) -> Unit
@@ -35,7 +35,7 @@ class StorageObjectSuggestionAdapter(
             textStorageType.text = storageObject.objectType ?: "Unknown type"
 
             val path = if (!storageObject.pathToRoot.isNullOrEmpty()) {
-                storageObject.pathToRoot.joinToString(" > ") { it.name }
+                storageObject.pathToRoot!!.joinToString(" > ") { it.name }
             } else {
                 "Root"
             }

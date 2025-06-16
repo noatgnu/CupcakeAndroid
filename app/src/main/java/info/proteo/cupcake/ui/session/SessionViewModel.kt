@@ -8,16 +8,16 @@ import info.proteo.cupcake.SessionManager
 import info.proteo.cupcake.data.local.dao.protocol.RecentSessionDao
 import info.proteo.cupcake.data.local.entity.protocol.RecentSessionEntity
 import info.proteo.cupcake.data.local.entity.user.UserPreferencesEntity
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolModel
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
-import info.proteo.cupcake.data.remote.model.protocol.Session
-import info.proteo.cupcake.data.remote.model.protocol.StepReagent
-import info.proteo.cupcake.data.remote.model.reagent.ReagentAction
-import info.proteo.cupcake.data.remote.model.annotation.Annotation
-import info.proteo.cupcake.data.remote.model.annotation.AnnotationWithPermissions
-import info.proteo.cupcake.data.remote.model.instrument.Instrument
-import info.proteo.cupcake.data.remote.model.reagent.StoredReagent
-import info.proteo.cupcake.data.remote.model.user.User
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolModel
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolStep
+import info.proteo.cupcake.shared.data.model.protocol.Session
+import info.proteo.cupcake.shared.data.model.protocol.StepReagent
+import info.proteo.cupcake.shared.data.model.reagent.ReagentAction
+import info.proteo.cupcake.shared.data.model.annotation.Annotation
+import info.proteo.cupcake.shared.data.model.annotation.AnnotationWithPermissions
+import info.proteo.cupcake.shared.data.model.instrument.Instrument
+import info.proteo.cupcake.shared.data.model.reagent.StoredReagent
+import info.proteo.cupcake.shared.data.model.user.User
 import info.proteo.cupcake.data.remote.service.CreateAnnotationRequest
 import info.proteo.cupcake.data.remote.service.SessionService
 import info.proteo.cupcake.data.repository.AnnotationRepository
@@ -388,7 +388,7 @@ class SessionViewModel @Inject constructor(
                 Log.d("SessionViewModel", "Annotation created successfully: ${response.id}")
                 // Optionally, you can refresh annotations for the current step
                 if (response.step != null && session.value != null) {
-                    loadAnnotationsForStep(response.step, session.value!!.uniqueId, 0, 10)
+                    loadAnnotationsForStep(response.step!!, session.value!!.uniqueId, 0, 10)
                 }
             } else {
                 Log.e("SessionViewModel", "Failed to create annotation")

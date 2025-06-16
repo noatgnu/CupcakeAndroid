@@ -13,7 +13,7 @@ import android.widget.TextView
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import info.proteo.cupcake.data.remote.model.annotation.Annotation
+import info.proteo.cupcake.shared.data.model.annotation.Annotation
 import java.text.DecimalFormat
 
 @JsonClass(generateAdapter = true)

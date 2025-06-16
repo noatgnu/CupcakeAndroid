@@ -1,7 +1,7 @@
 package info.proteo.cupcake.data.repository
 
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.annotation.Annotation
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.annotation.Annotation
 import info.proteo.cupcake.data.remote.service.AnnotationFolderDetails
 import info.proteo.cupcake.data.remote.service.DownloadTokenResponse
 import info.proteo.cupcake.data.remote.service.ReagentDocumentService

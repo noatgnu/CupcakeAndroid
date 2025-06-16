@@ -23,8 +23,8 @@ import info.proteo.cupcake.R
 import info.proteo.cupcake.SessionActivity
 import info.proteo.cupcake.TimeKeeperActivity
 import info.proteo.cupcake.data.local.entity.protocol.RecentSessionEntity
-import info.proteo.cupcake.data.remote.model.message.MessageThread
-import info.proteo.cupcake.data.remote.model.protocol.TimeKeeper
+import info.proteo.cupcake.shared.data.model.message.MessageThread
+import info.proteo.cupcake.shared.data.model.protocol.TimeKeeper
 import info.proteo.cupcake.databinding.FragmentMainBinding
 import info.proteo.cupcake.ui.message.MessageThreadAdapter
 import info.proteo.cupcake.ui.session.RecentSessionAdapter

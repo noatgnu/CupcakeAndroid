@@ -10,7 +10,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import info.proteo.cupcake.R
-import info.proteo.cupcake.data.remote.model.protocol.Session
+import info.proteo.cupcake.shared.data.model.protocol.Session
 import info.proteo.cupcake.data.remote.service.UserPermissionResponse
 import info.proteo.cupcake.databinding.ItemSessionBinding
 import java.text.SimpleDateFormat

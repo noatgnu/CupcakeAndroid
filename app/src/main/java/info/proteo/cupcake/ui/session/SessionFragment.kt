@@ -54,12 +54,12 @@ import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.R
 import info.proteo.cupcake.SessionManager
 import info.proteo.cupcake.data.local.entity.user.UserPreferencesEntity
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolModel
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolSection
-import info.proteo.cupcake.data.remote.model.protocol.ProtocolStep
-import info.proteo.cupcake.data.remote.model.protocol.StepReagent
-import info.proteo.cupcake.data.remote.model.annotation.Annotation
-import info.proteo.cupcake.data.remote.model.protocol.TimeKeeper
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolModel
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolSection
+import info.proteo.cupcake.shared.data.model.protocol.ProtocolStep
+import info.proteo.cupcake.shared.data.model.protocol.StepReagent
+import info.proteo.cupcake.shared.data.model.annotation.Annotation
+import info.proteo.cupcake.shared.data.model.protocol.TimeKeeper
 import info.proteo.cupcake.data.remote.service.CreateAnnotationRequest
 import info.proteo.cupcake.data.remote.service.SessionCreateRequest
 import info.proteo.cupcake.data.remote.service.SessionService
@@ -270,7 +270,7 @@ class SessionFragment : Fragment() {
                     timeRemainingMillis = if (timeKeeper.currentDuration == null) {
                         (step.stepDuration ?: 0) * 1000L
                     } else {
-                        (timeKeeper.currentDuration) * 1000L
+                        (timeKeeper.currentDuration!!) * 1000L
                     }
                     if (timeKeeper.started) {
                         val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.getDefault())

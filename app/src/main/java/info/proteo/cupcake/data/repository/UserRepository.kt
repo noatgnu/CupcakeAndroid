@@ -5,10 +5,10 @@ import info.proteo.cupcake.data.local.dao.user.UserDao
 import info.proteo.cupcake.data.local.dao.user.UserPreferencesDao
 import info.proteo.cupcake.data.local.entity.user.UserEntity
 import info.proteo.cupcake.data.local.entity.user.UserPreferencesEntity
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.reagent.StoredReagentPermission
-import info.proteo.cupcake.data.remote.model.user.User
-import info.proteo.cupcake.data.remote.model.user.UserBasic
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.reagent.StoredReagentPermission
+import info.proteo.cupcake.shared.data.model.user.User
+import info.proteo.cupcake.shared.data.model.user.UserBasic
 import info.proteo.cupcake.data.remote.service.AnnotationsPermissionRequest
 import info.proteo.cupcake.data.remote.service.AnnotationsPermissionResponse
 import info.proteo.cupcake.data.remote.service.ProtocolPermissionRequest

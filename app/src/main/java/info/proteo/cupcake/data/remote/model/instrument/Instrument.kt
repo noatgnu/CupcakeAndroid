@@ -2,8 +2,8 @@ package info.proteo.cupcake.data.remote.model.instrument
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import info.proteo.cupcake.data.remote.model.annotation.AnnotationFolder
-import info.proteo.cupcake.data.remote.model.metadatacolumn.MetadataColumn
+import info.proteo.cupcake.shared.data.model.annotation.AnnotationFolder
+import info.proteo.cupcake.shared.data.model.metadatacolumn.MetadataColumn
 
 @JsonClass(generateAdapter = true)
 data class Instrument(

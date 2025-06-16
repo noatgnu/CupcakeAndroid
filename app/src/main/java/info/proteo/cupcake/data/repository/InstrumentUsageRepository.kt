@@ -1,14 +1,15 @@
 package info.proteo.cupcake.data.repository
 
-import info.proteo.cupcake.data.remote.model.LimitOffsetResponse
-import info.proteo.cupcake.data.remote.model.instrument.CreateInstrumentUsageRequest
-import info.proteo.cupcake.data.remote.model.instrument.DelayUsageRequest
-import info.proteo.cupcake.data.remote.model.instrument.ExportUsageRequest
-import info.proteo.cupcake.data.remote.model.instrument.ExportUsageResponse
-import info.proteo.cupcake.data.remote.model.instrument.InstrumentUsage
-import info.proteo.cupcake.data.remote.model.instrument.InstrumentUsageService
-import info.proteo.cupcake.data.remote.model.instrument.PatchInstrumentUsageRequest
-import info.proteo.cupcake.data.remote.model.instrument.UpdateInstrumentUsageRequest
+import info.proteo.cupcake.data.remote.service.CreateInstrumentUsageRequest
+
+import info.proteo.cupcake.data.remote.service.ExportUsageRequest
+import info.proteo.cupcake.data.remote.service.ExportUsageResponse
+import info.proteo.cupcake.data.remote.service.InstrumentUsageService
+import info.proteo.cupcake.data.remote.service.PatchInstrumentUsageRequest
+import info.proteo.cupcake.data.remote.service.UpdateInstrumentUsageRequest
+import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
+import info.proteo.cupcake.shared.data.model.instrument.DelayUsageRequest
+import info.proteo.cupcake.shared.data.model.instrument.InstrumentUsage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
