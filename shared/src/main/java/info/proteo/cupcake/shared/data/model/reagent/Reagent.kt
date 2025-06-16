@@ -55,7 +55,7 @@ data class ReagentAction(
 data class StoredReagentCreateRequest(
     @Json(name = "created_by_project") val createdByProject: Int? = null,
     @Json(name = "created_by_protocol") val createdByProtocol: Int? = null,
-    @Json(name = "storage_object") val storageObject: Int? = null,
+    @Json(name = "storage_object_id") val storageObjectId: Int? = null,
     @Json(name = "name") val name: String,
     @Json(name = "unit") val unit: String,
     @Json(name = "quantity") val quantity: Float,

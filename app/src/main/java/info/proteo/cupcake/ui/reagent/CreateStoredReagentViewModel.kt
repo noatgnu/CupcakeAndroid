@@ -141,7 +141,6 @@ class CreateStoredReagentViewModel @Inject constructor(
         return result
     }
 
-    // Helper methods for metadata
     fun getMetadataProtocolId(): Int? {
         return exportedMetadata.value?.get("protocol") as? Int
     }

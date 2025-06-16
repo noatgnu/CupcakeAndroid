@@ -50,7 +50,7 @@ class CreateStoredReagentFragment : Fragment() {
 
         // Get arguments from bundle instead of using navArgs
         arguments?.let {
-            storageObjectId = it.getInt("storageObjectId", 0)
+            this@CreateStoredReagentFragment.storageObjectId = it.getInt("storageObjectId", 0)
             storageName = it.getString("storageName", "")
         }
 
@@ -93,7 +93,7 @@ class CreateStoredReagentFragment : Fragment() {
 
     private fun setupUi() {
         // Set storage field if we have a storage location from arguments
-        if (storageObjectId > 0) {
+        if (this@CreateStoredReagentFragment.storageObjectId > 0) {
             binding.storageAutocomplete.setText(storageName)
         }
 
@@ -247,17 +247,25 @@ class CreateStoredReagentFragment : Fragment() {
         val barcode = binding.barcodeInput.text.toString().takeIf { it.isNotEmpty() }
         val shareable = binding.shareableSwitch.isChecked
 
-        val selectedReagent = viewModel.selectedReagent.value
+        // Get name and unit from input fields instead of directly from selectedReagent
+        val reagentName = binding.reagentAutocomplete.text.toString()
+        val reagentUnit = binding.unitAutocomplete.text.toString()
 
-        if (selectedReagent == null) {
-            Toast.makeText(requireContext(), "Please select a valid reagent", Toast.LENGTH_SHORT).show()
+        // Basic validation for name and unit
+        if (reagentName.isEmpty()) {
+            Toast.makeText(requireContext(), "Please enter a valid reagent name", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (reagentUnit.isEmpty()) {
+            Toast.makeText(requireContext(), "Please enter a valid unit", Toast.LENGTH_SHORT).show()
             return
         }
 
         val request = StoredReagentCreateRequest(
-            name = selectedReagent.name,
-            unit = selectedReagent.unit,
-            storageObject = storageObjectId,
+            name = reagentName,
+            unit = reagentUnit,
+            storageObjectId = storageObjectId,
             quantity = quantity,
             notes = notes,
             barcode = barcode,
