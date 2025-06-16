@@ -122,7 +122,7 @@ class StoredReagentViewModel @Inject constructor(
                     Log.d("StoredReagentViewModel", "Search completed with ${response.results.size} results")
                     if (response.results.isNotEmpty()) {
                         response.results.forEach { reagent ->
-                            reagent.storageObject.id.let { locationId ->
+                            reagent.storageObject!!.id.let { locationId ->
                                 fetchLocationPath(locationId)
                             }
                         }
@@ -183,7 +183,7 @@ class StoredReagentViewModel @Inject constructor(
                     val reagents = response.results
                     if (reagents.isNotEmpty()) {
                         reagents.forEach { reagent ->
-                            reagent.storageObject.id.let { locationId ->
+                            reagent.storageObject!!.id.let { locationId ->
                                 fetchLocationPath(locationId)
                             }
                         }
@@ -239,7 +239,7 @@ class StoredReagentViewModel @Inject constructor(
                 result.onSuccess { response ->
                     if (response.results.isNotEmpty()) {
                         response.results.forEach { reagent ->
-                            reagent.storageObject.id.let { locationId ->
+                            reagent.storageObject!!.id.let { locationId ->
                                 fetchLocationPath(locationId)
                             }
                         }

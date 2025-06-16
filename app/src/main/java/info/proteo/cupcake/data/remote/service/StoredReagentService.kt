@@ -13,6 +13,7 @@ import info.proteo.cupcake.shared.data.model.reagent.Reagent
 import info.proteo.cupcake.shared.data.model.reagent.ReagentAction
 import info.proteo.cupcake.shared.data.model.storage.StorageObjectBasic
 import info.proteo.cupcake.shared.data.model.reagent.StoredReagent
+import info.proteo.cupcake.shared.data.model.reagent.StoredReagentCreateRequest
 import info.proteo.cupcake.shared.data.model.user.UserBasic
 import kotlinx.coroutines.flow.first
 import retrofit2.http.Body
@@ -40,7 +41,7 @@ interface StoredReagentApiService {
     suspend fun getStoredReagentById(@Path("id") id: Int): StoredReagent
 
     @POST("api/stored_reagent/")
-    suspend fun createStoredReagent(@Body storedReagent: StoredReagent): StoredReagent
+    suspend fun createStoredReagent(@Body request: StoredReagentCreateRequest): StoredReagent
 
     @PATCH("api/stored_reagent/{id}/")
     suspend fun updateStoredReagent(@Path("id") id: Int, @Body storedReagent: StoredReagent): StoredReagent
@@ -71,7 +72,7 @@ interface StoredReagentApiService {
 interface StoredReagentService {
     suspend fun getStoredReagents(offset: Int, limit: Int, storageObjectId: Int? = null, labGroupId: Int? = null, barcode: String? = null, search: String? = null): Result<LimitOffsetResponse<StoredReagent>>
     suspend fun getStoredReagentById(id: Int): Result<StoredReagent>
-    suspend fun createStoredReagent(storedReagent: StoredReagent): Result<StoredReagent>
+    suspend fun createStoredReagent(request: StoredReagentCreateRequest): Result<StoredReagent>
     suspend fun updateStoredReagent(id: Int, storedReagent: StoredReagent): Result<StoredReagent>
     suspend fun deleteStoredReagent(id: Int): Result<Unit>
     suspend fun getReagentActions(id: Int, startDate: String? = null, endDate: String? = null): Result<List<ReagentAction>>
@@ -141,9 +142,9 @@ class StoredReagentServiceImpl @Inject constructor(
         }
     }
 
-    override suspend fun createStoredReagent(storedReagent: StoredReagent): Result<StoredReagent> {
+    override suspend fun createStoredReagent(request: StoredReagentCreateRequest): Result<StoredReagent> {
         return try {
-            val response = apiService.createStoredReagent(storedReagent)
+            val response = apiService.createStoredReagent(request)
             // Cache created object with reagent data
             cacheStoredReagentWithRelations(response)
             Result.success(response)
@@ -239,13 +240,13 @@ class StoredReagentServiceImpl @Inject constructor(
         }
 
         storedReagent.storageObject.let { storageObject ->
-            val existingStorageObject = storageObjectDao.getById(storageObject.id)
+            val existingStorageObject = storageObjectDao.getById(storageObject!!.id)
 
             if (existingStorageObject == null) {
                 storageObjectDao.insert(StorageObjectEntity(
-                    id = storageObject.id,
-                    objectName = storageObject.objectName ?: "",
-                    objectType = storageObject.objectType ?: "",
+                    id = storageObject!!.id,
+                    objectName = storageObject!!.objectName ?: "",
+                    objectType = storageObject!!.objectType ?: "",
                     objectDescription = storageObject.objectDescription ?: "",
                     createdAt = null,
                     updatedAt = null,
@@ -270,18 +271,18 @@ class StoredReagentServiceImpl @Inject constructor(
             }
         }
         storedReagent.user.let { user ->
-            val existingUser = userDao.getById(user.id)
+            val existingUser = userDao.getById(user!!.id)
             if (existingUser == null) {
                 userDao.insert(UserEntity(
-                    id = user.id,
-                    username = user.username,
+                    id = user!!.id,
+                    username = user!!.username,
                     email = null,
                     firstName = null,
                     lastName = null,
                     isStaff = false,
                 ))
-            } else if (user.username.isNotEmpty() && user.username != existingUser.username) {
-                val updatedUser = existingUser.copy(username = user.username)
+            } else if (user!!.username.isNotEmpty() && user!!.username != existingUser.username) {
+                val updatedUser = existingUser.copy(username = user!!.username)
                 userDao.insert(updatedUser)
             }
         }
@@ -345,10 +346,10 @@ class StoredReagentServiceImpl @Inject constructor(
         return StoredReagentEntity(
             id = id,
             reagentId = reagentId ?: reagent.id,
-            storageObjectId = storageObjectId ?: storageObject.id,
+            storageObjectId = storageObjectId ?: storageObject!!.id,
             quantity = quantity,
             notes = notes,
-            userId = user.id,
+            userId = user!!.id,
             createdAt = createdAt,
             updatedAt = updatedAt,
             currentQuantity = currentQuantity,

@@ -74,7 +74,7 @@ class StoredReagentAdapter(
             }
 
             storedReagent.storageObject.let { location ->
-                val locationId = location.id
+                val locationId = location!!.id
                 if (locationId != null) {
                     val locationPath = locationPaths[locationId] ?: location.objectName
                     binding.textViewLocation.text = buildString {
@@ -109,7 +109,7 @@ class StoredReagentAdapter(
 
             binding.textViewAddedBy.text = buildString {
                 append("Added by: ")
-                append(storedReagent.user.username)
+                append(storedReagent.user!!.username)
             }
 
             storedReagent.pngBase64?.let { base64Image ->

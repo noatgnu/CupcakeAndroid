@@ -63,9 +63,12 @@ import info.proteo.cupcake.data.remote.service.ProtocolStepServiceImpl
 import info.proteo.cupcake.data.remote.service.ReagentActionApiService
 import info.proteo.cupcake.data.remote.service.ReagentActionService
 import info.proteo.cupcake.data.remote.service.ReagentActionServiceImpl
+import info.proteo.cupcake.data.remote.service.ReagentApiService
 import info.proteo.cupcake.data.remote.service.ReagentDocumentApiService
 import info.proteo.cupcake.data.remote.service.ReagentDocumentService
 import info.proteo.cupcake.data.remote.service.ReagentDocumentServiceImpl
+import info.proteo.cupcake.data.remote.service.ReagentService
+import info.proteo.cupcake.data.remote.service.ReagentServiceImpl
 import info.proteo.cupcake.data.remote.service.SessionApiService
 import info.proteo.cupcake.data.remote.service.SessionService
 import info.proteo.cupcake.data.remote.service.SessionServiceImpl
@@ -101,6 +104,7 @@ import info.proteo.cupcake.data.repository.ProtocolSectionRepository
 import info.proteo.cupcake.data.repository.ProtocolStepRepository
 import info.proteo.cupcake.data.repository.ReagentActionRepository
 import info.proteo.cupcake.data.repository.ReagentDocumentRepository
+import info.proteo.cupcake.data.repository.ReagentRepository
 import info.proteo.cupcake.data.repository.SessionRepository
 import info.proteo.cupcake.data.repository.StoredReagentRepository
 import info.proteo.cupcake.data.repository.SupportInformationRepository
@@ -700,6 +704,33 @@ object NetworkModule {
     fun provideTagRepository(tagService: TagService): TagRepository {
         return TagRepository(tagService)
     }
+
+    @Provides
+    @Singleton
+    fun provideReagentApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): ReagentApiService {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
+            .build()
+            .create(ReagentApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideReagentService(
+        reagentServiceImpl: ReagentServiceImpl
+    ): ReagentService  = reagentServiceImpl
+
+    @Provides
+    @Singleton
+    fun provideReagentRepository(
+        reagentService: ReagentService
+    ): ReagentRepository = ReagentRepository(reagentService)
 
     @Provides
     @Singleton

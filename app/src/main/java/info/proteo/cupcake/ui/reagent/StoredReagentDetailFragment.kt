@@ -518,7 +518,7 @@ class StoredReagentDetailFragment : Fragment() {
             append(reagent.reagent.unit)
         }
         binding.textViewDescription.text = "${reagent.notes}"
-        binding.textViewOwner.text = reagent.user.username
+        binding.textViewOwner.text = reagent.user!!.username
         binding.textViewLastUpdated.text = formatDate(reagent.updatedAt)
         binding.textViewExpiryDate.text = formatExpiryDate(reagent.expirationDate)
         viewModel.setReagentUnit(reagent.reagent.unit)
@@ -569,7 +569,7 @@ class StoredReagentDetailFragment : Fragment() {
         }
 
         reagent.storageObject.let { location ->
-            binding.textViewLocation.text = location.objectName
+            binding.textViewLocation.text = location!!.objectName
             location.id.let { locationId ->
                 viewModel.loadLocationPath(locationId)
             }

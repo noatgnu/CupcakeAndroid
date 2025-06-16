@@ -30,7 +30,7 @@
         android:id="@+id/swipe_refresh"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/button_view_reagents"
+        app:layout_constraintBottom_toTopOf="@+id/buttons_container"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/scroll_breadcrumbs">
@@ -73,17 +73,41 @@
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/button_view_reagents"
+    <!-- Container for buttons -->
+    <LinearLayout
+        android:id="@+id/buttons_container"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:padding="12dp"
-        android:text="@string/view_reagents"
-        android:textColor="@android:color/white"
-        android:visibility="gone"
+        android:orientation="horizontal"
+        android:weightSum="2"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_view_reagents"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:padding="12dp"
+            android:layout_marginEnd="4dp"
+            android:text="@string/view_reagents"
+            android:textColor="@android:color/white"
+            android:visibility="gone"
+            app:cornerRadius="4dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_create_reagent"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:padding="12dp"
+            android:layout_marginStart="4dp"
+            android:text="Create Reagent"
+            android:textColor="@android:color/white"
+            android:visibility="gone"
+            app:cornerRadius="4dp" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

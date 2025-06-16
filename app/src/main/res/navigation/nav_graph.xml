@@ -121,6 +121,21 @@
         android:name="info.proteo.cupcake.ui.metadata.UpdateMetadataFragment"
         android:label="Update Metadata" />
 
+    <fragment
+        android:id="@+id/createStoredReagentFragment"
+        android:name="info.proteo.cupcake.ui.reagent.CreateStoredReagentFragment"
+        android:label="Create Stored Reagent"
+        tools:layout="@layout/fragment_create_stored_reagent">
+        <argument
+            android:name="storageObjectId"
+            app:argType="integer"
+            android:defaultValue="0" />
+        <argument
+            android:name="storageName"
+            app:argType="string"
+            android:defaultValue="" />
+    </fragment>
+
     <activity
         android:id="@+id/messageActivity"
         android:name="info.proteo.cupcake.MessageActivity"

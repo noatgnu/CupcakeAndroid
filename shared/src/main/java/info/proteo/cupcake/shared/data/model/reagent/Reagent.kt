@@ -50,3 +50,19 @@ data class ReagentAction(
     val user: String?,
     @Json(name = "step_reagent") val stepReagent: Int?
 )
+
+@JsonClass(generateAdapter = true)
+data class StoredReagentCreateRequest(
+    @Json(name = "created_by_project") val createdByProject: Int? = null,
+    @Json(name = "created_by_protocol") val createdByProtocol: Int? = null,
+    @Json(name = "storage_object") val storageObject: Int? = null,
+    @Json(name = "name") val name: String,
+    @Json(name = "unit") val unit: String,
+    @Json(name = "quantity") val quantity: Float,
+    @Json(name = "notes") val notes: String? = null,
+    @Json(name = "shareable") val shareable: Boolean = false,
+    @Json(name = "access_all") val accessAll: Boolean = false,
+    @Json(name = "barcode") val barcode: String? = null,
+    @Json(name = "created_by_step") val createdByStep: Int? = null,
+    @Json(name = "created_by_session") val createdBySession: String? = null,
+)

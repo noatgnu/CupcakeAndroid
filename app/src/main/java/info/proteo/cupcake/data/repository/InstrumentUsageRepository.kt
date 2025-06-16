@@ -1,12 +1,12 @@
 package info.proteo.cupcake.data.repository
 
-import info.proteo.cupcake.data.remote.service.CreateInstrumentUsageRequest
+import info.proteo.cupcake.shared.data.model.instrument.CreateInstrumentUsageRequest
 
-import info.proteo.cupcake.data.remote.service.ExportUsageRequest
-import info.proteo.cupcake.data.remote.service.ExportUsageResponse
+import info.proteo.cupcake.shared.data.model.instrument.ExportUsageRequest
+import info.proteo.cupcake.shared.data.model.instrument.ExportUsageResponse
 import info.proteo.cupcake.data.remote.service.InstrumentUsageService
-import info.proteo.cupcake.data.remote.service.PatchInstrumentUsageRequest
-import info.proteo.cupcake.data.remote.service.UpdateInstrumentUsageRequest
+import info.proteo.cupcake.shared.data.model.instrument.PatchInstrumentUsageRequest
+import info.proteo.cupcake.shared.data.model.instrument.UpdateInstrumentUsageRequest
 import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
 import info.proteo.cupcake.shared.data.model.instrument.DelayUsageRequest
 import info.proteo.cupcake.shared.data.model.instrument.InstrumentUsage

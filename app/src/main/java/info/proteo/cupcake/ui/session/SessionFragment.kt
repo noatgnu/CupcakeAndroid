@@ -661,12 +661,6 @@ class SessionFragment : Fragment() {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.isLoading.collectLatest { isLoading ->
-                binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
-            }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
             viewModel.currentStepReagentInfo.collectLatest { reagentInfoList ->
                 updateReagentViews(reagentInfoList)
             }
@@ -690,6 +684,14 @@ class SessionFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.currentAnnotationOffset.collect { offset ->
                 binding.fabPrevAnnotation.visibility = if (offset > 0) View.VISIBLE else View.GONE
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.isLoading.collect { isLoading ->
+                    binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+                }
             }
         }
     }

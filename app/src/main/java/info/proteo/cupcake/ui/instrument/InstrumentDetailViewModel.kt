@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import info.proteo.cupcake.data.local.dao.user.UserPreferencesDao
 import info.proteo.cupcake.data.local.entity.user.UserPreferencesEntity
-import info.proteo.cupcake.data.remote.service.CreateInstrumentUsageRequest
+import info.proteo.cupcake.shared.data.model.instrument.CreateInstrumentUsageRequest
 import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
 import info.proteo.cupcake.shared.data.model.annotation.Annotation
 import info.proteo.cupcake.shared.data.model.instrument.Instrument
@@ -29,9 +29,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import javax.inject.Inject
-import kotlin.div
-import kotlin.text.toInt
-import kotlin.toString
 
 @HiltViewModel
 class InstrumentDetailViewModel @Inject constructor(

@@ -119,19 +119,19 @@ class SessionStoredReagentSearchAdapter(
                                 val pathString = pathItems.joinToString(" > ") { it.name }
                                 binding.textViewStorage.text = pathString
                             } else {
-                                binding.textViewStorage.text = reagent.storageObject.objectName
+                                binding.textViewStorage.text = reagent.storageObject!!.objectName
                             }
                         } else {
-                            Log.w("ReagentSearchVH", "Failed to get path for ${reagent.storageObject.objectName}: ${pathResult.exceptionOrNull()?.message}")
-                            binding.textViewStorage.text = reagent.storageObject.objectName
+                            Log.w("ReagentSearchVH", "Failed to get path for ${reagent.storageObject!!.objectName}: ${pathResult.exceptionOrNull()?.message}")
+                            binding.textViewStorage.text = reagent.storageObject!!.objectName
                         }
                     } catch (e: Exception) {
-                        Log.e("ReagentSearchVH", "Error fetching storage path for ${reagent.storageObject.objectName}", e)
-                        binding.textViewStorage.text = reagent.storageObject.objectName
+                        Log.e("ReagentSearchVH", "Error fetching storage path for ${reagent.storageObject!!.objectName}", e)
+                        binding.textViewStorage.text = reagent.storageObject!!.objectName
                     }
                 }
             } ?: run {
-                binding.textViewStorage.text = reagent.storageObject.objectName
+                binding.textViewStorage.text = reagent.storageObject!!.objectName
             }
 
 

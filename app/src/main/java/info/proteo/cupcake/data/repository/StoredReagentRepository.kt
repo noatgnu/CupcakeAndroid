@@ -4,6 +4,7 @@ import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
 import info.proteo.cupcake.shared.data.model.reagent.ReagentAction
 import info.proteo.cupcake.shared.data.model.reagent.StoredReagent
 import info.proteo.cupcake.data.remote.service.StoredReagentService
+import info.proteo.cupcake.shared.data.model.reagent.StoredReagentCreateRequest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
@@ -29,8 +30,8 @@ class StoredReagentRepository @Inject constructor(
         emit(storedReagentService.getStoredReagentById(id))
     }
 
-    suspend fun createStoredReagent(storedReagent: StoredReagent): Result<StoredReagent> {
-        return storedReagentService.createStoredReagent(storedReagent)
+    suspend fun createStoredReagent(request: StoredReagentCreateRequest): Result<StoredReagent> {
+        return storedReagentService.createStoredReagent(request)
     }
 
     suspend fun updateStoredReagent(id: Int, storedReagent: StoredReagent): Result<StoredReagent> {
@@ -73,11 +74,5 @@ class StoredReagentRepository @Inject constructor(
         return storedReagentService.unsubscribe(id, notifyLowStock, notifyExpiry)
     }
 
-    suspend fun saveStoredReagent(storedReagent: StoredReagent): Result<StoredReagent> {
-        return if (storedReagent.id > 0) {
-            updateStoredReagent(storedReagent.id, storedReagent)
-        } else {
-            createStoredReagent(storedReagent)
-        }
-    }
+
 }

@@ -44,7 +44,7 @@ import info.proteo.cupcake.R
 import info.proteo.cupcake.SessionManager
 import info.proteo.cupcake.SupportInformationActivity
 import info.proteo.cupcake.data.local.entity.user.UserPreferencesEntity
-import info.proteo.cupcake.data.remote.service.CreateInstrumentUsageRequest
+import info.proteo.cupcake.shared.data.model.instrument.CreateInstrumentUsageRequest
 import info.proteo.cupcake.shared.data.model.annotation.AnnotationFolder
 
 import info.proteo.cupcake.shared.data.model.instrument.Instrument

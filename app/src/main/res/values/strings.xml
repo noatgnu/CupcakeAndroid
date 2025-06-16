@@ -169,4 +169,19 @@
         <item>mg</item>
         <item>g</item>
     </string-array>
+    <string-array name="reagent_units">
+        <item>g</item>
+        <item>mg</item>
+        <item>μg</item>
+        <item>L</item>
+        <item>mL</item>
+        <item>μL</item>
+        <item>M</item>
+        <item>mM</item>
+        <item>μM</item>
+        <item>nM</item>
+        <item>ea</item>
+        <item>pieces</item>
+        <item>other</item>
+    </string-array>
 </resources>

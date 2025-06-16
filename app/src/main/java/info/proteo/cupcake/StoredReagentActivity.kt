@@ -8,6 +8,7 @@ import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.databinding.ActivityStoredReagentBinding
 import info.proteo.cupcake.ui.barcode.BarcodeScannerFragment
+import info.proteo.cupcake.ui.reagent.CreateStoredReagentFragment
 import info.proteo.cupcake.ui.reagent.StoredReagentFragment
 import info.proteo.cupcake.ui.reagent.StoredReagentViewModel
 import kotlinx.coroutines.flow.collectLatest
@@ -21,6 +22,8 @@ class StoredReagentActivity : AppCompatActivity() {
         const val EXTRA_STORAGE_OBJECT_ID = "extra_storage_object_id"
         const val EXTRA_OPEN_SCANNER = "extra_open_scanner"
         const val EXTRA_SEARCH_TERM = "extra_search_term"
+        const val EXTRA_CREATE_REAGENT = "extra_create_reagent"
+        const val EXTRA_STORAGE_NAME = "extra_storage_name"
     }
 
     private lateinit var binding: ActivityStoredReagentBinding
@@ -40,20 +43,27 @@ class StoredReagentActivity : AppCompatActivity() {
         }
 
         if (savedInstanceState == null) {
-
-            loadStoredReagentFragment(storageObjectId)
-
-            if (intent.getBooleanExtra(EXTRA_OPEN_SCANNER, false)) {
+            if (intent.getBooleanExtra(EXTRA_CREATE_REAGENT, false)) {
+                // Load create reagent fragment
+                loadCreateReagentFragment(storageObjectId)
+                supportActionBar?.title = "Create Reagent"
+            } else if (intent.getBooleanExtra(EXTRA_OPEN_SCANNER, false)) {
                 openBarcodeScanner(storageObjectId)
-            }
-            if (intent.hasExtra(EXTRA_SEARCH_TERM)) {
-                val searchTerm = intent.getStringExtra(EXTRA_SEARCH_TERM)
-                if (!searchTerm.isNullOrEmpty()) {
-                    binding.textViewSearchIndicator.visibility = View.VISIBLE
-                    binding.textViewSearchIndicator.text = "Searching: $searchTerm"
+            } else {
+                // Load regular stored reagent fragment
+                loadStoredReagentFragment(storageObjectId)
+
+                if (intent.hasExtra(EXTRA_SEARCH_TERM)) {
+                    val searchTerm = intent.getStringExtra(EXTRA_SEARCH_TERM)
+                    if (!searchTerm.isNullOrEmpty()) {
+                        binding.textViewSearchIndicator.visibility = View.VISIBLE
+                        binding.textViewSearchIndicator.text = "Searching: $searchTerm"
+                    }
                 }
             }
         }
+
+
     }
 
     private fun openBarcodeScanner(storageObjectId: Int) {
@@ -102,8 +112,6 @@ class StoredReagentActivity : AppCompatActivity() {
         }
     }
 
-
-
     private fun loadStoredReagentFragment(storageObjectId: Int) {
         val fragment = StoredReagentFragment().apply {
             arguments = Bundle().apply {
@@ -115,6 +123,31 @@ class StoredReagentActivity : AppCompatActivity() {
             .replace(R.id.fragment_container, fragment)
             .commit()
     }
+
+
+    private fun loadCreateReagentFragment(storageObjectId: Int) {
+        // Get the storage name from intent extras
+        val storageName = intent.getStringExtra(EXTRA_STORAGE_NAME) ?: ""
+
+        // Create fragment with required arguments
+        val fragment = CreateStoredReagentFragment().apply {
+            arguments = Bundle().apply {
+                putInt("storageObjectId", storageObjectId)
+                putString("storageName", storageName)
+            }
+        }
+
+        // Replace current fragment with create fragment
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+            .commit()
+
+        // Update activity title
+        supportActionBar?.title = "Create Reagent"
+        updateLocation(storageName)
+        binding.textViewSearchIndicator.visibility = View.GONE
+    }
+
     fun updateLocation(locationName: String) {
         binding.textViewLocation.text = locationName
     }

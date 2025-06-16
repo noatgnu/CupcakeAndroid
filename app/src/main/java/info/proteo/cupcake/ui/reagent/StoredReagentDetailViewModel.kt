@@ -357,6 +357,6 @@ class StoredReagentDetailViewModel @Inject constructor(
     }
 
     fun saveStoredReagent(storedReagent: StoredReagent): Flow<Result<StoredReagent>> = flow {
-        emit(reagentRepository.saveStoredReagent(storedReagent))
+        emit(reagentRepository.updateStoredReagent(storedReagent.id, storedReagent))
     }
 }

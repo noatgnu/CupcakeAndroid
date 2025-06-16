@@ -68,6 +68,7 @@ class StorageFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         setupRecyclerView()
         setupObservers()
         setupSwipeRefresh()
@@ -193,11 +194,30 @@ class StorageFragment : Fragment() {
             visibility = View.GONE
             setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.primary))
         }
+
+        binding.buttonCreateReagent.apply {
+            visibility = View.GONE
+            setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.primary))
+            setOnClickListener {
+                val currentStorage = viewModel.currentPath.value.lastOrNull()
+                val storageName = currentStorage?.objectName ?: ""
+
+                val intent = Intent(requireContext(), StoredReagentActivity::class.java).apply {
+                    putExtra(StoredReagentActivity.EXTRA_STORAGE_OBJECT_ID, currentStorageObjectId)
+                    putExtra(StoredReagentActivity.EXTRA_STORAGE_NAME, storageName)
+                    putExtra(StoredReagentActivity.EXTRA_CREATE_REAGENT, true)
+                }
+                startActivity(intent)
+            }
+        }
     }
 
     private fun checkForStoredReagents(storageObjectId: Int) {
         viewLifecycleOwner.lifecycleScope.launch {
             binding.buttonViewReagents.visibility = View.GONE
+
+            // Always show the create reagent button when inside a storage location
+            binding.buttonCreateReagent.visibility = View.VISIBLE
 
             try {
                 val result = storedReagentService.getStoredReagents(0, 1, storageObjectId)
@@ -213,6 +233,8 @@ class StorageFragment : Fragment() {
                     }
                 }
             } catch (e: Exception) {
+                // Even in case of error, keep the create button visible
+                binding.buttonCreateReagent.visibility = View.VISIBLE
             }
         }
     }
