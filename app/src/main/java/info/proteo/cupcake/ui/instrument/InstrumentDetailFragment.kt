@@ -52,6 +52,7 @@ import info.proteo.cupcake.shared.data.model.annotation.AnnotationFolder
 
 import info.proteo.cupcake.shared.data.model.instrument.Instrument
 import info.proteo.cupcake.databinding.FragmentInstrumentDetailBinding
+import info.proteo.cupcake.shared.data.model.instrument.DelayUsageRequest
 import info.proteo.cupcake.shared.data.model.instrument.InstrumentUsage
 import info.proteo.cupcake.ui.user.UserSearchAdapter
 import kotlinx.coroutines.Job
@@ -187,10 +188,16 @@ class InstrumentDetailFragment : Fragment() {
         val descText = dialogView.findViewById<TextView>(R.id.textViewDescription)
         val layoutApproval = dialogView.findViewById<LinearLayout>(R.id.layoutApproval)
         val approvalSwitch = dialogView.findViewById<SwitchMaterial>(R.id.switchApproval)
+        val layoutDelayOptions = dialogView.findViewById<LinearLayout>(R.id.layoutDelayOptions)
+        val btnDelay1Day = dialogView.findViewById<Button>(R.id.btnDelay1Day)
+        val btnDelay3Days = dialogView.findViewById<Button>(R.id.btnDelay3Days)
+        val btnDelay7Days = dialogView.findViewById<Button>(R.id.btnDelay7Days)
 
+        // Format dates properly for display
         val dateFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
         val startDate = booking.timeStarted?.let { parseApiDateTime(it) }
         val endDate = booking.timeEnded?.let { parseApiDateTime(it) }
+
         statusText.text = if (booking.approved == true) "Approved" else "Pending"
         timeText.text = if (startDate != null && endDate != null) {
             "${dateFormat.format(startDate)} - ${dateFormat.format(endDate)}"
@@ -199,35 +206,45 @@ class InstrumentDetailFragment : Fragment() {
         }
         descText.text = booking.description ?: "No description"
 
+        // Only show approval controls and delay options if user has manage permission
         val canManage = viewModel.canManageInstrument.value == true
         layoutApproval.isVisible = canManage
+        layoutDelayOptions.isVisible = canManage
 
-        approvalSwitch.isChecked = booking.approved == true
+        // Only set up approval toggle functionality if user has permission
+        if (canManage) {
+            approvalSwitch.isChecked = booking.approved == true
 
-        approvalSwitch.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked == booking.approved) return@setOnCheckedChangeListener // Avoid unnecessary calls
+            approvalSwitch.setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked == booking.approved) return@setOnCheckedChangeListener // Avoid unnecessary calls
 
-            viewLifecycleOwner.lifecycleScope.launch {
-                try {
-                    val result = viewModel.toggleBookingApproval(booking.id)
-                    result.fold(
-                        onSuccess = {
-                            Toast.makeText(context, "Approval status updated", Toast.LENGTH_SHORT).show()
-                            statusText.text = if (isChecked) "Approved" else "Pending"
-                            viewModel.loadBookings()
-                        },
-                        onFailure = { error ->
-                            // Revert switch if operation fails
-                            approvalSwitch.isChecked = !isChecked
-                            Toast.makeText(context, "Error: ${error.message}", Toast.LENGTH_LONG).show()
-                        }
-                    )
-                } catch (e: Exception) {
-                    // Revert switch if operation fails
-                    approvalSwitch.isChecked = !isChecked
-                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                viewLifecycleOwner.lifecycleScope.launch {
+                    try {
+                        val result = viewModel.toggleBookingApproval(booking.id)
+                        result.fold(
+                            onSuccess = {
+                                Toast.makeText(context, "Approval status updated", Toast.LENGTH_SHORT).show()
+                                statusText.text = if (isChecked) "Approved" else "Pending"
+                                viewModel.loadBookings()
+                            },
+                            onFailure = { error ->
+                                // Revert switch if operation fails
+                                approvalSwitch.isChecked = !isChecked
+                                Toast.makeText(context, "Error: ${error.message}", Toast.LENGTH_LONG).show()
+                            }
+                        )
+                    } catch (e: Exception) {
+                        // Revert switch if operation fails
+                        approvalSwitch.isChecked = !isChecked
+                        Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
                 }
             }
+
+            // Set up delay buttons
+            btnDelay1Day.setOnClickListener { delayBooking(booking, 1) }
+            btnDelay3Days.setOnClickListener { delayBooking(booking, 3) }
+            btnDelay7Days.setOnClickListener { delayBooking(booking, 7) }
         }
 
         AlertDialog.Builder(requireContext())
@@ -235,6 +252,27 @@ class InstrumentDetailFragment : Fragment() {
             .setView(dialogView)
             .setPositiveButton("Close", null)
             .show()
+    }
+
+    private fun delayBooking(booking: InstrumentUsage, days: Int) {
+        val delayRequest = DelayUsageRequest(days = days)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val result = viewModel.delayBooking(booking.id, delayRequest)
+                result.fold(
+                    onSuccess = {
+                        Toast.makeText(context, "Booking delayed by $days days", Toast.LENGTH_SHORT).show()
+                        viewModel.loadBookings() // Refresh bookings to show updated times
+                    },
+                    onFailure = { error ->
+                        Toast.makeText(context, "Error: ${error.message}", Toast.LENGTH_LONG).show()
+                    }
+                )
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
 

@@ -20,6 +20,7 @@ import info.proteo.cupcake.data.repository.AnnotationRepository
 import info.proteo.cupcake.data.repository.InstrumentRepository
 import info.proteo.cupcake.data.repository.InstrumentUsageRepository
 import info.proteo.cupcake.data.repository.UserRepository
+import info.proteo.cupcake.shared.data.model.instrument.DelayUsageRequest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
@@ -323,5 +324,9 @@ class InstrumentDetailViewModel @Inject constructor(
 
     suspend fun toggleBookingApproval(usageId: Int): Result<InstrumentUsage> {
         return instrumentUsageRepository.approveUsageToggle(usageId)
+    }
+
+    suspend fun delayBooking(usageId: Int, delayRequest: DelayUsageRequest): Result<InstrumentUsage> {
+        return instrumentUsageRepository.delayUsage(usageId, delayRequest)
     }
 }
