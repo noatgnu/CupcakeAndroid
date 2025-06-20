@@ -11,13 +11,16 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class InstrumentUsageAdapter(private val bookings: List<InstrumentUsage>) :
+class InstrumentUsageAdapter(
+    private val bookings: List<InstrumentUsage>,
+    private val onItemClick: (InstrumentUsage) -> Unit
+) :
     RecyclerView.Adapter<InstrumentUsageAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_instrument_booking, parent, false)
-        return ViewHolder(view)
+        return ViewHolder(view, onItemClick)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -27,7 +30,7 @@ class InstrumentUsageAdapter(private val bookings: List<InstrumentUsage>) :
 
     override fun getItemCount() = bookings.size
 
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+    class ViewHolder(view: View, val onItemClick: (InstrumentUsage) -> Unit) : RecyclerView.ViewHolder(view) {
         private val instrumentName: TextView = view.findViewById(R.id.instrumentName)
         private val bookingStatus: TextView = view.findViewById(R.id.bookingStatus)
         private val bookingTime: TextView = view.findViewById(R.id.bookingTime)
@@ -41,6 +44,7 @@ class InstrumentUsageAdapter(private val bookings: List<InstrumentUsage>) :
             bookingStatus.text = if (booking.approved == true) "Approved" else "Pending"
             bookingTime.text = "${dateFormat.format(Date(startTime))} - ${dateFormat.format(Date(endTime))}"
             bookingDescription.visibility = View.GONE
+            itemView.setOnClickListener { onItemClick(booking) }
         }
 
         private fun parseApiDateTime(dateTimeString: String?): Long {

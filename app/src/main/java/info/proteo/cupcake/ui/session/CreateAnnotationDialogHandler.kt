@@ -1000,7 +1000,12 @@ class CreateAnnotationDialogHandler(
         recyclerViewBookings.layoutManager = LinearLayoutManager(fragment.requireContext())
 
         // Create adapter for bookings
-        val bookingsAdapter = InstrumentUsageAdapter(instrumentBookings)
+        val bookingsAdapter = InstrumentUsageAdapter(
+            instrumentBookings,
+            {booking ->
+
+            }
+        )
         recyclerViewBookings.adapter = bookingsAdapter
 
         // Setup date/time pickers

@@ -52,6 +52,7 @@ import info.proteo.cupcake.shared.data.model.annotation.AnnotationFolder
 
 import info.proteo.cupcake.shared.data.model.instrument.Instrument
 import info.proteo.cupcake.databinding.FragmentInstrumentDetailBinding
+import info.proteo.cupcake.shared.data.model.instrument.InstrumentUsage
 import info.proteo.cupcake.ui.user.UserSearchAdapter
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -62,6 +63,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import javax.inject.Inject
+import kotlin.text.format
 
 @AndroidEntryPoint
 class InstrumentDetailFragment : Fragment() {
@@ -153,7 +155,12 @@ class InstrumentDetailFragment : Fragment() {
     }
 
     private fun setupBookingsView() {
-        bookingAdapter = InstrumentUsageAdapter(emptyList())
+        bookingAdapter = InstrumentUsageAdapter(
+            emptyList(),
+            { booking ->
+                showUsageDetailDialog(booking)
+            }
+        )
         binding.recyclerViewBookings.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = bookingAdapter
@@ -172,6 +179,64 @@ class InstrumentDetailFragment : Fragment() {
         }
     }
 
+    private fun showUsageDetailDialog(booking: InstrumentUsage) {
+        val dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_usage_detail, null)
+        val statusText = dialogView.findViewById<TextView>(R.id.textViewStatus)
+        val timeText = dialogView.findViewById<TextView>(R.id.textViewTime)
+        val descText = dialogView.findViewById<TextView>(R.id.textViewDescription)
+        val layoutApproval = dialogView.findViewById<LinearLayout>(R.id.layoutApproval)
+        val approvalSwitch = dialogView.findViewById<SwitchMaterial>(R.id.switchApproval)
+
+        val dateFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
+        val startDate = booking.timeStarted?.let { parseApiDateTime(it) }
+        val endDate = booking.timeEnded?.let { parseApiDateTime(it) }
+        statusText.text = if (booking.approved == true) "Approved" else "Pending"
+        timeText.text = if (startDate != null && endDate != null) {
+            "${dateFormat.format(startDate)} - ${dateFormat.format(endDate)}"
+        } else {
+            "Time not available"
+        }
+        descText.text = booking.description ?: "No description"
+
+        val canManage = viewModel.canManageInstrument.value == true
+        layoutApproval.isVisible = canManage
+
+        approvalSwitch.isChecked = booking.approved == true
+
+        approvalSwitch.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked == booking.approved) return@setOnCheckedChangeListener // Avoid unnecessary calls
+
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    val result = viewModel.toggleBookingApproval(booking.id)
+                    result.fold(
+                        onSuccess = {
+                            Toast.makeText(context, "Approval status updated", Toast.LENGTH_SHORT).show()
+                            statusText.text = if (isChecked) "Approved" else "Pending"
+                            viewModel.loadBookings()
+                        },
+                        onFailure = { error ->
+                            // Revert switch if operation fails
+                            approvalSwitch.isChecked = !isChecked
+                            Toast.makeText(context, "Error: ${error.message}", Toast.LENGTH_LONG).show()
+                        }
+                    )
+                } catch (e: Exception) {
+                    // Revert switch if operation fails
+                    approvalSwitch.isChecked = !isChecked
+                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Booking Details")
+            .setView(dialogView)
+            .setPositiveButton("Close", null)
+            .show()
+    }
+
 
     private fun setupMenu() {
         requireActivity().addMenuProvider(object : MenuProvider {
@@ -186,7 +251,6 @@ class InstrumentDetailFragment : Fragment() {
 
                 // Make the toolbar title and other elements white
                 (requireActivity() as? AppCompatActivity)?.supportActionBar?.let { actionBar ->
-                    // Set title text color programmatically (if not already set in theme)
                     val titleTextColor = ContextCompat.getColor(requireContext(), R.color.white)
                     val titleId = androidx.appcompat.R.id.action_bar_title
                     val titleView = requireActivity().findViewById<TextView>(titleId)
@@ -435,7 +499,12 @@ class InstrumentDetailFragment : Fragment() {
                         binding.textViewEmptyBookings.isVisible = true
                         binding.recyclerViewBookings.isVisible = false
                     } else {
-                        bookingAdapter = InstrumentUsageAdapter(bookings)
+                        bookingAdapter = InstrumentUsageAdapter(
+                            bookings,
+                            { booking ->
+                                showUsageDetailDialog(booking)
+                            }
+                        )
                         binding.recyclerViewBookings.adapter = bookingAdapter
                         binding.textViewEmptyBookings.isVisible = false
                         binding.recyclerViewBookings.isVisible = true

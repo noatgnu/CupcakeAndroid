@@ -321,5 +321,7 @@ class InstrumentDetailViewModel @Inject constructor(
     }
 
 
-
+    suspend fun toggleBookingApproval(usageId: Int): Result<InstrumentUsage> {
+        return instrumentUsageRepository.approveUsageToggle(usageId)
+    }
 }
