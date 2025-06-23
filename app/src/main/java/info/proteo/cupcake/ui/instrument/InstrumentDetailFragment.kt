@@ -28,6 +28,7 @@ import android.text.TextWatcher
 import android.util.Base64
 import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toolbar
 import androidx.appcompat.app.AppCompatActivity
@@ -263,7 +264,7 @@ class InstrumentDetailFragment : Fragment() {
                 result.fold(
                     onSuccess = {
                         Toast.makeText(context, "Booking delayed by $days days", Toast.LENGTH_SHORT).show()
-                        viewModel.loadBookings() // Refresh bookings to show updated times
+                        viewModel.loadBookings()
                     },
                     onFailure = { error ->
                         Toast.makeText(context, "Error: ${error.message}", Toast.LENGTH_LONG).show()
@@ -329,6 +330,7 @@ class InstrumentDetailFragment : Fragment() {
                 menu.findItem(R.id.action_attach_document)?.isVisible = canManage
                 menu.findItem(R.id.action_delete_instrument)?.isVisible = canManage
                 menu.findItem(R.id.action_view_maintenance)?.isVisible = canManage
+                menu.findItem(R.id.action_bulk_delay)?.isVisible = canManage
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
@@ -368,6 +370,10 @@ class InstrumentDetailFragment : Fragment() {
                     }
                     R.id.action_delete_instrument -> {
                         showDeleteConfirmationDialog()
+                        true
+                    }
+                    R.id.action_bulk_delay -> {
+                        showBulkDelayDialog()
                         true
                     }
                     else -> false
@@ -1145,6 +1151,128 @@ class InstrumentDetailFragment : Fragment() {
                 Log.e("InstrumentDetail", "Exception creating booking", e)
             }
         }
+    }
+    private fun showBulkDelayDialog() {
+        val dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_bulk_delay, null)
+
+        val startDateEditText = dialogView.findViewById<TextInputEditText>(R.id.edit_text_bulk_delay_start_date)
+        val btnDelay1Day = dialogView.findViewById<Button>(R.id.btnDelayAll1Day)
+        val btnDelay3Days = dialogView.findViewById<Button>(R.id.btnDelayAll3Days)
+        val btnDelay7Days = dialogView.findViewById<Button>(R.id.btnDelayAll7Days)
+        val btnCustomDelay = dialogView.findViewById<Button>(R.id.btnDelayAllCustom)
+        val editTextCustomDelay = dialogView.findViewById<TextInputEditText>(R.id.editTextCustomDays)
+
+        // Setup date pickers
+        val startDate = Calendar.getInstance()
+        val endDate = Calendar.getInstance()
+        endDate.add(Calendar.DAY_OF_MONTH, 7)  // Default to a week range
+
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+        startDateEditText.setText(dateFormat.format(startDate.time))
+
+        startDateEditText.setOnClickListener {
+            showDatePicker(startDate) { calendar ->
+                startDate.set(Calendar.YEAR, calendar.get(Calendar.YEAR))
+                startDate.set(Calendar.MONTH, calendar.get(Calendar.MONTH))
+                startDate.set(Calendar.DAY_OF_MONTH, calendar.get(Calendar.DAY_OF_MONTH))
+                startDateEditText.setText(dateFormat.format(startDate.time))
+            }
+        }
+
+
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle("Delay Bookings")
+            .setView(dialogView)
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        btnDelay1Day.setOnClickListener {
+            delayBookingsInRange(startDate.time, 1)
+            dialog.dismiss()
+        }
+
+        btnDelay3Days.setOnClickListener {
+            delayBookingsInRange(startDate.time, 3)
+            dialog.dismiss()
+        }
+
+        btnDelay7Days.setOnClickListener {
+            delayBookingsInRange(startDate.time, 7)
+            dialog.dismiss()
+        }
+
+        btnCustomDelay.setOnClickListener {
+            val customDays = editTextCustomDelay.text.toString().toIntOrNull()
+            if (customDays != null && customDays > 0) {
+                delayBookingsInRange(startDate.time, customDays)
+                dialog.dismiss()
+            } else {
+                Toast.makeText(context, "Please enter a valid number of days", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        dialog.show()
+    }
+
+    private fun delayBookingsInRange(startDate: Date, days: Int) {
+        val instrumentId = args.instrumentId
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+        val startString = dateFormat.format(startDate)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val progressDialog = createProgressDialog("Delaying bookings...")
+            progressDialog.show()
+
+            try {
+                val result = viewModel.delayBookingsInTimeRange(
+                    instrumentId,
+                    startString,
+                    days
+                )
+
+                progressDialog.dismiss()
+                result.fold(
+                    onSuccess = { instrument ->
+
+                        Toast.makeText(context, "Successfully updated instrument bookings", Toast.LENGTH_LONG).show()
+                        viewModel.loadBookings()
+                    },
+                    onFailure = { error ->
+                        Toast.makeText(context, "Error: ${error.message}", Toast.LENGTH_LONG).show()
+                    }
+                )
+            } catch (e: Exception) {
+                progressDialog.dismiss()
+                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun createProgressDialog(message: String): AlertDialog {
+        val progressBar = ProgressBar(context).apply {
+            isIndeterminate = true
+        }
+
+        val layout = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(30, 30, 30, 30)
+
+            addView(progressBar)
+
+            val textView = TextView(context).apply {
+                text = message
+                setPadding(30, 0, 0, 0)
+            }
+            addView(textView)
+        }
+
+        return AlertDialog.Builder(requireContext())
+            .setView(layout)
+            .setCancelable(false)
+            .create()
     }
 }
 

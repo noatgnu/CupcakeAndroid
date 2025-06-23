@@ -29,4 +29,8 @@
         android:id="@+id/action_delete_instrument"
         android:title="Delete Instrument"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_bulk_delay"
+        android:title="Bulk delay"
+        app:showAsAction="never" />
 </menu>

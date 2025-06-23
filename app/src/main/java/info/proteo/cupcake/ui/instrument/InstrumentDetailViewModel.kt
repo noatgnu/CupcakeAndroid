@@ -329,4 +329,12 @@ class InstrumentDetailViewModel @Inject constructor(
     suspend fun delayBooking(usageId: Int, delayRequest: DelayUsageRequest): Result<InstrumentUsage> {
         return instrumentUsageRepository.delayUsage(usageId, delayRequest)
     }
+
+    suspend fun delayBookingsInTimeRange(
+        instrumentId: Int,
+        startDate: String,
+        days: Int
+    ): Result<Instrument> {
+        return instrumentRepository.delayUsage(instrumentId, startDate, days)
+    }
 }
