@@ -44,5 +44,9 @@ data class AnnotationFolderEntity(
     @ColumnInfo(name = "parent_folder") val parentFolder: Int?,
     val session: Int?,
     val instrument: Int?,
-    @ColumnInfo(name = "stored_reagent") val storedReagent: Int?
+    @ColumnInfo(name = "stored_reagent") val storedReagent: Int?,
+    @ColumnInfo(name = "is_shared_document_folder") val isSharedDocumentFolder: Boolean = false,
+    @ColumnInfo(name = "owner_id") val ownerId: Int?,
+    @ColumnInfo(name = "remote_id") val remoteId: Long?,
+    @ColumnInfo(name = "remote_host") val remoteHost: Int?
 )

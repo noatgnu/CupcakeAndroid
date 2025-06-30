@@ -10,7 +10,7 @@ data class StepVariation(
     val id: Int,
     val step: Int,
     @Json(name = "variation_description") val variationDescription: String?,
-    @Json(name = "variation_duration") val variationDuration: String?
+    @Json(name = "variation_duration") val variationDuration: Int?
 )
 
 @JsonClass(generateAdapter = true)

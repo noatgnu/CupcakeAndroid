@@ -43,6 +43,7 @@ class InstrumentFragment : Fragment(), InstrumentActivity.SearchQueryListener {
 
         setupRecyclerView()
         setupSwipeRefresh()
+        setupFilterControls()
         observeInstruments()
     }
 
@@ -88,6 +89,13 @@ class InstrumentFragment : Fragment(), InstrumentActivity.SearchQueryListener {
     private fun setupSwipeRefresh() {
         binding.swipeRefreshLayout.setOnRefreshListener {
             viewModel.loadInitialInstruments()
+        }
+    }
+
+    private fun setupFilterControls() {
+        // Handle bookable filter switch
+        binding.bookableFilterSwitch.setOnCheckedChangeListener { _, isChecked ->
+            viewModel.setBookingFilter(if (isChecked) true else null)
         }
     }
 

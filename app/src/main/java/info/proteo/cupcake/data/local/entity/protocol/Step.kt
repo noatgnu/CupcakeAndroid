@@ -9,7 +9,11 @@ data class StepVariationEntity(
     @PrimaryKey val id: Int,
     val step: Int,
     @ColumnInfo(name = "variation_description") val variationDescription: String?,
-    @ColumnInfo(name = "variation_duration") val variationDuration: String?
+    @ColumnInfo(name = "variation_duration") val variationDuration: Int?,
+    @ColumnInfo(name = "created_at") val createdAt: String?,
+    @ColumnInfo(name = "updated_at") val updatedAt: String?,
+    @ColumnInfo(name = "remote_id") val remoteId: Long?,
+    @ColumnInfo(name = "remote_host") val remoteHost: Int?
 )
 
 @Entity(tableName = "step_reagent")

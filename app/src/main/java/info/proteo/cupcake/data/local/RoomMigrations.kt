@@ -116,19 +116,22 @@ object RoomMigrations {
         database.execSQL("""
             CREATE TABLE IF NOT EXISTS protocol_model (
                 id INTEGER PRIMARY KEY NOT NULL,
-                protocol_id Long,
+                protocol_id INTEGER,
                 protocol_created_on TEXT,
                 protocol_doi TEXT,
                 protocol_title TEXT NOT NULL,
                 protocol_description TEXT,
                 protocol_url TEXT,
                 protocol_version_uri TEXT,
+                enabled INTEGER NOT NULL DEFAULT 1,
+                complexity_rating REAL DEFAULT 0,
+                duration_rating REAL DEFAULT 0,
+                user INTEGER,
+                remote_id INTEGER,
+                model_hash TEXT,
+                remote_host INTEGER,
                 created_at TEXT,
                 updated_at TEXT,
-                enabled INTEGER NOT NULL DEFAULT 1,
-                user INTEGER,
-                duration_rating REAL DEFAULT 0,
-                complexity_rating REAL DEFAULT 0,
                 FOREIGN KEY (user) REFERENCES user(id) ON DELETE SET NULL
             )
         """)
@@ -204,35 +207,51 @@ object RoomMigrations {
         database.execSQL("""
             CREATE TABLE IF NOT EXISTS annotation (
                 id INTEGER PRIMARY KEY NOT NULL,
-                content TEXT NOT NULL,
-                created_at TEXT,
-                updated_at TEXT,
                 step INTEGER,
                 session INTEGER,
-                user INTEGER,
+                annotation TEXT,
+                file TEXT,
+                created_at TEXT,
+                updated_at TEXT,
+                annotation_type TEXT,
+                transcribed INTEGER,
+                transcription TEXT,
+                language TEXT,
+                translation TEXT,
+                scratched INTEGER,
+                annotation_name TEXT,
+                summary TEXT,
+                fixed INTEGER,
+                user_id INTEGER,
                 stored_reagent INTEGER,
-                folder INTEGER,
+                folder_id INTEGER,
                 FOREIGN KEY (step) REFERENCES protocol_step(id) ON DELETE CASCADE,
                 FOREIGN KEY (session) REFERENCES session(id) ON DELETE CASCADE,
-                FOREIGN KEY (user) REFERENCES user(id) ON DELETE SET NULL,
+                FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE SET NULL,
                 FOREIGN KEY (stored_reagent) REFERENCES stored_reagent(id) ON DELETE CASCADE,
-                FOREIGN KEY (folder) REFERENCES annotation_folder(id) ON DELETE CASCADE
+                FOREIGN KEY (folder_id) REFERENCES annotation_folder(id) ON DELETE CASCADE
             )
         """)
 
         database.execSQL("""
             CREATE TABLE IF NOT EXISTS annotation_folder (
                 id INTEGER PRIMARY KEY NOT NULL,
-                name TEXT NOT NULL,
+                folder_name TEXT NOT NULL,
+                created_at TEXT,
+                updated_at TEXT,
                 parent_folder INTEGER,
                 session INTEGER,
                 instrument INTEGER,
                 stored_reagent INTEGER,
-                created_at TEXT,
+                is_shared_document_folder INTEGER NOT NULL DEFAULT 0,
+                owner_id INTEGER,
+                remote_id INTEGER,
+                remote_host INTEGER,
                 FOREIGN KEY (parent_folder) REFERENCES annotation_folder(id) ON DELETE CASCADE,
                 FOREIGN KEY (session) REFERENCES session(id) ON DELETE CASCADE,
                 FOREIGN KEY (instrument) REFERENCES instrument(id) ON DELETE CASCADE,
-                FOREIGN KEY (stored_reagent) REFERENCES stored_reagent(id) ON DELETE CASCADE
+                FOREIGN KEY (stored_reagent) REFERENCES stored_reagent(id) ON DELETE CASCADE,
+                FOREIGN KEY (owner_id) REFERENCES user(id) ON DELETE SET NULL
             )
         """)
 
@@ -250,13 +269,13 @@ object RoomMigrations {
             CREATE TABLE IF NOT EXISTS step_variation (
                 id INTEGER PRIMARY KEY NOT NULL,
                 step INTEGER NOT NULL,
-                title TEXT,
-                description TEXT,
+                variation_description TEXT,
+                variation_duration INTEGER,
                 created_at TEXT,
                 updated_at TEXT,
-                user INTEGER,
-                FOREIGN KEY (step) REFERENCES protocol_step(id) ON DELETE CASCADE,
-                FOREIGN KEY (user) REFERENCES user(id) ON DELETE SET NULL
+                remote_id INTEGER,
+                remote_host INTEGER,
+                FOREIGN KEY (step) REFERENCES protocol_step(id) ON DELETE CASCADE
             )
         """)
 
@@ -464,10 +483,11 @@ object RoomMigrations {
                 updated_at TEXT,
                 enabled INTEGER NOT NULL DEFAULT 1,
                 image TEXT,
-                last_warranty_notification_sent TEXT,
-                last_maintenance_notification_sent TEXT,
+                days_before_maintenance_notification INTEGER DEFAULT 14,
                 days_before_warranty_notification INTEGER DEFAULT 30,
-                days_before_maintenance_notification INTEGER DEFAULT 14
+                last_maintenance_notification_sent TEXT,
+                last_warranty_notification_sent TEXT,
+                accepts_bookings INTEGER
             )
         """)
 
@@ -778,6 +798,117 @@ object RoomMigrations {
             )
         """)
 
+        // System tables
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS remote_host (
+                id INTEGER PRIMARY KEY NOT NULL,
+                host_name TEXT NOT NULL,
+                host_url TEXT NOT NULL,
+                host_token TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            )
+        """)
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS site_settings (
+                id INTEGER PRIMARY KEY NOT NULL,
+                is_active INTEGER NOT NULL DEFAULT 0,
+                site_name TEXT,
+                site_tagline TEXT,
+                logo TEXT,
+                favicon TEXT,
+                banner_enabled INTEGER NOT NULL DEFAULT 0,
+                banner_text TEXT,
+                banner_color TEXT,
+                banner_text_color TEXT,
+                banner_dismissible INTEGER NOT NULL DEFAULT 1,
+                primary_color TEXT,
+                secondary_color TEXT,
+                footer_text TEXT,
+                created_at TEXT,
+                updated_at TEXT,
+                updated_by INTEGER,
+                FOREIGN KEY (updated_by) REFERENCES user(id) ON DELETE SET NULL
+            )
+        """)
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS backup_log (
+                id INTEGER PRIMARY KEY NOT NULL,
+                backup_type TEXT NOT NULL,
+                status TEXT NOT NULL,
+                started_at TEXT,
+                completed_at TEXT,
+                duration_seconds INTEGER,
+                backup_file_path TEXT,
+                file_size_bytes INTEGER,
+                error_message TEXT,
+                success_message TEXT,
+                triggered_by TEXT,
+                container_id TEXT
+            )
+        """)
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS document_permission (
+                id INTEGER PRIMARY KEY NOT NULL,
+                annotation_id INTEGER,
+                folder_id INTEGER,
+                user_id INTEGER,
+                lab_group_id INTEGER,
+                can_view INTEGER NOT NULL DEFAULT 0,
+                can_download INTEGER NOT NULL DEFAULT 0,
+                can_comment INTEGER NOT NULL DEFAULT 0,
+                can_edit INTEGER NOT NULL DEFAULT 0,
+                can_share INTEGER NOT NULL DEFAULT 0,
+                can_delete INTEGER NOT NULL DEFAULT 0,
+                shared_by INTEGER,
+                shared_at TEXT,
+                expires_at TEXT,
+                last_accessed TEXT,
+                access_count INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY (annotation_id) REFERENCES annotation(id) ON DELETE CASCADE,
+                FOREIGN KEY (folder_id) REFERENCES annotation_folder(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+                FOREIGN KEY (lab_group_id) REFERENCES lab_group(id) ON DELETE CASCADE,
+                FOREIGN KEY (shared_by) REFERENCES user(id) ON DELETE SET NULL
+            )
+        """)
+
+        // WebRTC Communication tables
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS webrtc_session (
+                id INTEGER PRIMARY KEY NOT NULL,
+                session_id TEXT NOT NULL,
+                is_active INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT,
+                updated_at TEXT
+            )
+        """)
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS webrtc_user_channel (
+                id INTEGER PRIMARY KEY NOT NULL,
+                user_id INTEGER NOT NULL,
+                channel_name TEXT NOT NULL,
+                channel_type TEXT NOT NULL,
+                created_at TEXT,
+                FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+            )
+        """)
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS webrtc_user_offer (
+                id INTEGER PRIMARY KEY NOT NULL,
+                user_id INTEGER NOT NULL,
+                offer_data TEXT NOT NULL,
+                id_type TEXT NOT NULL,
+                created_at TEXT,
+                FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+            )
+        """)
+
         // Create indexes for better query performance
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_protocol_step_protocol ON protocol_step(protocol)")
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_protocol_section_protocol ON protocol_section(protocol)")
@@ -800,5 +931,18 @@ object RoomMigrations {
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_recent_session_user ON recent_session(user_id)")
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_recent_session_protocol ON recent_session(protocol_id)")
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_recent_session_step ON recent_session(step_id)")
+        
+        // Indexes for new tables
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_document_permission_annotation ON document_permission(annotation_id)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_document_permission_folder ON document_permission(folder_id)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_document_permission_user ON document_permission(user_id)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_document_permission_lab_group ON document_permission(lab_group_id)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_webrtc_session_active ON webrtc_session(is_active)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_webrtc_user_channel_user ON webrtc_user_channel(user_id)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_webrtc_user_offer_user ON webrtc_user_offer(user_id)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_backup_log_status ON backup_log(status)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_backup_log_started_at ON backup_log(started_at)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_annotation_folder_owner ON annotation_folder(owner_id)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_annotation_folder_shared ON annotation_folder(is_shared_document_folder)")
     }
 }

@@ -19,8 +19,9 @@ data class Instrument(
     @Json(name = "annotation_folders") val annotationFolders: List<AnnotationFolder>?,
     val image: String?,
     @Json(name = "support_information") val supportInformation: List<SupportInformation>?,
-    @Json(name = "last_warranty_notification_sent") val lastWarrantyNotificationSent: String?,
-    @Json(name = "last_maintenance_notification_sent") val lastMaintenanceNotificationSent: String?,
+    @Json(name = "days_before_maintenance_notification") val daysBeforeMaintenanceNotification: Int?,
     @Json(name = "days_before_warranty_notification") val daysBeforeWarrantyNotification: Int?,
-    @Json(name = "days_before_maintenance_notification") val daysBeforeMaintenanceNotification: Int?
+    @Json(name = "last_maintenance_notification_sent") val lastMaintenanceNotificationSent: String?,
+    @Json(name = "last_warranty_notification_sent") val lastWarrantyNotificationSent: String?,
+    @Json(name = "accepts_bookings") val acceptsBookings: Boolean?
 )

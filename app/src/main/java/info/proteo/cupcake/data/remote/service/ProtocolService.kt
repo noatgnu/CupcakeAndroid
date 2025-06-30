@@ -565,7 +565,9 @@ class ProtocolServiceImpl @Inject constructor(
             user = null,
             remoteId = null,
             modelHash = null,
-            remoteHost = null
+            remoteHost = null,
+            createdAt = null,
+            updatedAt = null
         )
     }
 

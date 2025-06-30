@@ -30,6 +30,7 @@ class InstrumentViewModel @Inject constructor(
     val hasMoreData: Boolean get() = _hasMoreData
     private var searchQuery: String? = null
     private var ordering: String? = null
+    private var acceptsBookings: Boolean? = null
 
     init {
         loadInitialInstruments()
@@ -63,6 +64,11 @@ class InstrumentViewModel @Inject constructor(
         loadInitialInstruments()
     }
 
+    fun setBookingFilter(acceptsBookings: Boolean?) {
+        this.acceptsBookings = acceptsBookings
+        loadInitialInstruments()
+    }
+
     private fun loadInstruments(refresh: Boolean) {
         if (refresh) {
             currentOffset = 0
@@ -74,7 +80,8 @@ class InstrumentViewModel @Inject constructor(
             ordering = ordering,
             limit = pageSize,
             offset = currentOffset,
-            serialNumber = serialNumber
+            serialNumber = serialNumber,
+            acceptsBookings = acceptsBookings
         ).onEach { result ->
             result.onSuccess { response ->
                 Log.d("InstrumentViewModel", "Fetched instruments: ${response.results.size} items")

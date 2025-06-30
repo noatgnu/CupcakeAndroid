@@ -2,6 +2,7 @@ package info.proteo.cupcake.shared.data.model.instrument
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
+import info.proteo.cupcake.shared.data.model.annotation.Annotation
 import info.proteo.cupcake.shared.data.model.metadatacolumn.MetadataColumn
 import info.proteo.cupcake.shared.data.model.metadatacolumn.MetadataTableTemplate
 import info.proteo.cupcake.shared.data.model.project.Project

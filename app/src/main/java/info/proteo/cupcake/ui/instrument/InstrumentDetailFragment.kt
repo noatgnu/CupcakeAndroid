@@ -324,13 +324,18 @@ class InstrumentDetailFragment : Fragment() {
 
             override fun onPrepareMenu(menu: Menu) {
                 val canManage = viewModel.canManageInstrument.value == true
-                Log.d("InstrumentDetailFragment", "onPrepareMenu - canManage: $canManage")
+                val instrumentAcceptsBookings = viewModel.instrument.value?.getOrNull()?.acceptsBookings == true
+                
+                Log.d("InstrumentDetailFragment", "onPrepareMenu - canManage: $canManage, acceptsBookings: $instrumentAcceptsBookings")
+                
                 menu.findItem(R.id.action_edit_instrument)?.isVisible = canManage
                 menu.findItem(R.id.action_manage_access)?.isVisible = canManage
                 menu.findItem(R.id.action_attach_document)?.isVisible = canManage
                 menu.findItem(R.id.action_delete_instrument)?.isVisible = canManage
                 menu.findItem(R.id.action_view_maintenance)?.isVisible = canManage
-                menu.findItem(R.id.action_bulk_delay)?.isVisible = canManage
+                
+                // Hide bulk delay menu item if instrument doesn't accept bookings
+                menu.findItem(R.id.action_bulk_delay)?.isVisible = canManage && instrumentAcceptsBookings
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
@@ -397,7 +402,8 @@ class InstrumentDetailFragment : Fragment() {
             userPreferencesEntity = preferences
         }
         viewModel.canBookInstrument.observe(viewLifecycleOwner) { canBook ->
-            binding.fabBookUsage.isVisible = canBook
+            val instrumentAcceptsBookings = viewModel.instrument.value?.getOrNull()?.acceptsBookings == true
+            binding.fabBookUsage.isVisible = canBook && instrumentAcceptsBookings
         }
         viewModel.isLoadingInstrument.observe(viewLifecycleOwner) { isLoading ->
             binding.progressBarInstrument.isVisible = isLoading
@@ -417,6 +423,22 @@ class InstrumentDetailFragment : Fragment() {
                     binding.instrumentDetailUpdatedAt.text = formatDate(instrument.updatedAt)
                     binding.instrumentDetailMaxPreapprovalDays.text = instrument.maxDaysAheadPreApproval?.toString() ?: "N/A"
                     binding.instrumentDetailMaxUsagePreapprovalWindow.text = instrument.maxDaysWithinUsagePreApproval?.toString() ?: "N/A"
+                    
+                    // Set accepts bookings toggle
+                    binding.switchAcceptsBookings.isChecked = instrument.acceptsBookings == true
+                    
+                    // Enable switch only for users with management permissions
+                    val canManage = viewModel.canManageInstrument.value == true
+                    binding.switchAcceptsBookings.isEnabled = canManage
+                    
+                    // Set up switch change listener if user can manage
+                    if (canManage) {
+                        binding.switchAcceptsBookings.setOnCheckedChangeListener { _, isChecked ->
+                            if (isChecked != instrument.acceptsBookings) {
+                                updateAcceptsBookings(instrument, isChecked)
+                            }
+                        }
+                    }
 
                     if (!instrument.image.isNullOrEmpty()) {
                         binding.instrumentDetailImage.load(instrument.image) {
@@ -430,6 +452,11 @@ class InstrumentDetailFragment : Fragment() {
                     viewModel.canManageInstrument.value?.let { currentCanManageState ->
                         setupAnnotationFolderTabs(instrument.annotationFolders, currentCanManageState)
                     }
+                    
+                    // Update FAB visibility when instrument data changes
+                    val canBook = viewModel.canBookInstrument.value == true
+                    val instrumentAcceptsBookings = instrument.acceptsBookings == true
+                    binding.fabBookUsage.isVisible = canBook && instrumentAcceptsBookings
                 },
                 onFailure = { error ->
                     Log.e("InstrumentDetail", "Error loading instrument details", error)
@@ -446,8 +473,23 @@ class InstrumentDetailFragment : Fragment() {
         viewModel.canManageInstrument.observe(viewLifecycleOwner) { canManage ->
             Log.d("InstrumentDetailFragment", "canManageInstrument observed: $canManage")
             requireActivity().invalidateOptionsMenu()
+            
+            // Update accepts bookings switch state based on permissions
+            binding.switchAcceptsBookings.isEnabled = canManage
+            
+            // Set up or remove the switch listener based on permissions
             viewModel.instrument.value?.getOrNull()?.let { currentInstrument ->
                 setupAnnotationFolderTabs(currentInstrument.annotationFolders, canManage)
+                
+                if (canManage) {
+                    binding.switchAcceptsBookings.setOnCheckedChangeListener { _, isChecked ->
+                        if (isChecked != currentInstrument.acceptsBookings) {
+                            updateAcceptsBookings(currentInstrument, isChecked)
+                        }
+                    }
+                } else {
+                    binding.switchAcceptsBookings.setOnCheckedChangeListener(null)
+                }
             }
         }
 
@@ -1273,6 +1315,40 @@ class InstrumentDetailFragment : Fragment() {
             .setView(layout)
             .setCancelable(false)
             .create()
+    }
+
+    private fun updateAcceptsBookings(instrument: Instrument, acceptsBookings: Boolean) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                // Temporarily disable the switch to prevent rapid clicking
+                binding.switchAcceptsBookings.isEnabled = false
+                
+                val updatedInstrument = instrument.copy(acceptsBookings = acceptsBookings)
+                viewModel.updateInstrumentDetails(updatedInstrument)
+                
+                val message = if (acceptsBookings) {
+                    "Instrument now accepts bookings"
+                } else {
+                    "Instrument no longer accepts bookings"
+                }
+                
+                Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
+                
+            } catch (e: Exception) {
+                // Revert the switch if update fails
+                binding.switchAcceptsBookings.isChecked = !acceptsBookings
+                Log.e("InstrumentDetail", "Error updating accepts bookings", e)
+                Snackbar.make(
+                    binding.root, 
+                    "Error updating booking settings: ${e.message}", 
+                    Snackbar.LENGTH_LONG
+                ).show()
+            } finally {
+                // Re-enable the switch after update attempt
+                val canManage = viewModel.canManageInstrument.value == true
+                binding.switchAcceptsBookings.isEnabled = canManage
+            }
+        }
     }
 }
 

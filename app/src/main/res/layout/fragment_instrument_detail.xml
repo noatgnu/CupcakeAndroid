@@ -122,6 +122,23 @@
                         android:textAppearance="?attr/textAppearanceBody2"
                         tools:text="N/A" />
                 </TableRow>
+
+                <TableRow android:layout_marginBottom="8dp">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Accepts Bookings"
+                        android:textAppearance="?attr/textAppearanceBody2"
+                        android:textStyle="bold" />
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switch_accepts_bookings"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:enabled="false"
+                        tools:checked="true" />
+                </TableRow>
             </TableLayout>
 
             <TextView

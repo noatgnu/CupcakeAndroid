@@ -46,7 +46,9 @@ data class AnnotationFolder(
     @Json(name = "parent_folder") val parentFolder: Int?,
     val session: Int?,
     val instrument: Int?,
-    @Json(name = "stored_reagent") val storedReagent: Int?
+    @Json(name = "stored_reagent") val storedReagent: Int?,
+    @Json(name = "is_shared_document_folder") val isSharedDocumentFolder: Boolean = false,
+    val owner: UserBasic?
 )
 
 @JsonClass(generateAdapter = true)

@@ -27,6 +27,8 @@ data class ProtocolModelEntity(
     @ColumnInfo(name = "remote_id") val remoteId: Long?,
     @ColumnInfo(name = "model_hash") val modelHash: String?,
     @ColumnInfo(name = "remote_host") val remoteHost: Int?,
+        @ColumnInfo(name = "created_at") val createdAt: String?,
+    @ColumnInfo(name = "updated_at") val updatedAt: String?
 )
 
 @Entity(

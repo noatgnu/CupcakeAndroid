@@ -16,6 +16,8 @@ import info.proteo.cupcake.data.local.entity.instrument.*
 import info.proteo.cupcake.data.local.entity.message.*
 import info.proteo.cupcake.data.local.entity.protocol.*
 import info.proteo.cupcake.data.local.entity.tag.TagEntity
+import info.proteo.cupcake.data.local.entity.system.*
+import info.proteo.cupcake.data.local.entity.communication.*
 
 import info.proteo.cupcake.data.local.dao.user.*
 import info.proteo.cupcake.data.local.dao.annotation.*
@@ -29,6 +31,8 @@ import info.proteo.cupcake.data.local.dao.instrument.*
 import info.proteo.cupcake.data.local.dao.message.*
 import info.proteo.cupcake.data.local.dao.protocol.*
 import info.proteo.cupcake.data.local.dao.tag.TagDao
+import info.proteo.cupcake.data.local.dao.system.*
+import info.proteo.cupcake.data.local.dao.communication.*
 import kotlinx.coroutines.Dispatchers
 
 import kotlinx.coroutines.flow.Flow
@@ -90,7 +94,14 @@ import java.util.Date
         MetadataTableTemplateEntity::class,
         MSUniqueVocabulariesEntity::class,
         HumanDiseaseEntity::class,
-        UserPreferencesEntity::class
+        UserPreferencesEntity::class,
+        RemoteHostEntity::class,
+        SiteSettingsEntity::class,
+        BackupLogEntity::class,
+        DocumentPermissionEntity::class,
+        WebRTCSessionEntity::class,
+        WebRTCUserChannelEntity::class,
+        WebRTCUserOfferEntity::class
     ],
     version = 1,
     exportSchema = false
@@ -146,6 +157,17 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun humanDiseaseDao(): HumanDiseaseDao
     abstract fun userPreferencesDao(): UserPreferencesDao
     abstract fun recentSessionDao(): RecentSessionDao
+    
+    // System DAOs
+    abstract fun remoteHostDao(): RemoteHostDao
+    abstract fun siteSettingsDao(): SiteSettingsDao
+    abstract fun backupLogDao(): BackupLogDao
+    abstract fun documentPermissionDao(): DocumentPermissionDao
+    
+    // Communication DAOs
+    abstract fun webRTCSessionDao(): WebRTCSessionDao
+    abstract fun webRTCUserChannelDao(): WebRTCUserChannelDao
+    abstract fun webRTCUserOfferDao(): WebRTCUserOfferDao
 
     companion object {
         const val DATABASE_NAME = "cupcake_database"
