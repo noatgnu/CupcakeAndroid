@@ -2,31 +2,8 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/instrument_nav_graph"
-    app:startDestination="@id/instrumentFragment">
-
-    <fragment
-        android:id="@+id/instrumentFragment"
-        android:name="info.proteo.cupcake.ui.instrument.InstrumentFragment"
-        android:label="Instruments"
-        tools:layout="@layout/fragment_instrument" >
-        <action
-            android:id="@+id/action_instrumentFragment_to_instrumentDetailFragment"
-            app:destination="@id/instrumentDetailFragment" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/instrumentDetailFragment"
-        android:name="info.proteo.cupcake.ui.instrument.InstrumentDetailFragment"
-        android:label="Instrument Details"
-        tools:layout="@layout/fragment_instrument_detail">
-        <argument
-            android:name="instrumentId"
-            app:argType="integer" />
-        <action
-            android:id="@+id/action_instrumentDetailFragment_to_maintenanceLogFragment"
-            app:destination="@id/maintenanceLogFragment" />
-    </fragment>
+    android:id="@+id/maintenance_nav_graph"
+    app:startDestination="@id/maintenanceLogFragment">
 
     <fragment
         android:id="@+id/maintenanceLogFragment"
@@ -50,5 +27,4 @@
             android:name="maintenanceLogId"
             app:argType="long" />
     </fragment>
-
 </navigation>

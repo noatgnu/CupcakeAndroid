@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="4dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardElevation="2dp"
+    app:cardCornerRadius="8dp"
+    app:rippleColor="?attr/colorPrimary">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp">
+
+        <!-- Annotation Type Icon -->
+        <ImageView
+            android:id="@+id/imageViewAnnotationType"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="12dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Annotation type"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_attachment"
+            android:tint="?attr/colorPrimary" />
+
+        <!-- Annotation Content -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <!-- Annotation Name -->
+            <TextView
+                android:id="@+id/textViewAnnotationName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle1"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end"
+                tools:text="Maintenance Report.pdf" />
+
+            <!-- Annotation Type -->
+            <TextView
+                android:id="@+id/textViewAnnotationType"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+                android:textColor="?attr/colorPrimary"
+                android:maxLines="1"
+                android:ellipsize="end"
+                tools:text="File: document.pdf" />
+
+            <!-- Annotation Preview/Description -->
+            <TextView
+                android:id="@+id/textViewAnnotationPreview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+                android:textColor="@android:color/darker_gray"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:visibility="gone"
+                tools:text="This is a preview of the annotation content that might be quite long..."
+                tools:visibility="visible" />
+
+            <!-- Metadata Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <!-- Created By -->
+                <TextView
+                    android:id="@+id/textViewCreatedBy"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+                    android:textColor="@android:color/darker_gray"
+                    android:drawablePadding="4dp"
+                    android:gravity="center_vertical"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="John Doe" />
+
+                <!-- Created Date -->
+                <TextView
+                    android:id="@+id/textViewCreatedDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+                    android:textColor="@android:color/darker_gray"
+                    android:drawablePadding="4dp"
+                    android:gravity="center_vertical"
+                    tools:text="Jan 15, 2024" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Action Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonDelete"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:padding="8dp"
+            android:text="Delete"
+            android:textColor="@color/danger"
+            android:textSize="12sp"
+            app:icon="@drawable/ic_delete"
+            app:iconSize="16dp"
+            app:iconTint="@color/danger" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

@@ -23,4 +23,7 @@ data class UserBasic(
     val username: String,
     @Json(name = "first_name") val firstName: String?,
     @Json(name = "last_name") val lastName: String?,
-)
+) {
+    val fullName: String
+        get() = listOfNotNull(firstName, lastName).joinToString(" ").ifBlank { username }
+}

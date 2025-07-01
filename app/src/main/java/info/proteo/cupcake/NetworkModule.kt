@@ -92,6 +92,9 @@ import info.proteo.cupcake.data.remote.service.UserService
 import info.proteo.cupcake.data.remote.service.UserServiceImpl
 import info.proteo.cupcake.data.remote.service.WebSocketManager
 import info.proteo.cupcake.data.remote.service.WebSocketService
+import info.proteo.cupcake.data.remote.service.MaintenanceLogApiService
+import info.proteo.cupcake.data.remote.service.MaintenanceLogService
+import info.proteo.cupcake.data.remote.service.MaintenanceLogServiceImpl
 import info.proteo.cupcake.data.repository.AnnotationRepository
 import info.proteo.cupcake.data.repository.InstrumentRepository
 import info.proteo.cupcake.data.repository.InstrumentUsageRepository
@@ -111,6 +114,7 @@ import info.proteo.cupcake.data.repository.SupportInformationRepository
 import info.proteo.cupcake.data.repository.TagRepository
 import info.proteo.cupcake.data.repository.TimeKeeperRepository
 import info.proteo.cupcake.data.repository.UserRepository
+import info.proteo.cupcake.data.repository.MaintenanceLogRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import okhttp3.Interceptor
@@ -854,6 +858,37 @@ object NetworkModule {
         return InstrumentUsageRepository(
             instrumentUsageService
         )
+    }
+
+    @Provides
+    @Singleton
+    fun provideMaintenanceLogApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): MaintenanceLogApiService {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
+            .build()
+            .create(MaintenanceLogApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideMaintenanceLogService(
+        maintenanceLogServiceImpl: MaintenanceLogServiceImpl
+    ): MaintenanceLogService {
+        return maintenanceLogServiceImpl
+    }
+
+    @Provides
+    @Singleton
+    fun provideMaintenanceLogRepository(
+        maintenanceLogService: MaintenanceLogService
+    ): MaintenanceLogRepository {
+        return MaintenanceLogRepository(maintenanceLogService)
     }
 }
 

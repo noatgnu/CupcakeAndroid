@@ -358,7 +358,14 @@ class InstrumentDetailFragment : Fragment() {
                         true
                     }
                     R.id.action_view_maintenance -> {
-                        // TODO: Navigate to maintenance history screen
+                        viewModel.instrument.value?.getOrNull()?.let { instrument ->
+                            val intent = info.proteo.cupcake.ui.maintenance.MaintenanceLogActivity.createIntent(
+                                requireContext(),
+                                args.instrumentId.toLong(),
+                                instrument.instrumentName
+                            )
+                            startActivity(intent)
+                        }
                         true
                     }
                     R.id.action_manage_access -> {

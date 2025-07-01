@@ -129,6 +129,11 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".ui.maintenance.MaintenanceLogActivity"
+            android:exported="false"
+            android:label="Maintenance History"
+            android:theme="@style/Theme.Cupcake.NoActionBar" />
     </application>
 
 </manifest>

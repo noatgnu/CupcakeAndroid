@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Maintenance Status Colors -->
+    <color name="status_pending">#FF9800</color>
+    <color name="status_in_progress">#2196F3</color>
+    <color name="status_completed">#4CAF50</color>
+    <color name="status_requested">#9C27B0</color>
+    <color name="status_cancelled">#F44336</color>
+    
+    <!-- Maintenance Type Colors -->
+    <color name="maintenance_type_background">#E8F5E8</color>
+    <color name="maintenance_type_text">#2E7D32</color>
+    
+    <!-- Template Colors -->
+    <color name="template_chip_background">#FFF3E0</color>
+    <color name="template_chip_stroke">#FF8A65</color>
+    
+    <!-- Notes Text Color -->
+    <color name="notes_text_color">#666666</color>
+</resources>
