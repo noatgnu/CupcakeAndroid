@@ -16,12 +16,13 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.datepicker.MaterialDatePicker
 import androidx.core.widget.addTextChangedListener
-import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.R
 import info.proteo.cupcake.databinding.DialogCreateMaintenanceLogBinding
@@ -43,10 +44,8 @@ class MaintenanceLogFragment : Fragment() {
     private val viewModel: MaintenanceLogViewModel by viewModels()
     private lateinit var maintenanceLogAdapter: MaintenanceLogAdapter
     
-    private val instrumentId: Long by lazy {
-        Log.d("MaintenanceLogFragment", "Arguments: ${arguments?.keySet()}")
-        arguments?.getLong("instrumentId") ?: -1L
-    }
+    private val args: MaintenanceLogFragmentArgs by navArgs()
+    private val instrumentId: Long get() = args.instrumentId
 
     override fun onCreateView(
         inflater: LayoutInflater,

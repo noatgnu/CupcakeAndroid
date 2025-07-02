@@ -63,7 +63,6 @@ class MaintenanceLogDetailFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupToolbar()
         setupMenu()
         setupRecyclerView()
         setupClickListeners()
@@ -75,11 +74,6 @@ class MaintenanceLogDetailFragment : Fragment() {
         }
     }
 
-    private fun setupToolbar() {
-        binding.toolbar.setNavigationOnClickListener {
-            findNavController().navigateUp()
-        }
-    }
 
     private fun setupMenu() {
         requireActivity().addMenuProvider(object : MenuProvider {

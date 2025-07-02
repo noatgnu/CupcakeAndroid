@@ -12,7 +12,8 @@
         tools:layout="@layout/fragment_maintenance_log">
         <argument
             android:name="instrumentId"
-            app:argType="long" />
+            app:argType="long"
+            android:defaultValue="-1L" />
         <action
             android:id="@+id/action_maintenanceLogFragment_to_maintenanceLogDetailFragment"
             app:destination="@id/maintenanceLogDetailFragment" />
@@ -27,4 +28,8 @@
             android:name="maintenanceLogId"
             app:argType="long" />
     </fragment>
+
+    <action
+        android:id="@+id/action_global_maintenanceLogFragment"
+        app:destination="@id/maintenanceLogFragment" />
 </navigation>
