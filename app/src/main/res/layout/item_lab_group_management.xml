@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="4dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp"
+    app:strokeColor="@color/border_color"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Header Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Lab Group Icon -->
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginEnd="12dp"
+                android:src="@drawable/ic_outline_folder_shared_24"
+                app:tint="@color/primary" />
+
+            <!-- Lab Group Info -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <!-- Lab Group Name -->
+                    <TextView
+                        android:id="@+id/tvLabGroupName"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        tools:text="Research Lab Alpha" />
+
+                    <!-- Professional Badge -->
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipProfessional"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="Professional"
+                        android:textSize="10sp"
+                        android:visibility="gone"
+                        app:chipBackgroundColor="@color/accent_background"
+                        app:chipCornerRadius="12dp"
+                        app:chipMinHeight="24dp"
+                        app:chipStrokeColor="@color/accent"
+                        app:chipStrokeWidth="1dp"
+                        tools:visibility="visible" />
+
+                </LinearLayout>
+
+                <!-- Lab Group Description -->
+                <TextView
+                    android:id="@+id/tvLabGroupDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp"
+                    android:visibility="gone"
+                    tools:text="Advanced research laboratory for molecular biology experiments and protein analysis"
+                    tools:visibility="visible" />
+
+            </LinearLayout>
+
+
+        </LinearLayout>
+
+        <!-- Members Info Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Members Count -->
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginEnd="6dp"
+                android:src="@drawable/ic_person"
+                app:tint="@color/text_secondary" />
+
+            <TextView
+                android:id="@+id/tvMembersCount"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                tools:text="12 members • 3 managers" />
+
+            <!-- Storage Info -->
+            <ImageView
+                android:id="@+id/iconStorage"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="6dp"
+                android:src="@drawable/ic_storage"
+                android:visibility="gone"
+                app:tint="@color/success"
+                tools:visibility="visible" />
+
+            <TextView
+                android:id="@+id/tvStorageInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:visibility="gone"
+                tools:text="Service Storage Set"
+                tools:visibility="visible" />
+
+        </LinearLayout>
+
+        <!-- Dates -->
+        <TextView
+            android:id="@+id/tvDates"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp"
+            tools:text="Created: Jan 15, 2024 • Updated: Dec 20, 2024" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

@@ -48,7 +48,7 @@ android {
 dependencies {
     implementation(libs.javapoet)
     implementation(project(":shared"))
-    implementation(project(":communication"))  // Add communication module dependency
+    implementation(project(":communication"))
 
     implementation(libs.retrofit)
     implementation(libs.okhttp)

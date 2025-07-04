@@ -13,6 +13,10 @@
         android:title="@string/messages"
         android:icon="@drawable/ic_message_black_24dp" />
     <item
+        android:id="@+id/nav_lab_groups"
+        android:icon="@drawable/ic_outline_folder_shared_24"
+        android:title="@string/lab_groups" />
+    <item
         android:id="@+id/nav_timekeepers"
         android:icon="@drawable/outline_calendar_clock_24"
         android:title="@string/time_keepers" />

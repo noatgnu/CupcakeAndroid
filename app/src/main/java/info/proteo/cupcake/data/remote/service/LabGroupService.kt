@@ -17,7 +17,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 interface LabGroupApiService {
-    @GET("api/lab_group/")
+    @GET("api/lab_groups/")
     suspend fun getLabGroups(
         @Query("offset") offset: Int,
         @Query("limit") limit: Int,

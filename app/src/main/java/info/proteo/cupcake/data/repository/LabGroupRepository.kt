@@ -1,16 +1,19 @@
 package info.proteo.cupcake.data.repository
 
+import android.util.Log
+import info.proteo.cupcake.data.remote.service.LabGroupService
 import info.proteo.cupcake.shared.data.model.LimitOffsetResponse
 import info.proteo.cupcake.shared.data.model.user.LabGroup
 import info.proteo.cupcake.shared.data.model.user.User
-import info.proteo.cupcake.data.remote.service.LabGroupService
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 import javax.inject.Singleton
 
-interface LabGroupRepository {
-    fun getLabGroups(
+@Singleton
+class LabGroupRepository @Inject constructor(
+    private val labGroupService: LabGroupService
+) {
+
+    suspend fun getLabGroups(
         offset: Int,
         limit: Int,
         search: String? = null,
@@ -18,70 +21,105 @@ interface LabGroupRepository {
         storedReagentId: Int? = null,
         storageObjectId: Int? = null,
         isProfessional: Boolean? = null
-    ): Flow<Result<LimitOffsetResponse<LabGroup>>>
-
-    fun getLabGroupById(id: Int): Flow<Result<LabGroup>>
-    suspend fun createLabGroup(name: String, description: String, isProfessional: Boolean): Result<LabGroup>
-    suspend fun updateLabGroup(id: Int, updates: Map<String, Any>): Result<LabGroup>
-    suspend fun deleteLabGroup(id: Int): Result<Unit>
-    suspend fun removeUser(labGroupId: Int, userId: Int): Result<LabGroup>
-    suspend fun addUser(labGroupId: Int, userId: Int): Result<LabGroup>
-    fun getUsers(labGroupId: Int): Flow<Result<List<User>>>
-    fun getManagers(labGroupId: Int): Flow<Result<List<User>>>
-}
-
-@Singleton
-class LabGroupRepositoryImpl @Inject constructor(
-    private val labGroupService: LabGroupService
-) : LabGroupRepository {
-
-    override fun getLabGroups(
-        offset: Int,
-        limit: Int,
-        search: String?,
-        ordering: String?,
-        storedReagentId: Int?,
-        storageObjectId: Int?,
-        isProfessional: Boolean?
-    ): Flow<Result<LimitOffsetResponse<LabGroup>>> = flow {
-        emit(labGroupService.getLabGroups(
-            offset, limit, search, ordering, storedReagentId, storageObjectId, isProfessional
-        ))
+    ): Result<LimitOffsetResponse<LabGroup>> {
+        return try {
+            val result = labGroupService.getLabGroups(
+                offset = offset,
+                limit = limit,
+                search = search,
+                ordering = ordering,
+                storedReagentId = storedReagentId,
+                storageObjectId = storageObjectId,
+                isProfessional = isProfessional
+            )
+            result
+        } catch (e: Exception) {
+            Log.e("LabGroupRepository", "Error getting lab groups: ${e.message}")
+            Result.failure(e)
+        }
     }
 
-    override fun getLabGroupById(id: Int): Flow<Result<LabGroup>> = flow {
-        emit(labGroupService.getLabGroupById(id))
+    suspend fun getLabGroupById(id: Int): Result<LabGroup> {
+        return try {
+            val result = labGroupService.getLabGroupById(id)
+            result
+        } catch (e: Exception) {
+            Log.e("LabGroupRepository", "Error getting lab group by id: ${e.message}")
+            Result.failure(e)
+        }
     }
 
-    override suspend fun createLabGroup(
+    suspend fun createLabGroup(
         name: String,
         description: String,
         isProfessional: Boolean
     ): Result<LabGroup> {
-        return labGroupService.createLabGroup(name, description, isProfessional)
+        return try {
+            val result = labGroupService.createLabGroup(name, description, isProfessional)
+            result
+        } catch (e: Exception) {
+            Log.e("LabGroupRepository", "Error creating lab group: ${e.message}")
+            Result.failure(e)
+        }
     }
 
-    override suspend fun updateLabGroup(id: Int, updates: Map<String, Any>): Result<LabGroup> {
-        return labGroupService.updateLabGroup(id, updates)
+    suspend fun updateLabGroup(id: Int, updates: Map<String, Any>): Result<LabGroup> {
+        return try {
+            val result = labGroupService.updateLabGroup(id, updates)
+            result
+        } catch (e: Exception) {
+            Log.e("LabGroupRepository", "Error updating lab group: ${e.message}")
+            Result.failure(e)
+        }
     }
 
-    override suspend fun deleteLabGroup(id: Int): Result<Unit> {
-        return labGroupService.deleteLabGroup(id)
+    suspend fun deleteLabGroup(id: Int): Result<Unit> {
+        return try {
+            val result = labGroupService.deleteLabGroup(id)
+            result
+        } catch (e: Exception) {
+            Log.e("LabGroupRepository", "Error deleting lab group: ${e.message}")
+            Result.failure(e)
+        }
     }
 
-    override suspend fun removeUser(labGroupId: Int, userId: Int): Result<LabGroup> {
-        return labGroupService.removeUser(labGroupId, userId)
+    suspend fun addUser(labGroupId: Int, userId: Int): Result<LabGroup> {
+        return try {
+            val result = labGroupService.addUser(labGroupId, userId)
+            result
+        } catch (e: Exception) {
+            Log.e("LabGroupRepository", "Error adding user to lab group: ${e.message}")
+            Result.failure(e)
+        }
     }
 
-    override suspend fun addUser(labGroupId: Int, userId: Int): Result<LabGroup> {
-        return labGroupService.addUser(labGroupId, userId)
+    suspend fun removeUser(labGroupId: Int, userId: Int): Result<LabGroup> {
+        return try {
+            val result = labGroupService.removeUser(labGroupId, userId)
+            result
+        } catch (e: Exception) {
+            Log.e("LabGroupRepository", "Error removing user from lab group: ${e.message}")
+            Result.failure(e)
+        }
     }
 
-    override fun getUsers(labGroupId: Int): Flow<Result<List<User>>> = flow {
-        emit(labGroupService.getUsers(labGroupId))
+    suspend fun getUsers(labGroupId: Int): Result<List<User>> {
+        return try {
+            val result = labGroupService.getUsers(labGroupId)
+            result
+        } catch (e: Exception) {
+            Log.e("LabGroupRepository", "Error getting lab group users: ${e.message}")
+            Result.failure(e)
+        }
     }
 
-    override fun getManagers(labGroupId: Int): Flow<Result<List<User>>> = flow {
-        emit(labGroupService.getManagers(labGroupId))
+    suspend fun getManagers(labGroupId: Int): Result<List<User>> {
+        return try {
+            val result = labGroupService.getManagers(labGroupId)
+            result
+        } catch (e: Exception) {
+            Log.e("LabGroupRepository", "Error getting lab group managers: ${e.message}")
+            Result.failure(e)
+        }
     }
 }

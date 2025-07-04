@@ -76,4 +76,10 @@
         <item name="colorOnPrimary">@color/white</item>
         <item name="colorPrimary">@color/primary</item>
     </style>
+
+    <!-- Circle Image View Style -->
+    <style name="CircleImageView">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
 </resources>

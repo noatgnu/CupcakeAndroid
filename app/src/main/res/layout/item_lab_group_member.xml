@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp">
+
+        <!-- Member Avatar Placeholder -->
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/rounded_background"
+            android:backgroundTint="@color/accent_background"
+            android:padding="8dp"
+            android:src="@drawable/ic_person"
+            app:tint="@color/primary" />
+
+        <!-- Member Info -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <!-- Name and Staff Badge Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvMemberName"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:text="John Doe" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipStaff"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="Staff"
+                    android:textSize="10sp"
+                    android:visibility="gone"
+                    app:chipBackgroundColor="@color/accent_background"
+                    app:chipCornerRadius="10dp"
+                    app:chipMinHeight="20dp"
+                    app:chipStrokeColor="@color/accent"
+                    app:chipStrokeWidth="1dp"
+                    tools:visibility="visible" />
+
+            </LinearLayout>
+
+            <!-- Username -->
+            <TextView
+                android:id="@+id/tvMemberUsername"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                tools:text="@johndoe" />
+
+            <!-- Email -->
+            <TextView
+                android:id="@+id/tvMemberEmail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                tools:text="john.doe@example.com" />
+
+        </LinearLayout>
+
+        <!-- Remove Button (for staff/managers) -->
+        <ImageButton
+            android:id="@+id/btnRemoveMember"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Remove member"
+            android:src="@drawable/ic_remove_circle_outline"
+            android:visibility="gone"
+            app:tint="@color/danger" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

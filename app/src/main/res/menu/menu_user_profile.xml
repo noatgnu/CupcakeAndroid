@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    
+    <item
+        android:id="@+id/action_edit_profile"
+        android:icon="@drawable/ic_outline_edit_24"
+        android:title="Edit Profile"
+        app:showAsAction="never" />
+    
+    <item
+        android:id="@+id/action_change_password"
+        android:icon="@drawable/ic_lock"
+        android:title="Change Password"
+        app:showAsAction="never" />
+    
+    <item
+        android:id="@+id/action_export_data"
+        android:icon="@drawable/ic_download"
+        android:title="Export Data"
+        app:showAsAction="never" />
+    
+    <item
+        android:id="@+id/action_import_data"
+        android:icon="@drawable/ic_upload"
+        android:title="Import Data"
+        app:showAsAction="never" />
+    
+</menu>

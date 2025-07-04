@@ -37,6 +37,7 @@
     <string name="hostname_required">Hostname is required</string>
     <string name="logout_button">Logout</string>
     <string name="menu_main">Main menu</string>
+    <string name="menu_user_profile">User Profile</string>
     <string name="settings_title">Settings</string>
     <string name="category_icon">Category icon\n</string>
     <string name="profile_management">Profile Management</string>
@@ -95,6 +96,7 @@
     <string name="time_keepers">Time Keepers</string>
     <string name="instruments">Instruments</string>
     <string name="protocols">Protocols</string>
+    <string name="lab_groups">Lab Groups</string>
     <string name="edit_session">Edit session</string>
     <string name="delete_session">Delete session</string>
     <string name="session_status">Session status</string>

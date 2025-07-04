@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp"
+    app:strokeColor="@color/border_color"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Lab Group Name -->
+        <TextView
+            android:id="@+id/tvLabGroupName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            tools:text="Research Lab Alpha" />
+
+        <!-- Lab Group Description -->
+        <TextView
+            android:id="@+id/tvLabGroupDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            android:visibility="gone"
+            tools:text="Advanced research laboratory for molecular biology experiments"
+            tools:visibility="visible" />
+
+        <!-- Professional Badge -->
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipProfessional"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Professional"
+            android:visibility="gone"
+            app:chipBackgroundColor="@color/accent_background"
+            app:chipStrokeColor="@color/accent"
+            app:chipStrokeWidth="1dp"
+            tools:visibility="visible" />
+
+        <!-- Dates -->
+        <TextView
+            android:id="@+id/tvDates"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            tools:text="Created: Jan 15, 2024 • Updated: Dec 20, 2024" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

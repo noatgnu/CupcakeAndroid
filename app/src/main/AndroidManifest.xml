@@ -134,6 +134,26 @@
             android:exported="false"
             android:label="Maintenance History"
             android:theme="@style/Theme.Cupcake.NoActionBar" />
+        <activity
+            android:name=".ui.labgroup.LabGroupManagementActivity"
+            android:exported="false"
+            android:label="Lab Group Management"
+            android:theme="@style/Theme.Cupcake.NoActionBar" />
+        <activity
+            android:name=".ui.labgroup.LabGroupMemberManagementActivity"
+            android:exported="false"
+            android:label="Manage Members"
+            android:theme="@style/Theme.Cupcake.NoActionBar" />
+        <activity
+            android:name=".ui.labgroup.LabGroupMemberViewActivity"
+            android:exported="false"
+            android:label="View Members"
+            android:theme="@style/Theme.Cupcake.NoActionBar" />
+        <activity
+            android:name=".ui.labgroup.LabGroupDetailActivity"
+            android:exported="false"
+            android:label="Lab Group Details"
+            android:theme="@style/Theme.Cupcake.NoActionBar" />
     </application>
 
 </manifest>
