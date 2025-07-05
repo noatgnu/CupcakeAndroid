@@ -10,6 +10,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -154,18 +155,4 @@ class NetworkConnectivityMonitor @Inject constructor(
         return networkStatusFlow()
             .first { it.isConnected && (it.connectionType == ConnectionType.WIFI || !it.isMetered) }
     }
-}
-
-/**
- * Extension function to get first value from Flow
- */
-private suspend fun <T> Flow<T>.first(predicate: (T) -> Boolean): T {
-    var result: T? = null
-    collect { value ->
-        if (predicate(value)) {
-            result = value
-            return@collect
-        }
-    }
-    return result!!
 }

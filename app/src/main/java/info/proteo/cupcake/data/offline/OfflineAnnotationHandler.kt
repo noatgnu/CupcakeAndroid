@@ -23,7 +23,7 @@ class OfflineAnnotationHandler @Inject constructor(
     private val annotationDao: AnnotationDao,
     private val cachedAnnotationService: CachedAnnotationService,
     private val fileCacheManager: FileCacheManager,
-    private val pendingChangesDao: PendingChangesDao,
+    private val pendingChangesDao: info.proteo.cupcake.data.local.dao.offline.PendingChangesDao,
     private val networkConnectivityMonitor: NetworkConnectivityMonitor
 ) {
     

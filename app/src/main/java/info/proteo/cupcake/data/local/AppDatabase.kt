@@ -33,6 +33,8 @@ import info.proteo.cupcake.data.local.dao.protocol.*
 import info.proteo.cupcake.data.local.dao.tag.TagDao
 import info.proteo.cupcake.data.local.dao.system.*
 import info.proteo.cupcake.data.local.dao.communication.*
+import info.proteo.cupcake.data.local.dao.offline.*
+import info.proteo.cupcake.data.offline.*
 import kotlinx.coroutines.Dispatchers
 
 import kotlinx.coroutines.flow.Flow
@@ -110,12 +112,15 @@ import java.util.Date
         ImportedRelationshipEntity::class,
         WebRTCSessionEntity::class,
         WebRTCUserChannelEntity::class,
-        WebRTCUserOfferEntity::class
+        WebRTCUserOfferEntity::class,
+        PendingChange::class,
+        OfflineAnnotationMetadata::class,
+        PendingFileOperation::class
     ],
-    version = 2,
+    version = 1,
     exportSchema = false
 )
-@TypeConverters(Converters::class)
+@TypeConverters(Converters::class, info.proteo.cupcake.data.offline.OfflineTypeConverters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userBasicDao(): UserBasicDao
     abstract fun labGroupBasicDao(): LabGroupBasicDao
@@ -184,6 +189,11 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun webRTCSessionDao(): WebRTCSessionDao
     abstract fun webRTCUserChannelDao(): WebRTCUserChannelDao
     abstract fun webRTCUserOfferDao(): WebRTCUserOfferDao
+    
+    // Offline DAOs
+    abstract fun pendingChangesDao(): PendingChangesDao
+    abstract fun offlineAnnotationDao(): OfflineAnnotationDao
+    abstract fun pendingFileOperationsDao(): PendingFileOperationsDao
 
     companion object {
         const val DATABASE_NAME = "cupcake_database"

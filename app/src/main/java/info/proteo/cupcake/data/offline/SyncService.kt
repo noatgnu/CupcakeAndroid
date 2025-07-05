@@ -15,8 +15,8 @@ import javax.inject.Singleton
 class SyncService @Inject constructor(
     private val offlineAnnotationHandler: OfflineAnnotationHandler,
     private val networkConnectivityMonitor: NetworkConnectivityMonitor,
-    private val pendingChangesDao: PendingChangesDao,
-    private val pendingFileOperationsDao: PendingFileOperationsDao,
+    private val pendingChangesDao: info.proteo.cupcake.data.local.dao.offline.PendingChangesDao,
+    private val pendingFileOperationsDao: info.proteo.cupcake.data.local.dao.offline.PendingFileOperationsDao,
     private val cachedAnnotationService: CachedAnnotationService,
     private val cachedSharedDocumentService: CachedSharedDocumentService
 ) {
@@ -85,12 +85,12 @@ class SyncService @Inject constructor(
             cleanupSyncedChanges()
             
             val combinedResult = SyncResult(
-                totalChanges = annotationSyncResult.getOrNull()?.totalChanges ?: 0 + 
-                              fileSyncResult.getOrNull()?.totalOperations ?: 0,
-                successCount = annotationSyncResult.getOrNull()?.successCount ?: 0 + 
-                              fileSyncResult.getOrNull()?.successCount ?: 0,
-                failureCount = annotationSyncResult.getOrNull()?.failureCount ?: 0 + 
-                              fileSyncResult.getOrNull()?.failureCount ?: 0,
+                totalChanges = (annotationSyncResult.getOrNull()?.totalChanges ?: 0) + 
+                              (fileSyncResult.getOrNull()?.totalOperations ?: 0),
+                successCount = (annotationSyncResult.getOrNull()?.successCount ?: 0) + 
+                              (fileSyncResult.getOrNull()?.successCount ?: 0),
+                failureCount = (annotationSyncResult.getOrNull()?.failureCount ?: 0) + 
+                              (fileSyncResult.getOrNull()?.failureCount ?: 0),
                 errors = (annotationSyncResult.getOrNull()?.errors ?: emptyList()) + 
                         (fileSyncResult.getOrNull()?.errors ?: emptyList())
             )

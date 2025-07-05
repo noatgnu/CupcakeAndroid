@@ -212,6 +212,16 @@ object DatabaseModule {
 
     @Provides
     fun provideRecentSessionDao(database: AppDatabase): RecentSessionDao = database.recentSessionDao()
+
+    // Offline DAOs
+    @Provides
+    fun providePendingChangesDao(database: AppDatabase): info.proteo.cupcake.data.local.dao.offline.PendingChangesDao = database.pendingChangesDao()
+
+    @Provides
+    fun provideOfflineAnnotationDao(database: AppDatabase): info.proteo.cupcake.data.local.dao.offline.OfflineAnnotationDao = database.offlineAnnotationDao()
+
+    @Provides
+    fun providePendingFileOperationsDao(database: AppDatabase): info.proteo.cupcake.data.local.dao.offline.PendingFileOperationsDao = database.pendingFileOperationsDao()
 }
 
 @Singleton

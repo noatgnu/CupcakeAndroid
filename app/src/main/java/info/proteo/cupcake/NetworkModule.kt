@@ -1,5 +1,6 @@
 package info.proteo.cupcake
 
+import android.content.Context
 import android.util.Log
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
@@ -1148,14 +1149,14 @@ object NetworkModule {
     
     @Provides
     @Singleton
-    fun provideFileCacheManager(context: Context): info.proteo.cupcake.data.cache.FileCacheManager {
+    fun provideFileCacheManager(@dagger.hilt.android.qualifiers.ApplicationContext context: Context): info.proteo.cupcake.data.cache.FileCacheManager {
         return info.proteo.cupcake.data.cache.FileCacheManager(context)
     }
     
     @Provides
     @Singleton
     fun provideMediaCacheHandler(
-        context: Context,
+        @dagger.hilt.android.qualifiers.ApplicationContext context: Context,
         fileCacheManager: info.proteo.cupcake.data.cache.FileCacheManager
     ): info.proteo.cupcake.data.cache.MediaCacheHandler {
         return info.proteo.cupcake.data.cache.MediaCacheHandler(context, fileCacheManager)
@@ -1197,6 +1198,74 @@ object NetworkModule {
             mediaCacheHandler,
             cachedAnnotationService,
             cachedSharedDocumentService
+        )
+    }
+    
+    // Offline Management Providers
+    
+    @Provides
+    @Singleton
+    fun provideNetworkConnectivityMonitor(@dagger.hilt.android.qualifiers.ApplicationContext context: Context): info.proteo.cupcake.data.offline.NetworkConnectivityMonitor {
+        return info.proteo.cupcake.data.offline.NetworkConnectivityMonitor(context)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideOfflineAnnotationHandler(
+        annotationDao: AnnotationDao,
+        cachedAnnotationService: info.proteo.cupcake.data.cache.CachedAnnotationService,
+        fileCacheManager: info.proteo.cupcake.data.cache.FileCacheManager,
+        pendingChangesDao: info.proteo.cupcake.data.local.dao.offline.PendingChangesDao,
+        networkConnectivityMonitor: info.proteo.cupcake.data.offline.NetworkConnectivityMonitor
+    ): info.proteo.cupcake.data.offline.OfflineAnnotationHandler {
+        return info.proteo.cupcake.data.offline.OfflineAnnotationHandler(
+            annotationDao,
+            cachedAnnotationService,
+            fileCacheManager,
+            pendingChangesDao,
+            networkConnectivityMonitor
+        )
+    }
+    
+    @Provides
+    @Singleton
+    fun provideSyncService(
+        offlineAnnotationHandler: info.proteo.cupcake.data.offline.OfflineAnnotationHandler,
+        networkConnectivityMonitor: info.proteo.cupcake.data.offline.NetworkConnectivityMonitor,
+        pendingChangesDao: info.proteo.cupcake.data.local.dao.offline.PendingChangesDao,
+        pendingFileOperationsDao: info.proteo.cupcake.data.local.dao.offline.PendingFileOperationsDao,
+        cachedAnnotationService: info.proteo.cupcake.data.cache.CachedAnnotationService,
+        cachedSharedDocumentService: info.proteo.cupcake.data.cache.CachedSharedDocumentService
+    ): info.proteo.cupcake.data.offline.SyncService {
+        return info.proteo.cupcake.data.offline.SyncService(
+            offlineAnnotationHandler,
+            networkConnectivityMonitor,
+            pendingChangesDao,
+            pendingFileOperationsDao,
+            cachedAnnotationService,
+            cachedSharedDocumentService
+        )
+    }
+    
+    @Provides
+    @Singleton
+    fun provideOfflineManager(
+        offlineAnnotationHandler: info.proteo.cupcake.data.offline.OfflineAnnotationHandler,
+        syncService: info.proteo.cupcake.data.offline.SyncService,
+        cacheRepository: info.proteo.cupcake.data.repository.CacheRepository,
+        fileCacheManager: info.proteo.cupcake.data.cache.FileCacheManager,
+        networkConnectivityMonitor: info.proteo.cupcake.data.offline.NetworkConnectivityMonitor,
+        pendingChangesDao: info.proteo.cupcake.data.local.dao.offline.PendingChangesDao,
+        pendingFileOperationsDao: info.proteo.cupcake.data.local.dao.offline.PendingFileOperationsDao
+    ): info.proteo.cupcake.data.offline.OfflineManager {
+        return info.proteo.cupcake.data.offline.OfflineManager(
+            offlineAnnotationHandler,
+            syncService,
+            cacheRepository,
+            fileCacheManager,
+            networkConnectivityMonitor,
+            pendingChangesDao,
+            pendingFileOperationsDao
         )
     }
 
