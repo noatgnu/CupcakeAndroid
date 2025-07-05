@@ -247,15 +247,35 @@ class ProtocolServiceImpl @Inject constructor(
         protocolCreatedOn: String?
     ): Result<LimitOffsetResponse<ProtocolModel>> {
         return try {
+            Log.d("ProtocolService", "Fetching protocols with params: offset=$offset, limit=$limit, search=$search")
             val response = apiService.getProtocols(offset, limit, search, ordering, protocolTitle)
-            response.results.forEach { cacheProtocolModel(it) }
+            Log.d("ProtocolService", "Successfully received response with ${response.results.size} protocols")
+
+            response.results.forEachIndexed { index, protocol ->
+                try {
+                    Log.d("ProtocolService", "Caching protocol $index: id=${protocol.id}, title=${protocol.protocolTitle}")
+                    cacheProtocolModel(protocol)
+                    Log.d("ProtocolService", "Successfully cached protocol ${protocol.id}")
+                } catch (e: Exception) {
+                    Log.e("ProtocolService", "Failed to cache protocol ${protocol.id}", e)
+                }
+            }
+
             Result.success(response)
         } catch (e: Exception) {
+            Log.e("ProtocolService", "Failed to fetch protocols from API", e)
+            Log.e("ProtocolService", "Exception type: ${e.javaClass.simpleName}")
+            Log.e("ProtocolService", "Exception message: ${e.message}")
+            e.printStackTrace()
+
             try {
+                Log.d("ProtocolService", "Attempting to load protocols from cache")
                 val cachedItems = protocolModelDao.getAllProtocols(limit?:10, offset?:0).firstOrNull() ?: emptyList()
                 val domainObjects = cachedItems.map { it.toDomainModel() }
+                Log.d("ProtocolService", "Successfully loaded ${domainObjects.size} protocols from cache")
                 Result.success(LimitOffsetResponse(cachedItems.size, null, null, domainObjects))
             } catch (cacheEx: Exception) {
+                Log.e("ProtocolService", "Failed to load protocols from cache", cacheEx)
                 Result.failure(e)
             }
         }

@@ -15,7 +15,7 @@ data class MetadataColumn(
     @Json(name = "updated_at") val updatedAt: String?,
     @Json(name = "not_applicable") val notApplicable: Boolean = false,
     val mandatory: Boolean = false,
-    @Json(name = "modifiers") val modifiers: String = "", // JSON string
+    @Json(name = "modifiers") val modifiers: List<String>? = emptyList<String>(), // JSON string
 
     val readonly: Boolean = false,
     val hidden: Boolean = false,
