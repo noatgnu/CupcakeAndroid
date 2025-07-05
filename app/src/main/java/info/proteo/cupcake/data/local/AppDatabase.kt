@@ -112,7 +112,7 @@ import java.util.Date
         WebRTCUserChannelEntity::class,
         WebRTCUserOfferEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

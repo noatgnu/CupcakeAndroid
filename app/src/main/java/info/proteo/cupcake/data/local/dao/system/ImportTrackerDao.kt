@@ -39,6 +39,9 @@ interface ImportedObjectDao {
     @Query("SELECT * FROM imported_object WHERE import_tracker = :importTrackerId")
     fun getImportedObjectsByTracker(importTrackerId: Int): Flow<List<ImportedObjectEntity>>
 
+    @Query("SELECT * FROM imported_object WHERE id = :id")
+    suspend fun getImportedObjectById(id: Int): ImportedObjectEntity?
+
     @Query("SELECT * FROM imported_object WHERE object_type = :objectType AND object_id = :objectId")
     suspend fun getImportedObject(objectType: String, objectId: Int): ImportedObjectEntity?
 
@@ -60,6 +63,9 @@ interface ImportedFileDao {
     @Query("SELECT * FROM imported_file WHERE import_tracker = :importTrackerId")
     fun getImportedFilesByTracker(importTrackerId: Int): Flow<List<ImportedFileEntity>>
 
+    @Query("SELECT * FROM imported_file WHERE id = :id")
+    suspend fun getImportedFileById(id: Int): ImportedFileEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertImportedFile(importedFile: ImportedFileEntity)
 
@@ -77,6 +83,9 @@ interface ImportedFileDao {
 interface ImportedRelationshipDao {
     @Query("SELECT * FROM imported_relationship WHERE import_tracker = :importTrackerId")
     fun getImportedRelationshipsByTracker(importTrackerId: Int): Flow<List<ImportedRelationshipEntity>>
+
+    @Query("SELECT * FROM imported_relationship WHERE id = :id")
+    suspend fun getImportedRelationshipById(id: Int): ImportedRelationshipEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertImportedRelationship(importedRelationship: ImportedRelationshipEntity)

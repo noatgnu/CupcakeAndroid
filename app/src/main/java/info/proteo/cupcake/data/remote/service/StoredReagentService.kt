@@ -254,6 +254,8 @@ class StoredReagentServiceImpl @Inject constructor(
                     storedAt = null,
                     pngBase64 = null,
                     user = null,
+                    remoteId = null,
+                    remoteHost = null
                 ))
             } else {
                 val updatedName = if (storageObject.objectName.isNotEmpty())
@@ -338,7 +340,14 @@ class StoredReagentServiceImpl @Inject constructor(
             lastExpiryNotificationSent = entity.lastExpiryNotificationSent,
             isSubscribed = false,
             subscription = null,
-            subscriberCount = entity.subscriberCount
+            subscriberCount = entity.subscriberCount,
+            accessUsers = null,
+            accessLabGroups = null,
+            accessAll = entity.accessAll,
+            createdByProject = entity.createdByProject,
+            createdByProtocol = entity.createdByProtocol,
+            remoteId = entity.remoteId,
+            remoteHost = entity.remoteHost
         )
     }
 
@@ -364,7 +373,13 @@ class StoredReagentServiceImpl @Inject constructor(
             notifyDaysBeforeExpiry = notifyDaysBeforeExpiry,
             notifyOnExpiry = notifyOnExpiry,
             lastExpiryNotificationSent = lastExpiryNotificationSent,
-            subscriberCount = subscriberCount
+            subscriberCount = subscriberCount,
+            accessAll = accessAll ?: false,
+            createdByProject = createdByProject,
+            createdByProtocol = createdByProtocol,
+            createdByStep = createdByStep,
+            remoteId = null,
+            remoteHost = null
         )
     }
 }

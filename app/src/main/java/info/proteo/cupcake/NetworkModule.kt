@@ -27,6 +27,14 @@ import info.proteo.cupcake.data.local.dao.storage.StorageObjectDao
 import info.proteo.cupcake.data.local.dao.user.LabGroupDao
 import info.proteo.cupcake.data.local.dao.user.UserDao
 import info.proteo.cupcake.data.local.dao.user.UserPreferencesDao
+import info.proteo.cupcake.data.local.dao.system.ImportTrackerDao
+import info.proteo.cupcake.data.local.dao.system.ImportedObjectDao
+import info.proteo.cupcake.data.local.dao.system.ImportedFileDao
+import info.proteo.cupcake.data.local.dao.system.ImportedRelationshipDao
+import info.proteo.cupcake.data.local.dao.system.SiteSettingsDao
+import info.proteo.cupcake.data.local.dao.system.BackupLogDao
+import info.proteo.cupcake.data.local.dao.system.DocumentPermissionDao
+import info.proteo.cupcake.data.local.dao.system.RemoteHostDao
 import info.proteo.cupcake.data.model.api.user.User
 import info.proteo.cupcake.data.remote.LimitOffsetResponseAdapterFactory
 import info.proteo.cupcake.data.remote.interceptor.AuthInterceptor
@@ -95,6 +103,33 @@ import info.proteo.cupcake.data.remote.service.WebSocketService
 import info.proteo.cupcake.data.remote.service.MaintenanceLogApiService
 import info.proteo.cupcake.data.remote.service.MaintenanceLogService
 import info.proteo.cupcake.data.remote.service.MaintenanceLogServiceImpl
+import info.proteo.cupcake.data.remote.service.ImportTrackerApiService
+import info.proteo.cupcake.data.remote.service.ImportTrackerService
+import info.proteo.cupcake.data.remote.service.ImportTrackerServiceImpl
+import info.proteo.cupcake.data.remote.service.ImportedObjectApiService
+import info.proteo.cupcake.data.remote.service.ImportedObjectService
+import info.proteo.cupcake.data.remote.service.ImportedObjectServiceImpl
+import info.proteo.cupcake.data.remote.service.ImportedFileApiService
+import info.proteo.cupcake.data.remote.service.ImportedFileService
+import info.proteo.cupcake.data.remote.service.ImportedFileServiceImpl
+import info.proteo.cupcake.data.remote.service.ImportedRelationshipApiService
+import info.proteo.cupcake.data.remote.service.ImportedRelationshipService
+import info.proteo.cupcake.data.remote.service.ImportedRelationshipServiceImpl
+import info.proteo.cupcake.data.remote.service.SiteSettingsApiService
+import info.proteo.cupcake.data.remote.service.SiteSettingsService
+import info.proteo.cupcake.data.remote.service.SiteSettingsServiceImpl
+import info.proteo.cupcake.data.remote.service.BackupLogApiService
+import info.proteo.cupcake.data.remote.service.BackupLogService
+import info.proteo.cupcake.data.remote.service.BackupLogServiceImpl
+import info.proteo.cupcake.data.remote.service.DocumentPermissionApiService
+import info.proteo.cupcake.data.remote.service.DocumentPermissionService
+import info.proteo.cupcake.data.remote.service.DocumentPermissionServiceImpl
+import info.proteo.cupcake.data.remote.service.RemoteHostApiService
+import info.proteo.cupcake.data.remote.service.RemoteHostService
+import info.proteo.cupcake.data.remote.service.RemoteHostServiceImpl
+import info.proteo.cupcake.data.remote.service.SharedDocumentApiService
+import info.proteo.cupcake.data.remote.service.SharedDocumentService
+import info.proteo.cupcake.data.remote.service.SharedDocumentServiceImpl
 import info.proteo.cupcake.data.repository.AnnotationRepository
 import info.proteo.cupcake.data.repository.InstrumentRepository
 import info.proteo.cupcake.data.repository.InstrumentUsageRepository
@@ -890,6 +925,281 @@ object NetworkModule {
     ): MaintenanceLogRepository {
         return MaintenanceLogRepository(maintenanceLogService)
     }
+
+    // Import Services
+    @Provides
+    @Singleton
+    fun provideImportTrackerApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): ImportTrackerApiService {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
+            .build()
+            .create(ImportTrackerApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideImportTrackerService(
+        apiService: ImportTrackerApiService,
+        importTrackerDao: ImportTrackerDao
+    ): ImportTrackerService {
+        return ImportTrackerServiceImpl(apiService, importTrackerDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideImportedObjectApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): ImportedObjectApiService {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
+            .build()
+            .create(ImportedObjectApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideImportedObjectService(
+        apiService: ImportedObjectApiService,
+        importedObjectDao: ImportedObjectDao
+    ): ImportedObjectService {
+        return ImportedObjectServiceImpl(apiService, importedObjectDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideImportedFileApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): ImportedFileApiService {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
+            .build()
+            .create(ImportedFileApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideImportedFileService(
+        apiService: ImportedFileApiService,
+        importedFileDao: ImportedFileDao
+    ): ImportedFileService {
+        return ImportedFileServiceImpl(apiService, importedFileDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideImportedRelationshipApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): ImportedRelationshipApiService {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
+            .build()
+            .create(ImportedRelationshipApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideImportedRelationshipService(
+        apiService: ImportedRelationshipApiService,
+        importedRelationshipDao: ImportedRelationshipDao
+    ): ImportedRelationshipService {
+        return ImportedRelationshipServiceImpl(apiService, importedRelationshipDao)
+    }
+
+    // System Services
+    @Provides
+    @Singleton
+    fun provideSiteSettingsApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): SiteSettingsApiService {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
+            .build()
+            .create(SiteSettingsApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSiteSettingsService(
+        apiService: SiteSettingsApiService,
+        siteSettingsDao: SiteSettingsDao
+    ): SiteSettingsService {
+        return SiteSettingsServiceImpl(apiService, siteSettingsDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideBackupLogApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): BackupLogApiService {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
+            .build()
+            .create(BackupLogApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideBackupLogService(
+        apiService: BackupLogApiService,
+        backupLogDao: BackupLogDao
+    ): BackupLogService {
+        return BackupLogServiceImpl(apiService, backupLogDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideDocumentPermissionApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): DocumentPermissionApiService {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
+            .build()
+            .create(DocumentPermissionApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideDocumentPermissionService(
+        apiService: DocumentPermissionApiService,
+        documentPermissionDao: DocumentPermissionDao
+    ): DocumentPermissionService {
+        return DocumentPermissionServiceImpl(apiService, documentPermissionDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideRemoteHostApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): RemoteHostApiService {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
+            .build()
+            .create(RemoteHostApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideRemoteHostService(
+        apiService: RemoteHostApiService,
+        remoteHostDao: RemoteHostDao
+    ): RemoteHostService {
+        return RemoteHostServiceImpl(apiService, remoteHostDao)
+    }
+
+    // Shared Document Services
+    @Provides
+    @Singleton
+    fun provideSharedDocumentApiService(
+        @Named("baseUrl") baseUrl: String,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): SharedDocumentApiService {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
+            .build()
+            .create(SharedDocumentApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSharedDocumentService(
+        apiService: SharedDocumentApiService
+    ): SharedDocumentService {
+        return SharedDocumentServiceImpl(apiService)
+    }
+
+    // Cache Management Providers
+    
+    @Provides
+    @Singleton
+    fun provideFileCacheManager(context: Context): info.proteo.cupcake.data.cache.FileCacheManager {
+        return info.proteo.cupcake.data.cache.FileCacheManager(context)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideMediaCacheHandler(
+        context: Context,
+        fileCacheManager: info.proteo.cupcake.data.cache.FileCacheManager
+    ): info.proteo.cupcake.data.cache.MediaCacheHandler {
+        return info.proteo.cupcake.data.cache.MediaCacheHandler(context, fileCacheManager)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideCachedAnnotationService(
+        annotationService: AnnotationService,
+        fileCacheManager: info.proteo.cupcake.data.cache.FileCacheManager
+    ): info.proteo.cupcake.data.cache.CachedAnnotationService {
+        return info.proteo.cupcake.data.cache.CachedAnnotationService(annotationService, fileCacheManager)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideCachedSharedDocumentService(
+        sharedDocumentService: SharedDocumentService,
+        fileCacheManager: info.proteo.cupcake.data.cache.FileCacheManager,
+        @Named("authenticatedClient") okHttpClient: OkHttpClient
+    ): info.proteo.cupcake.data.cache.CachedSharedDocumentService {
+        return info.proteo.cupcake.data.cache.CachedSharedDocumentService(
+            sharedDocumentService, 
+            fileCacheManager, 
+            okHttpClient
+        )
+    }
+    
+    @Provides
+    @Singleton
+    fun provideCacheRepository(
+        fileCacheManager: info.proteo.cupcake.data.cache.FileCacheManager,
+        mediaCacheHandler: info.proteo.cupcake.data.cache.MediaCacheHandler,
+        cachedAnnotationService: info.proteo.cupcake.data.cache.CachedAnnotationService,
+        cachedSharedDocumentService: info.proteo.cupcake.data.cache.CachedSharedDocumentService
+    ): info.proteo.cupcake.data.repository.CacheRepository {
+        return info.proteo.cupcake.data.repository.CacheRepository(
+            fileCacheManager,
+            mediaCacheHandler,
+            cachedAnnotationService,
+            cachedSharedDocumentService
+        )
+    }
+
 }
 
 class JsonResponseInterceptor : Interceptor {

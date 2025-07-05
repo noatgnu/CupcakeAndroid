@@ -25,8 +25,10 @@ data class AnnotationEntity(
     @ColumnInfo(name = "fixed") val fixed: Boolean?,
     @ColumnInfo(name = "user_id") val userId: Int?,
     @ColumnInfo(name = "stored_reagent") val storedReagent: Int?,
-    @ColumnInfo(name = "folder_id") val folderId: Int?
-
+    @ColumnInfo(name = "folder_id") val folderId: Int?,
+    // Offline support fields
+    @ColumnInfo(name = "is_deleted") val isDeleted: Boolean = false,
+    @ColumnInfo(name = "is_temp_id") val isTempId: Boolean = false
 )
 
 @Entity(tableName = "annotation_folder_path")

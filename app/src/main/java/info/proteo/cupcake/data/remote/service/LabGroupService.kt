@@ -289,7 +289,9 @@ class LabGroupServiceImpl @Inject constructor(
                 description = labGroup.description,
                 defaultStorage = labGroup.defaultStorage?.id,
                 isProfessional = labGroup.isProfessional,
-                serviceStorage = labGroup.serviceStorage?.id
+                serviceStorage = labGroup.serviceStorage?.id,
+                remoteId = null,
+                remoteHost = null
             )
         )
 
@@ -310,6 +312,8 @@ class LabGroupServiceImpl @Inject constructor(
                         storedAt = null,
                         pngBase64 = null,
                         user = null,
+                        remoteId = null,
+                        remoteHost = null
                     )
                 )
             }
@@ -330,6 +334,8 @@ class LabGroupServiceImpl @Inject constructor(
                         storedAt = null,
                         pngBase64 = null,
                         user = null,
+                        remoteId = null,
+                        remoteHost = null
                     )
                 )
             }

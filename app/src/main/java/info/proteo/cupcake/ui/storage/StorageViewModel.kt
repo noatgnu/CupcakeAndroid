@@ -129,7 +129,9 @@ class StorageViewModel @Inject constructor(
                     user = null,
                     accessLabGroups = null,
                     pathToRoot = null,
-                    childCount = 0
+                    childCount = 0,
+                    remoteId = null,
+                    remoteHost = null
                 ))
             }
 
@@ -173,7 +175,9 @@ class StorageViewModel @Inject constructor(
                     user = null,
                     accessLabGroups = null,
                     pathToRoot = null,
-                    childCount = 0
+                    childCount = 0,
+                    remoteId = null,
+                    remoteHost = null
                 )
                 
                 storageRepository.createStorageObject(newStorageObject).onSuccess {

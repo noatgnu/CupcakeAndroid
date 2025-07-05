@@ -51,6 +51,9 @@ interface AnnotationDao {
 
     @Query("SELECT COUNT(*) FROM annotation WHERE folder_id = :folderId")
     fun countByFolderId(folderId: Int): Flow<Int>
+
+    @Query("SELECT * FROM annotation ORDER BY created_at DESC")
+    fun getAllAnnotations(): Flow<List<AnnotationEntity>>
 }
 
 @Dao
