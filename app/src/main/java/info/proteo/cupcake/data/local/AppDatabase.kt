@@ -11,7 +11,7 @@ import info.proteo.cupcake.data.local.entity.instrument.*
 import info.proteo.cupcake.data.local.entity.metadatacolumn.*
 import info.proteo.cupcake.data.local.entity.project.ProjectEntity
 import info.proteo.cupcake.data.local.entity.reagent.*
-import info.proteo.cupcake.data.local.entity.storage.StorageObjectEntity
+import info.proteo.cupcake.data.local.entity.storage.*
 import info.proteo.cupcake.data.local.entity.instrument.*
 import info.proteo.cupcake.data.local.entity.message.*
 import info.proteo.cupcake.data.local.entity.protocol.*
@@ -26,7 +26,7 @@ import info.proteo.cupcake.data.local.dao.instrument.*
 import info.proteo.cupcake.data.local.dao.metadatacolumn.*
 import info.proteo.cupcake.data.local.dao.project.ProjectDao
 import info.proteo.cupcake.data.local.dao.reagent.*
-import info.proteo.cupcake.data.local.dao.storage.StorageObjectDao
+import info.proteo.cupcake.data.local.dao.storage.*
 import info.proteo.cupcake.data.local.dao.instrument.*
 import info.proteo.cupcake.data.local.dao.message.*
 import info.proteo.cupcake.data.local.dao.protocol.*
@@ -74,8 +74,11 @@ import java.util.Date
         InstrumentEntity::class,
         InstrumentUsageEntity::class,
         StorageObjectEntity::class,
+        StorageObjectAccessLabGroupCrossRef::class,
         ReagentSubscriptionEntity::class,
         StoredReagentEntity::class,
+        StoredReagentAccessUserCrossRef::class,
+        StoredReagentAccessLabGroupCrossRef::class,
         ReagentActionEntity::class,
         LabGroupEntity::class,
         MetadataColumnEntity::class,
@@ -92,6 +95,8 @@ import java.util.Date
         FavouriteMetadataOptionEntity::class,
         PresetEntity::class,
         MetadataTableTemplateEntity::class,
+        MetadataTableTemplateUserColumnCrossRef::class,
+        MetadataTableTemplateStaffColumnCrossRef::class,
         MSUniqueVocabulariesEntity::class,
         HumanDiseaseEntity::class,
         UserPreferencesEntity::class,
@@ -99,6 +104,10 @@ import java.util.Date
         SiteSettingsEntity::class,
         BackupLogEntity::class,
         DocumentPermissionEntity::class,
+        ImportTrackerEntity::class,
+        ImportedObjectEntity::class,
+        ImportedFileEntity::class,
+        ImportedRelationshipEntity::class,
         WebRTCSessionEntity::class,
         WebRTCUserChannelEntity::class,
         WebRTCUserOfferEntity::class
@@ -135,9 +144,11 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun instrumentDao(): InstrumentDao
     abstract fun instrumentUsageDao(): InstrumentUsageDao
     abstract fun storageObjectDao(): StorageObjectDao
+    abstract fun storageAccessDao(): StorageAccessDao
     abstract fun reagentSubscriptionDao(): ReagentSubscriptionDao
     abstract fun storedReagentDao(): StoredReagentDao
     abstract fun reagentActionDao(): ReagentActionDao
+    abstract fun reagentAccessDao(): ReagentAccessDao
     abstract fun labGroupDao(): LabGroupDao
     abstract fun metadataColumnDao(): MetadataColumnDao
     abstract fun messageDao(): MessageDao
@@ -153,6 +164,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun favouriteMetadataOptionDao(): FavouriteMetadataOptionDao
     abstract fun presetDao(): PresetDao
     abstract fun metadataTableTemplateDao(): MetadataTableTemplateDao
+    abstract fun metadataTemplateDao(): MetadataTemplateDao
     abstract fun msUniqueVocabulariesDao(): MSUniqueVocabulariesDao
     abstract fun humanDiseaseDao(): HumanDiseaseDao
     abstract fun userPreferencesDao(): UserPreferencesDao
@@ -163,6 +175,10 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun siteSettingsDao(): SiteSettingsDao
     abstract fun backupLogDao(): BackupLogDao
     abstract fun documentPermissionDao(): DocumentPermissionDao
+    abstract fun importTrackerDao(): ImportTrackerDao
+    abstract fun importedObjectDao(): ImportedObjectDao
+    abstract fun importedFileDao(): ImportedFileDao
+    abstract fun importedRelationshipDao(): ImportedRelationshipDao
     
     // Communication DAOs
     abstract fun webRTCSessionDao(): WebRTCSessionDao

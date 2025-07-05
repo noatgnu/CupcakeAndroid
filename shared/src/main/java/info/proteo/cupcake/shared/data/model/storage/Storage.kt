@@ -25,7 +25,9 @@ data class StorageObject(
     val user: String?,
     @Json(name = "access_lab_groups") val accessLabGroups: List<Int>?,
     @Json(name = "path_to_root") val pathToRoot: List<StoragePathItem>?,
-    @Json(name = "child_count") val childCount: Int
+    @Json(name = "child_count") val childCount: Int,
+    @Json(name = "remote_id") val remoteId: Long?,
+    @Json(name = "remote_host") val remoteHost: Int?
 )
 
 @JsonClass(generateAdapter = true)

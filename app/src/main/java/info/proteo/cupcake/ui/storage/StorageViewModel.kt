@@ -155,6 +155,39 @@ class StorageViewModel @Inject constructor(
     fun refresh() {
         loadStorageObjects(currentParentId)
     }
+    
+    fun createStorageObject(name: String, type: String, parentId: Int?) {
+        viewModelScope.launch {
+            try {
+                val newStorageObject = StorageObject(
+                    id = 0, // Will be assigned by server
+                    objectName = name,
+                    objectType = type,
+                    objectDescription = null,
+                    createdAt = null,
+                    updatedAt = null,
+                    canDelete = true,
+                    storedAt = parentId,
+                    storedReagents = null,
+                    pngBase64 = null,
+                    user = null,
+                    accessLabGroups = null,
+                    pathToRoot = null,
+                    childCount = 0
+                )
+                
+                storageRepository.createStorageObject(newStorageObject).onSuccess {
+                    // Refresh the current view to show the new object
+                    refresh()
+                }.onFailure { exception ->
+                    Log.e("StorageViewModel", "Error creating storage object: ${exception.message}")
+                    // Could emit error state here if needed
+                }
+            } catch (e: Exception) {
+                Log.e("StorageViewModel", "Exception creating storage object: ${e.message}")
+            }
+        }
+    }
 }
 
 sealed class StorageUiState {

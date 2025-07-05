@@ -31,7 +31,21 @@ data class SiteSettings(
     @Json(name = "footer_text") val footerText: String?,
     @Json(name = "created_at") val createdAt: String?,
     @Json(name = "updated_at") val updatedAt: String?,
-    @Json(name = "updated_by") val updatedBy: UserBasic?
+    @Json(name = "updated_by") val updatedBy: UserBasic?,
+    // Import restrictions
+    @Json(name = "allow_import_protocols") val allowImportProtocols: Boolean,
+    @Json(name = "allow_import_reagents") val allowImportReagents: Boolean,
+    @Json(name = "allow_import_storage_objects") val allowImportStorageObjects: Boolean,
+    @Json(name = "allow_import_instruments") val allowImportInstruments: Boolean,
+    @Json(name = "allow_import_users") val allowImportUsers: Boolean,
+    @Json(name = "allow_import_lab_groups") val allowImportLabGroups: Boolean,
+    @Json(name = "allow_import_sessions") val allowImportSessions: Boolean,
+    @Json(name = "allow_import_projects") val allowImportProjects: Boolean,
+    @Json(name = "allow_import_annotations") val allowImportAnnotations: Boolean,
+    @Json(name = "allow_import_metadata") val allowImportMetadata: Boolean,
+    @Json(name = "staff_only_import_override") val staffOnlyImportOverride: Boolean,
+    @Json(name = "import_archive_size_limit_mb") val importArchiveSizeLimitMb: Int,
+    @Json(name = "available_import_options") val availableImportOptions: List<String>?
 )
 
 @JsonClass(generateAdapter = true)
@@ -74,4 +88,62 @@ data class DocumentPermission(
     @Json(name = "last_accessed") val lastAccessed: String?,
     @Json(name = "access_count") val accessCount: Int,
     @Json(name = "is_expired") val isExpired: Boolean?
+)
+
+@JsonClass(generateAdapter = true)
+data class ImportTracker(
+    val id: Int,
+    @Json(name = "import_type") val importType: String?,
+    @Json(name = "import_status") val importStatus: String?,
+    @Json(name = "created_at") val createdAt: String?,
+    @Json(name = "updated_at") val updatedAt: String?,
+    @Json(name = "created_by") val createdBy: UserBasic?,
+    @Json(name = "import_name") val importName: String?,
+    @Json(name = "import_description") val importDescription: String?,
+    @Json(name = "total_objects") val totalObjects: Int?,
+    @Json(name = "processed_objects") val processedObjects: Int?,
+    @Json(name = "created_objects") val createdObjects: Int?,
+    @Json(name = "updated_objects") val updatedObjects: Int?,
+    @Json(name = "failed_objects") val failedObjects: Int?,
+    @Json(name = "error_log") val errorLog: String?,
+    @Json(name = "import_metadata") val importMetadata: String?,
+    @Json(name = "file_size_bytes") val fileSizeBytes: Long?,
+    @Json(name = "lab_group") val labGroup: LabGroup?,
+    @Json(name = "imported_objects") val importedObjects: List<ImportedObject>?,
+    @Json(name = "imported_files") val importedFiles: List<ImportedFile>?,
+    @Json(name = "imported_relationships") val importedRelationships: List<ImportedRelationship>?
+)
+
+@JsonClass(generateAdapter = true)
+data class ImportedObject(
+    val id: Int,
+    @Json(name = "import_tracker") val importTracker: Int,
+    @Json(name = "object_type") val objectType: String,
+    @Json(name = "object_id") val objectId: Int,
+    @Json(name = "action_type") val actionType: String,
+    @Json(name = "created_at") val createdAt: String?,
+    @Json(name = "object_data") val objectData: String?
+)
+
+@JsonClass(generateAdapter = true)
+data class ImportedFile(
+    val id: Int,
+    @Json(name = "import_tracker") val importTracker: Int,
+    @Json(name = "file_path") val filePath: String,
+    @Json(name = "original_filename") val originalFilename: String?,
+    @Json(name = "file_size_bytes") val fileSizeBytes: Int?,
+    @Json(name = "file_hash") val fileHash: String?,
+    @Json(name = "created_at") val createdAt: String?
+)
+
+@JsonClass(generateAdapter = true)
+data class ImportedRelationship(
+    val id: Int,
+    @Json(name = "import_tracker") val importTracker: Int,
+    @Json(name = "relationship_type") val relationshipType: String,
+    @Json(name = "parent_model") val parentModel: String,
+    @Json(name = "parent_id") val parentId: Int,
+    @Json(name = "child_model") val childModel: String,
+    @Json(name = "child_id") val childId: Int,
+    @Json(name = "created_at") val createdAt: String?
 )

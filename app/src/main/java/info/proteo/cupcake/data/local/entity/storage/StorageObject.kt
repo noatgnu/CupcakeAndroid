@@ -15,6 +15,17 @@ data class StorageObjectEntity(
     @ColumnInfo(name = "can_delete") val canDelete: Boolean,
     @ColumnInfo(name = "stored_at") val storedAt: Int?,
     @ColumnInfo(name = "png_base64") val pngBase64: String?,
-    val user: String?
+    val user: String?,
+    @ColumnInfo(name = "remote_id") val remoteId: Long?,
+    @ColumnInfo(name = "remote_host") val remoteHost: Int?
+)
+
+@Entity(
+    tableName = "storage_object_access_lab_group",
+    primaryKeys = ["storageObjectId", "labGroupId"]
+)
+data class StorageObjectAccessLabGroupCrossRef(
+    val storageObjectId: Int,
+    val labGroupId: Int
 )
 

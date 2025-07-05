@@ -39,12 +39,28 @@ class SystemRepository @Inject constructor(
         bannerDismissible: Boolean? = null,
         primaryColor: String? = null,
         secondaryColor: String? = null,
-        footerText: String? = null
+        footerText: String? = null,
+        allowImportProtocols: Boolean? = null,
+        allowImportReagents: Boolean? = null,
+        allowImportStorageObjects: Boolean? = null,
+        allowImportInstruments: Boolean? = null,
+        allowImportUsers: Boolean? = null,
+        allowImportLabGroups: Boolean? = null,
+        allowImportSessions: Boolean? = null,
+        allowImportProjects: Boolean? = null,
+        allowImportAnnotations: Boolean? = null,
+        allowImportMetadata: Boolean? = null,
+        staffOnlyImportOverride: Boolean? = null,
+        importArchiveSizeLimitMb: Int? = null
     ): Result<SiteSettings> {
         return siteSettingsService.createSettings(
             siteName, siteTagline, logo, favicon, bannerEnabled, bannerText,
             bannerColor, bannerTextColor, bannerDismissible, primaryColor,
-            secondaryColor, footerText
+            secondaryColor, footerText, allowImportProtocols, allowImportReagents,
+            allowImportStorageObjects, allowImportInstruments, allowImportUsers,
+            allowImportLabGroups, allowImportSessions, allowImportProjects,
+            allowImportAnnotations, allowImportMetadata, staffOnlyImportOverride,
+            importArchiveSizeLimitMb
         )
     }
 
@@ -61,12 +77,28 @@ class SystemRepository @Inject constructor(
         bannerDismissible: Boolean? = null,
         primaryColor: String? = null,
         secondaryColor: String? = null,
-        footerText: String? = null
+        footerText: String? = null,
+        allowImportProtocols: Boolean? = null,
+        allowImportReagents: Boolean? = null,
+        allowImportStorageObjects: Boolean? = null,
+        allowImportInstruments: Boolean? = null,
+        allowImportUsers: Boolean? = null,
+        allowImportLabGroups: Boolean? = null,
+        allowImportSessions: Boolean? = null,
+        allowImportProjects: Boolean? = null,
+        allowImportAnnotations: Boolean? = null,
+        allowImportMetadata: Boolean? = null,
+        staffOnlyImportOverride: Boolean? = null,
+        importArchiveSizeLimitMb: Int? = null
     ): Result<SiteSettings> {
         return siteSettingsService.updateSettings(
             id, siteName, siteTagline, logo, favicon, bannerEnabled, bannerText,
             bannerColor, bannerTextColor, bannerDismissible, primaryColor,
-            secondaryColor, footerText
+            secondaryColor, footerText, allowImportProtocols, allowImportReagents,
+            allowImportStorageObjects, allowImportInstruments, allowImportUsers,
+            allowImportLabGroups, allowImportSessions, allowImportProjects,
+            allowImportAnnotations, allowImportMetadata, staffOnlyImportOverride,
+            importArchiveSizeLimitMb
         )
     }
 
@@ -83,12 +115,28 @@ class SystemRepository @Inject constructor(
         bannerDismissible: Boolean? = null,
         primaryColor: String? = null,
         secondaryColor: String? = null,
-        footerText: String? = null
+        footerText: String? = null,
+        allowImportProtocols: Boolean? = null,
+        allowImportReagents: Boolean? = null,
+        allowImportStorageObjects: Boolean? = null,
+        allowImportInstruments: Boolean? = null,
+        allowImportUsers: Boolean? = null,
+        allowImportLabGroups: Boolean? = null,
+        allowImportSessions: Boolean? = null,
+        allowImportProjects: Boolean? = null,
+        allowImportAnnotations: Boolean? = null,
+        allowImportMetadata: Boolean? = null,
+        staffOnlyImportOverride: Boolean? = null,
+        importArchiveSizeLimitMb: Int? = null
     ): Result<SiteSettings> {
         return siteSettingsService.patchSettings(
             id, siteName, siteTagline, logo, favicon, bannerEnabled, bannerText,
             bannerColor, bannerTextColor, bannerDismissible, primaryColor,
-            secondaryColor, footerText
+            secondaryColor, footerText, allowImportProtocols, allowImportReagents,
+            allowImportStorageObjects, allowImportInstruments, allowImportUsers,
+            allowImportLabGroups, allowImportSessions, allowImportProjects,
+            allowImportAnnotations, allowImportMetadata, staffOnlyImportOverride,
+            importArchiveSizeLimitMb
         )
     }
 

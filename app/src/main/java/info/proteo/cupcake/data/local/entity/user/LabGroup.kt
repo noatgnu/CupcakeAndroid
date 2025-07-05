@@ -19,5 +19,7 @@ data class LabGroupEntity(
     val description: String?,
     @ColumnInfo(name = "default_storage") val defaultStorage: Int?,
     @ColumnInfo(name = "is_professional") val isProfessional: Boolean,
-    @ColumnInfo(name = "service_storage") val serviceStorage: Int?
+    @ColumnInfo(name = "service_storage") val serviceStorage: Int?,
+    @ColumnInfo(name = "remote_id") val remoteId: Long?,
+    @ColumnInfo(name = "remote_host") val remoteHost: Int?
 )

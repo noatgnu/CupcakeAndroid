@@ -195,21 +195,6 @@ class StorageFragment : Fragment() {
         binding.buttonViewReagents.apply {
             visibility = View.GONE
         }
-
-        binding.buttonCreateReagent.apply {
-            visibility = View.GONE
-            setOnClickListener {
-                val currentStorage = viewModel.currentPath.value.lastOrNull()
-                val storageName = currentStorage?.objectName ?: ""
-
-                val intent = Intent(requireContext(), StoredReagentActivity::class.java).apply {
-                    putExtra(StoredReagentActivity.EXTRA_STORAGE_OBJECT_ID, currentStorageObjectId)
-                    putExtra(StoredReagentActivity.EXTRA_STORAGE_NAME, storageName)
-                    putExtra(StoredReagentActivity.EXTRA_CREATE_REAGENT, true)
-                }
-                startActivity(intent)
-            }
-        }
     }
 
     private fun setupSearchFunctionality() {
@@ -225,32 +210,101 @@ class StorageFragment : Fragment() {
 
     private fun setupFAB() {
         binding.fabStorageAction.setOnClickListener {
-            // Show storage actions menu or perform default action
-            if (currentStorageObjectId != null) {
-                // Inside a storage location - create reagent
-                val currentStorage = viewModel.currentPath.value.lastOrNull()
-                val storageName = currentStorage?.objectName ?: ""
-
-                val intent = Intent(requireContext(), StoredReagentActivity::class.java).apply {
-                    putExtra(StoredReagentActivity.EXTRA_STORAGE_OBJECT_ID, currentStorageObjectId)
-                    putExtra(StoredReagentActivity.EXTRA_STORAGE_NAME, storageName)
-                    putExtra(StoredReagentActivity.EXTRA_CREATE_REAGENT, true)
-                }
-                startActivity(intent)
-            } else {
-                // At root level - show barcode scanner
-                openBarcodeScanner()
-            }
+            // Always show create menu for + FAB
+            showStorageActionMenu()
         }
+    }
+
+    private fun showStorageActionMenu() {
+        val options = if (currentStorageObjectId != null) {
+            // Inside a storage location - can create both
+            arrayOf(
+                "Create Reagent",
+                "Create Storage Object"
+            )
+        } else {
+            // At root level - can only create storage objects
+            arrayOf(
+                "Create Storage Object"
+            )
+        }
+        
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Create New")
+            .setItems(options) { _, which ->
+                if (currentStorageObjectId != null) {
+                    // Inside storage location
+                    when (which) {
+                        0 -> createReagent()
+                        1 -> createStorageObject()
+                    }
+                } else {
+                    // At root level
+                    when (which) {
+                        0 -> createStorageObject()
+                    }
+                }
+            }
+            .show()
+    }
+    
+    private fun createReagent() {
+        val currentStorage = viewModel.currentPath.value.lastOrNull()
+        val storageName = currentStorage?.objectName ?: ""
+
+        val intent = Intent(requireContext(), StoredReagentActivity::class.java).apply {
+            putExtra(StoredReagentActivity.EXTRA_STORAGE_OBJECT_ID, currentStorageObjectId)
+            putExtra(StoredReagentActivity.EXTRA_STORAGE_NAME, storageName)
+            putExtra(StoredReagentActivity.EXTRA_CREATE_REAGENT, true)
+        }
+        startActivity(intent)
+    }
+    
+    private fun createStorageObject() {
+        val dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_create_storage_object, null)
+        
+        val nameInput = dialogView.findViewById<EditText>(R.id.editTextStorageName)
+        val typeDropdown = dialogView.findViewById<com.google.android.material.textfield.MaterialAutoCompleteTextView>(R.id.autoCompleteStorageType)
+        
+        // Define storage types based on backend model
+        val storageTypes = arrayOf(
+            "shelf", "box", "fridge", "freezer", 
+            "room", "building", "floor", "other"
+        )
+        
+        val storageTypeLabels = arrayOf(
+            "Shelf", "Box", "Fridge", "Freezer",
+            "Room", "Building", "Floor", "Other"
+        )
+        
+        val adapter = android.widget.ArrayAdapter(requireContext(), 
+            android.R.layout.simple_dropdown_item_1line, storageTypeLabels)
+        typeDropdown.setAdapter(adapter)
+        typeDropdown.setText("Shelf", false) // Set default to Shelf
+        
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Create Storage Object")
+            .setView(dialogView)
+            .setPositiveButton("Create") { _, _ ->
+                val name = nameInput.text.toString().trim()
+                val selectedIndex = storageTypeLabels.indexOf(typeDropdown.text.toString())
+                val type = if (selectedIndex >= 0) storageTypes[selectedIndex] else "shelf"
+                
+                if (name.isNotEmpty()) {
+                    viewModel.createStorageObject(name, type, currentStorageObjectId)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun checkForStoredReagents(storageObjectId: Int) {
         viewLifecycleOwner.lifecycleScope.launch {
             binding.buttonViewReagents.visibility = View.GONE
 
-            // Show the buttons card and create reagent button when inside a storage location
+            // Show the buttons card when inside a storage location
             binding.buttonsCard.visibility = View.VISIBLE
-            binding.buttonCreateReagent.visibility = View.VISIBLE
             
             // Show FAB for actions
             binding.fabStorageAction.visibility = View.VISIBLE
@@ -269,9 +323,8 @@ class StorageFragment : Fragment() {
                     }
                 }
             } catch (e: Exception) {
-                // Even in case of error, keep the create button and card visible
+                // Even in case of error, keep the card visible
                 binding.buttonsCard.visibility = View.VISIBLE
-                binding.buttonCreateReagent.visibility = View.VISIBLE
             }
         }
     }

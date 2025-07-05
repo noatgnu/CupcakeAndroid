@@ -15,7 +15,7 @@ data class MetadataColumn(
     @Json(name = "updated_at") val updatedAt: String?,
     @Json(name = "not_applicable") val notApplicable: Boolean = false,
     val mandatory: Boolean = false,
-    @Json(name = "modifiers") val modifiers: List<Map<String, Any>> = emptyList(),
+    @Json(name = "modifiers") val modifiers: String = "", // JSON string
 
     val readonly: Boolean = false,
     val hidden: Boolean = false,
@@ -44,19 +44,4 @@ data class Preset(
     val user: Int?,
     @Json(name = "created_at") val createdAt: String?,
     @Json(name = "updated_at") val updatedAt: String?
-)
-@JsonClass(generateAdapter = true)
-data class MetadataTableTemplate(
-    val id: Int,
-    val name: String?,
-    val user: Int?,
-    @Json(name = "created_at") val createdAt: String?,
-    @Json(name = "updated_at") val updatedAt: String?,
-    @Json(name = "user_columns") val userColumns: List<MetadataColumn>?,
-    @Json(name = "hidden_user_columns") val hiddenUserColumns: Int?,
-    @Json(name = "staff_columns") val staffColumns: List<MetadataColumn>?,
-    @Json(name = "hidden_staff_columns") val hiddenStaffColumns: Int?,
-    @Json(name = "service_lab_group") val serviceLabGroup: Int?,
-    @Json(name = "lab_group") val labGroup: Int?,
-    @Json(name = "field_mask_mapping") val fieldMaskMapping: List<String>?
 )

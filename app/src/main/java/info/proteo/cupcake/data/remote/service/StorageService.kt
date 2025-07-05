@@ -312,7 +312,9 @@ class StorageObjectServiceImpl @Inject constructor(
             canDelete = canDelete,
             storedAt = storedAt,
             pngBase64 = pngBase64,
-            user = user
+            user = user,
+            remoteId = remoteId,
+            remoteHost = remoteHost
         )
     }
 
@@ -328,6 +330,8 @@ class StorageObjectServiceImpl @Inject constructor(
             storedAt = storedAt,
             pngBase64 = pngBase64,
             user = user,
+            remoteId = remoteId,
+            remoteHost = remoteHost,
             storedReagents = null,
             accessLabGroups = null,
             pathToRoot = null,

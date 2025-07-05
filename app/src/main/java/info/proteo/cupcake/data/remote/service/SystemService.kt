@@ -45,7 +45,20 @@ data class SiteSettingsRequest(
     @Json(name = "banner_dismissible") val bannerDismissible: Boolean?,
     @Json(name = "primary_color") val primaryColor: String?,
     @Json(name = "secondary_color") val secondaryColor: String?,
-    @Json(name = "footer_text") val footerText: String?
+    @Json(name = "footer_text") val footerText: String?,
+    // Import restrictions
+    @Json(name = "allow_import_protocols") val allowImportProtocols: Boolean?,
+    @Json(name = "allow_import_reagents") val allowImportReagents: Boolean?,
+    @Json(name = "allow_import_storage_objects") val allowImportStorageObjects: Boolean?,
+    @Json(name = "allow_import_instruments") val allowImportInstruments: Boolean?,
+    @Json(name = "allow_import_users") val allowImportUsers: Boolean?,
+    @Json(name = "allow_import_lab_groups") val allowImportLabGroups: Boolean?,
+    @Json(name = "allow_import_sessions") val allowImportSessions: Boolean?,
+    @Json(name = "allow_import_projects") val allowImportProjects: Boolean?,
+    @Json(name = "allow_import_annotations") val allowImportAnnotations: Boolean?,
+    @Json(name = "allow_import_metadata") val allowImportMetadata: Boolean?,
+    @Json(name = "staff_only_import_override") val staffOnlyImportOverride: Boolean?,
+    @Json(name = "import_archive_size_limit_mb") val importArchiveSizeLimitMb: Int?
 )
 
 @JsonClass(generateAdapter = true)
@@ -163,9 +176,9 @@ interface RemoteHostApiService {
 
 interface SiteSettingsService {
     suspend fun getCurrentSettings(): Result<SiteSettings>
-    suspend fun createSettings(siteName: String?, siteTagline: String?, logo: String?, favicon: String?, bannerEnabled: Boolean?, bannerText: String?, bannerColor: String?, bannerTextColor: String?, bannerDismissible: Boolean?, primaryColor: String?, secondaryColor: String?, footerText: String?): Result<SiteSettings>
-    suspend fun updateSettings(id: Int, siteName: String?, siteTagline: String?, logo: String?, favicon: String?, bannerEnabled: Boolean?, bannerText: String?, bannerColor: String?, bannerTextColor: String?, bannerDismissible: Boolean?, primaryColor: String?, secondaryColor: String?, footerText: String?): Result<SiteSettings>
-    suspend fun patchSettings(id: Int, siteName: String?, siteTagline: String?, logo: String?, favicon: String?, bannerEnabled: Boolean?, bannerText: String?, bannerColor: String?, bannerTextColor: String?, bannerDismissible: Boolean?, primaryColor: String?, secondaryColor: String?, footerText: String?): Result<SiteSettings>
+    suspend fun createSettings(siteName: String?, siteTagline: String?, logo: String?, favicon: String?, bannerEnabled: Boolean?, bannerText: String?, bannerColor: String?, bannerTextColor: String?, bannerDismissible: Boolean?, primaryColor: String?, secondaryColor: String?, footerText: String?, allowImportProtocols: Boolean?, allowImportReagents: Boolean?, allowImportStorageObjects: Boolean?, allowImportInstruments: Boolean?, allowImportUsers: Boolean?, allowImportLabGroups: Boolean?, allowImportSessions: Boolean?, allowImportProjects: Boolean?, allowImportAnnotations: Boolean?, allowImportMetadata: Boolean?, staffOnlyImportOverride: Boolean?, importArchiveSizeLimitMb: Int?): Result<SiteSettings>
+    suspend fun updateSettings(id: Int, siteName: String?, siteTagline: String?, logo: String?, favicon: String?, bannerEnabled: Boolean?, bannerText: String?, bannerColor: String?, bannerTextColor: String?, bannerDismissible: Boolean?, primaryColor: String?, secondaryColor: String?, footerText: String?, allowImportProtocols: Boolean?, allowImportReagents: Boolean?, allowImportStorageObjects: Boolean?, allowImportInstruments: Boolean?, allowImportUsers: Boolean?, allowImportLabGroups: Boolean?, allowImportSessions: Boolean?, allowImportProjects: Boolean?, allowImportAnnotations: Boolean?, allowImportMetadata: Boolean?, staffOnlyImportOverride: Boolean?, importArchiveSizeLimitMb: Int?): Result<SiteSettings>
+    suspend fun patchSettings(id: Int, siteName: String?, siteTagline: String?, logo: String?, favicon: String?, bannerEnabled: Boolean?, bannerText: String?, bannerColor: String?, bannerTextColor: String?, bannerDismissible: Boolean?, primaryColor: String?, secondaryColor: String?, footerText: String?, allowImportProtocols: Boolean?, allowImportReagents: Boolean?, allowImportStorageObjects: Boolean?, allowImportInstruments: Boolean?, allowImportUsers: Boolean?, allowImportLabGroups: Boolean?, allowImportSessions: Boolean?, allowImportProjects: Boolean?, allowImportAnnotations: Boolean?, allowImportMetadata: Boolean?, staffOnlyImportOverride: Boolean?, importArchiveSizeLimitMb: Int?): Result<SiteSettings>
 }
 
 interface BackupLogService {
@@ -218,10 +231,10 @@ class SiteSettingsServiceImpl @Inject constructor(
         }
     }
 
-    override suspend fun createSettings(siteName: String?, siteTagline: String?, logo: String?, favicon: String?, bannerEnabled: Boolean?, bannerText: String?, bannerColor: String?, bannerTextColor: String?, bannerDismissible: Boolean?, primaryColor: String?, secondaryColor: String?, footerText: String?): Result<SiteSettings> {
+    override suspend fun createSettings(siteName: String?, siteTagline: String?, logo: String?, favicon: String?, bannerEnabled: Boolean?, bannerText: String?, bannerColor: String?, bannerTextColor: String?, bannerDismissible: Boolean?, primaryColor: String?, secondaryColor: String?, footerText: String?, allowImportProtocols: Boolean?, allowImportReagents: Boolean?, allowImportStorageObjects: Boolean?, allowImportInstruments: Boolean?, allowImportUsers: Boolean?, allowImportLabGroups: Boolean?, allowImportSessions: Boolean?, allowImportProjects: Boolean?, allowImportAnnotations: Boolean?, allowImportMetadata: Boolean?, staffOnlyImportOverride: Boolean?, importArchiveSizeLimitMb: Int?): Result<SiteSettings> {
         return withContext(Dispatchers.IO) {
             try {
-                val request = SiteSettingsRequest(siteName, siteTagline, logo, favicon, bannerEnabled, bannerText, bannerColor, bannerTextColor, bannerDismissible, primaryColor, secondaryColor, footerText)
+                val request = SiteSettingsRequest(siteName, siteTagline, logo, favicon, bannerEnabled, bannerText, bannerColor, bannerTextColor, bannerDismissible, primaryColor, secondaryColor, footerText, allowImportProtocols, allowImportReagents, allowImportStorageObjects, allowImportInstruments, allowImportUsers, allowImportLabGroups, allowImportSessions, allowImportProjects, allowImportAnnotations, allowImportMetadata, staffOnlyImportOverride, importArchiveSizeLimitMb)
                 val response = apiService.createSettings(request)
                 cacheSiteSettings(response)
                 Result.success(response)
@@ -231,10 +244,10 @@ class SiteSettingsServiceImpl @Inject constructor(
         }
     }
 
-    override suspend fun updateSettings(id: Int, siteName: String?, siteTagline: String?, logo: String?, favicon: String?, bannerEnabled: Boolean?, bannerText: String?, bannerColor: String?, bannerTextColor: String?, bannerDismissible: Boolean?, primaryColor: String?, secondaryColor: String?, footerText: String?): Result<SiteSettings> {
+    override suspend fun updateSettings(id: Int, siteName: String?, siteTagline: String?, logo: String?, favicon: String?, bannerEnabled: Boolean?, bannerText: String?, bannerColor: String?, bannerTextColor: String?, bannerDismissible: Boolean?, primaryColor: String?, secondaryColor: String?, footerText: String?, allowImportProtocols: Boolean?, allowImportReagents: Boolean?, allowImportStorageObjects: Boolean?, allowImportInstruments: Boolean?, allowImportUsers: Boolean?, allowImportLabGroups: Boolean?, allowImportSessions: Boolean?, allowImportProjects: Boolean?, allowImportAnnotations: Boolean?, allowImportMetadata: Boolean?, staffOnlyImportOverride: Boolean?, importArchiveSizeLimitMb: Int?): Result<SiteSettings> {
         return withContext(Dispatchers.IO) {
             try {
-                val request = SiteSettingsRequest(siteName, siteTagline, logo, favicon, bannerEnabled, bannerText, bannerColor, bannerTextColor, bannerDismissible, primaryColor, secondaryColor, footerText)
+                val request = SiteSettingsRequest(siteName, siteTagline, logo, favicon, bannerEnabled, bannerText, bannerColor, bannerTextColor, bannerDismissible, primaryColor, secondaryColor, footerText, allowImportProtocols, allowImportReagents, allowImportStorageObjects, allowImportInstruments, allowImportUsers, allowImportLabGroups, allowImportSessions, allowImportProjects, allowImportAnnotations, allowImportMetadata, staffOnlyImportOverride, importArchiveSizeLimitMb)
                 val response = apiService.updateSettings(id, request)
                 cacheSiteSettings(response)
                 Result.success(response)
@@ -244,10 +257,10 @@ class SiteSettingsServiceImpl @Inject constructor(
         }
     }
 
-    override suspend fun patchSettings(id: Int, siteName: String?, siteTagline: String?, logo: String?, favicon: String?, bannerEnabled: Boolean?, bannerText: String?, bannerColor: String?, bannerTextColor: String?, bannerDismissible: Boolean?, primaryColor: String?, secondaryColor: String?, footerText: String?): Result<SiteSettings> {
+    override suspend fun patchSettings(id: Int, siteName: String?, siteTagline: String?, logo: String?, favicon: String?, bannerEnabled: Boolean?, bannerText: String?, bannerColor: String?, bannerTextColor: String?, bannerDismissible: Boolean?, primaryColor: String?, secondaryColor: String?, footerText: String?, allowImportProtocols: Boolean?, allowImportReagents: Boolean?, allowImportStorageObjects: Boolean?, allowImportInstruments: Boolean?, allowImportUsers: Boolean?, allowImportLabGroups: Boolean?, allowImportSessions: Boolean?, allowImportProjects: Boolean?, allowImportAnnotations: Boolean?, allowImportMetadata: Boolean?, staffOnlyImportOverride: Boolean?, importArchiveSizeLimitMb: Int?): Result<SiteSettings> {
         return withContext(Dispatchers.IO) {
             try {
-                val request = SiteSettingsRequest(siteName, siteTagline, logo, favicon, bannerEnabled, bannerText, bannerColor, bannerTextColor, bannerDismissible, primaryColor, secondaryColor, footerText)
+                val request = SiteSettingsRequest(siteName, siteTagline, logo, favicon, bannerEnabled, bannerText, bannerColor, bannerTextColor, bannerDismissible, primaryColor, secondaryColor, footerText, allowImportProtocols, allowImportReagents, allowImportStorageObjects, allowImportInstruments, allowImportUsers, allowImportLabGroups, allowImportSessions, allowImportProjects, allowImportAnnotations, allowImportMetadata, staffOnlyImportOverride, importArchiveSizeLimitMb)
                 val response = apiService.patchSettings(id, request)
                 cacheSiteSettings(response)
                 Result.success(response)
@@ -275,7 +288,19 @@ class SiteSettingsServiceImpl @Inject constructor(
             footerText = siteSettings.footerText,
             createdAt = siteSettings.createdAt,
             updatedAt = siteSettings.updatedAt,
-            updatedBy = siteSettings.updatedBy?.id
+            updatedBy = siteSettings.updatedBy?.id,
+            allowImportProtocols = siteSettings.allowImportProtocols,
+            allowImportReagents = siteSettings.allowImportReagents,
+            allowImportStorageObjects = siteSettings.allowImportStorageObjects,
+            allowImportInstruments = siteSettings.allowImportInstruments,
+            allowImportUsers = siteSettings.allowImportUsers,
+            allowImportLabGroups = siteSettings.allowImportLabGroups,
+            allowImportSessions = siteSettings.allowImportSessions,
+            allowImportProjects = siteSettings.allowImportProjects,
+            allowImportAnnotations = siteSettings.allowImportAnnotations,
+            allowImportMetadata = siteSettings.allowImportMetadata,
+            staffOnlyImportOverride = siteSettings.staffOnlyImportOverride,
+            importArchiveSizeLimitMb = siteSettings.importArchiveSizeLimitMb
         )
         siteSettingsDao.insert(entity)
     }
@@ -298,7 +323,20 @@ class SiteSettingsServiceImpl @Inject constructor(
             footerText = entity.footerText,
             createdAt = entity.createdAt,
             updatedAt = entity.updatedAt,
-            updatedBy = entity.updatedBy?.let { UserBasic(it, "", null, null) }
+            updatedBy = entity.updatedBy?.let { UserBasic(it, "", null, null) },
+            allowImportProtocols = entity.allowImportProtocols,
+            allowImportReagents = entity.allowImportReagents,
+            allowImportStorageObjects = entity.allowImportStorageObjects,
+            allowImportInstruments = entity.allowImportInstruments,
+            allowImportUsers = entity.allowImportUsers,
+            allowImportLabGroups = entity.allowImportLabGroups,
+            allowImportSessions = entity.allowImportSessions,
+            allowImportProjects = entity.allowImportProjects,
+            allowImportAnnotations = entity.allowImportAnnotations,
+            allowImportMetadata = entity.allowImportMetadata,
+            staffOnlyImportOverride = entity.staffOnlyImportOverride,
+            importArchiveSizeLimitMb = entity.importArchiveSizeLimitMb,
+            availableImportOptions = null // This is a computed field from the backend
         )
     }
 }

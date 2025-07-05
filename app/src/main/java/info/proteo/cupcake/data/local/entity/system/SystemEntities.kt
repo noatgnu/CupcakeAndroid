@@ -32,7 +32,20 @@ data class SiteSettingsEntity(
     @ColumnInfo(name = "footer_text") val footerText: String?,
     @ColumnInfo(name = "created_at") val createdAt: String?,
     @ColumnInfo(name = "updated_at") val updatedAt: String?,
-    @ColumnInfo(name = "updated_by") val updatedBy: Int?
+    @ColumnInfo(name = "updated_by") val updatedBy: Int?,
+    // Import restrictions
+    @ColumnInfo(name = "allow_import_protocols") val allowImportProtocols: Boolean = true,
+    @ColumnInfo(name = "allow_import_reagents") val allowImportReagents: Boolean = true,
+    @ColumnInfo(name = "allow_import_storage_objects") val allowImportStorageObjects: Boolean = true,
+    @ColumnInfo(name = "allow_import_instruments") val allowImportInstruments: Boolean = true,
+    @ColumnInfo(name = "allow_import_users") val allowImportUsers: Boolean = true,
+    @ColumnInfo(name = "allow_import_lab_groups") val allowImportLabGroups: Boolean = true,
+    @ColumnInfo(name = "allow_import_sessions") val allowImportSessions: Boolean = true,
+    @ColumnInfo(name = "allow_import_projects") val allowImportProjects: Boolean = true,
+    @ColumnInfo(name = "allow_import_annotations") val allowImportAnnotations: Boolean = true,
+    @ColumnInfo(name = "allow_import_metadata") val allowImportMetadata: Boolean = true,
+    @ColumnInfo(name = "staff_only_import_override") val staffOnlyImportOverride: Boolean = false,
+    @ColumnInfo(name = "import_archive_size_limit_mb") val importArchiveSizeLimitMb: Int = 500
 )
 
 @Entity(tableName = "backup_log")

@@ -16,6 +16,8 @@
         <!-- Container colors -->
         <item name="colorSecondaryContainer">@color/accent_background</item>
         <item name="colorOnSecondaryContainer">@color/white</item>
+        <item name="colorPrimaryContainer">@color/accent</item>
+        <item name="colorOnPrimaryContainer">@color/dark</item>
         <!-- Status bar color -->
         <item name="android:statusBarColor">?attr/colorPrimary</item>
         <item name="android:windowLightStatusBar">false</item>

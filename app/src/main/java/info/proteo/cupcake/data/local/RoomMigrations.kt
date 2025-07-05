@@ -51,10 +51,17 @@ object RoomMigrations {
             CREATE TABLE IF NOT EXISTS lab_group (
                 id INTEGER PRIMARY KEY NOT NULL,
                 name TEXT NOT NULL,
-                address TEXT,
+                description TEXT,
+                default_storage INTEGER,
+                is_professional INTEGER NOT NULL DEFAULT 0,
+                service_storage INTEGER,
+                remote_id INTEGER,
+                remote_host INTEGER,
                 created_at TEXT,
                 updated_at TEXT,
-                is_service INTEGER NOT NULL DEFAULT 0
+                FOREIGN KEY (default_storage) REFERENCES storage_object(id) ON DELETE SET NULL,
+                FOREIGN KEY (service_storage) REFERENCES storage_object(id) ON DELETE SET NULL,
+                FOREIGN KEY (remote_host) REFERENCES remote_host(id) ON DELETE SET NULL
             )
         """)
 
@@ -385,23 +392,58 @@ object RoomMigrations {
             CREATE TABLE IF NOT EXISTS stored_reagent (
                 id INTEGER PRIMARY KEY NOT NULL,
                 reagent_id INTEGER NOT NULL,
-                batch_number TEXT,
-                location TEXT,
-                expiration_date TEXT,
-                opening_date TEXT,
-                current_quantity REAL,
-                initial_quantity REAL,
-                quantity_unit TEXT,
-                storage_object_id INTEGER,
-                user_id INTEGER,
-                notify_on_expiry INTEGER NOT NULL DEFAULT 0,
-                notify_on_low_stock INTEGER NOT NULL DEFAULT 0,
-                low_stock_threshold REAL,
+                storage_object_id INTEGER NOT NULL,
+                quantity REAL NOT NULL,
+                notes TEXT,
+                user_id INTEGER NOT NULL,
                 created_at TEXT,
                 updated_at TEXT,
+                current_quantity REAL NOT NULL,
+                png_base64 TEXT,
+                barcode TEXT,
+                shareable INTEGER NOT NULL DEFAULT 1,
+                expiration_date TEXT,
+                created_by_session TEXT,
+                notify_on_low_stock INTEGER NOT NULL DEFAULT 0,
+                last_notification_sent TEXT,
+                low_stock_threshold REAL,
+                notify_days_before_expiry INTEGER,
+                notify_on_expiry INTEGER NOT NULL DEFAULT 0,
+                last_expiry_notification_sent TEXT,
+                subscriber_count INTEGER NOT NULL DEFAULT 0,
+                access_all INTEGER NOT NULL DEFAULT 0,
+                created_by_project INTEGER,
+                created_by_protocol INTEGER,
+                created_by_step INTEGER,
+                remote_id INTEGER,
+                remote_host INTEGER,
                 FOREIGN KEY (reagent_id) REFERENCES reagent(id) ON DELETE CASCADE,
-                FOREIGN KEY (storage_object_id) REFERENCES storage_object(id) ON DELETE SET NULL,
-                FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE SET NULL
+                FOREIGN KEY (storage_object_id) REFERENCES storage_object(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+                FOREIGN KEY (created_by_project) REFERENCES project(id) ON DELETE SET NULL,
+                FOREIGN KEY (created_by_protocol) REFERENCES protocol_model(id) ON DELETE SET NULL,
+                FOREIGN KEY (created_by_step) REFERENCES protocol_step(id) ON DELETE SET NULL,
+                FOREIGN KEY (remote_host) REFERENCES remote_host(id) ON DELETE SET NULL
+            )
+        """)
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS stored_reagent_access_user (
+                storedReagentId INTEGER NOT NULL,
+                userId INTEGER NOT NULL,
+                PRIMARY KEY(storedReagentId, userId),
+                FOREIGN KEY (storedReagentId) REFERENCES stored_reagent(id) ON DELETE CASCADE,
+                FOREIGN KEY (userId) REFERENCES user(id) ON DELETE CASCADE
+            )
+        """)
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS stored_reagent_access_lab_group (
+                storedReagentId INTEGER NOT NULL,
+                labGroupId INTEGER NOT NULL,
+                PRIMARY KEY(storedReagentId, labGroupId),
+                FOREIGN KEY (storedReagentId) REFERENCES stored_reagent(id) ON DELETE CASCADE,
+                FOREIGN KEY (labGroupId) REFERENCES lab_group(id) ON DELETE CASCADE
             )
         """)
 
@@ -410,6 +452,8 @@ object RoomMigrations {
                 id INTEGER PRIMARY KEY NOT NULL,
                 user_id INTEGER NOT NULL,
                 stored_reagent INTEGER NOT NULL,
+                notify_on_low_stock INTEGER NOT NULL DEFAULT 1,
+                notify_on_expiry INTEGER NOT NULL DEFAULT 1,
                 created_at TEXT,
                 FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
                 FOREIGN KEY (stored_reagent) REFERENCES stored_reagent(id) ON DELETE CASCADE
@@ -539,13 +583,29 @@ object RoomMigrations {
         database.execSQL("""
             CREATE TABLE IF NOT EXISTS storage_object (
                 id INTEGER PRIMARY KEY NOT NULL,
-                name TEXT NOT NULL,
-                description TEXT,
-                type TEXT NOT NULL,
-                stored_at INTEGER,
+                object_name TEXT NOT NULL,
+                object_type TEXT,
+                object_description TEXT,
                 created_at TEXT,
                 updated_at TEXT,
-                FOREIGN KEY (stored_at) REFERENCES storage_object(id) ON DELETE CASCADE
+                can_delete INTEGER NOT NULL DEFAULT 0,
+                stored_at INTEGER,
+                png_base64 TEXT,
+                user TEXT,
+                remote_id INTEGER,
+                remote_host INTEGER,
+                FOREIGN KEY (stored_at) REFERENCES storage_object(id) ON DELETE CASCADE,
+                FOREIGN KEY (remote_host) REFERENCES remote_host(id) ON DELETE SET NULL
+            )
+        """)
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS storage_object_access_lab_group (
+                storageObjectId INTEGER NOT NULL,
+                labGroupId INTEGER NOT NULL,
+                PRIMARY KEY(storageObjectId, labGroupId),
+                FOREIGN KEY (storageObjectId) REFERENCES storage_object(id) ON DELETE CASCADE,
+                FOREIGN KEY (labGroupId) REFERENCES lab_group(id) ON DELETE CASCADE
             )
         """)
 
@@ -602,16 +662,39 @@ object RoomMigrations {
         database.execSQL("""
             CREATE TABLE IF NOT EXISTS metadata_table_template (
                 id INTEGER PRIMARY KEY NOT NULL,
-                name TEXT NOT NULL,
+                name TEXT,
                 user INTEGER,
+                created_at TEXT,
+                updated_at TEXT,
+                hidden_user_columns INTEGER,
+                hidden_staff_columns INTEGER,
                 service_lab_group INTEGER,
                 lab_group INTEGER,
                 field_mask_mapping TEXT,
-                created_at TEXT,
-                updated_at TEXT,
+                enabled INTEGER NOT NULL DEFAULT 1,
                 FOREIGN KEY (user) REFERENCES user(id) ON DELETE SET NULL,
-                FOREIGN KEY (service_lab_group) REFERENCES lab_group(id) ON DELETE CASCADE,
-                FOREIGN KEY (lab_group) REFERENCES lab_group(id) ON DELETE CASCADE
+                FOREIGN KEY (service_lab_group) REFERENCES lab_group(id) ON DELETE SET NULL,
+                FOREIGN KEY (lab_group) REFERENCES lab_group(id) ON DELETE SET NULL
+            )
+        """)
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS metadata_table_template_user_column (
+                templateId INTEGER NOT NULL,
+                columnId INTEGER NOT NULL,
+                PRIMARY KEY(templateId, columnId),
+                FOREIGN KEY (templateId) REFERENCES metadata_table_template(id) ON DELETE CASCADE,
+                FOREIGN KEY (columnId) REFERENCES metadata_column(id) ON DELETE CASCADE
+            )
+        """)
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS metadata_table_template_staff_column (
+                templateId INTEGER NOT NULL,
+                columnId INTEGER NOT NULL,
+                PRIMARY KEY(templateId, columnId),
+                FOREIGN KEY (templateId) REFERENCES metadata_table_template(id) ON DELETE CASCADE,
+                FOREIGN KEY (columnId) REFERENCES metadata_column(id) ON DELETE CASCADE
             )
         """)
 
@@ -829,6 +912,18 @@ object RoomMigrations {
                 created_at TEXT,
                 updated_at TEXT,
                 updated_by INTEGER,
+                allow_import_protocols INTEGER NOT NULL DEFAULT 1,
+                allow_import_reagents INTEGER NOT NULL DEFAULT 1,
+                allow_import_storage_objects INTEGER NOT NULL DEFAULT 1,
+                allow_import_instruments INTEGER NOT NULL DEFAULT 1,
+                allow_import_users INTEGER NOT NULL DEFAULT 1,
+                allow_import_lab_groups INTEGER NOT NULL DEFAULT 1,
+                allow_import_sessions INTEGER NOT NULL DEFAULT 1,
+                allow_import_projects INTEGER NOT NULL DEFAULT 1,
+                allow_import_annotations INTEGER NOT NULL DEFAULT 1,
+                allow_import_metadata INTEGER NOT NULL DEFAULT 1,
+                staff_only_import_override INTEGER NOT NULL DEFAULT 0,
+                import_archive_size_limit_mb INTEGER NOT NULL DEFAULT 500,
                 FOREIGN KEY (updated_by) REFERENCES user(id) ON DELETE SET NULL
             )
         """)
@@ -909,6 +1004,71 @@ object RoomMigrations {
             )
         """)
 
+        // Import Tracker tables
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS import_tracker (
+                id INTEGER PRIMARY KEY NOT NULL,
+                import_type TEXT,
+                import_status TEXT,
+                created_at TEXT,
+                updated_at TEXT,
+                created_by INTEGER,
+                import_name TEXT,
+                import_description TEXT,
+                total_objects INTEGER,
+                processed_objects INTEGER,
+                created_objects INTEGER,
+                updated_objects INTEGER,
+                failed_objects INTEGER,
+                error_log TEXT,
+                import_metadata TEXT,
+                file_size_bytes INTEGER,
+                lab_group INTEGER,
+                FOREIGN KEY (created_by) REFERENCES user(id) ON DELETE SET NULL,
+                FOREIGN KEY (lab_group) REFERENCES lab_group(id) ON DELETE SET NULL
+            )
+        """)
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS imported_object (
+                id INTEGER PRIMARY KEY NOT NULL,
+                import_tracker INTEGER NOT NULL,
+                object_type TEXT NOT NULL,
+                object_id INTEGER NOT NULL,
+                action_type TEXT NOT NULL,
+                created_at TEXT,
+                object_data TEXT,
+                FOREIGN KEY (import_tracker) REFERENCES import_tracker(id) ON DELETE CASCADE
+            )
+        """)
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS imported_file (
+                id INTEGER PRIMARY KEY NOT NULL,
+                import_tracker INTEGER NOT NULL,
+                file_path TEXT NOT NULL,
+                original_filename TEXT,
+                file_size_bytes INTEGER,
+                file_hash TEXT,
+                created_at TEXT,
+                FOREIGN KEY (import_tracker) REFERENCES import_tracker(id) ON DELETE CASCADE
+            )
+        """)
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS imported_relationship (
+                id INTEGER PRIMARY KEY NOT NULL,
+                import_tracker INTEGER NOT NULL,
+                relationship_type TEXT NOT NULL,
+                parent_model TEXT NOT NULL,
+                parent_id INTEGER NOT NULL,
+                child_model TEXT NOT NULL,
+                child_id INTEGER NOT NULL,
+                created_at TEXT,
+                FOREIGN KEY (import_tracker) REFERENCES import_tracker(id) ON DELETE CASCADE
+            )
+        """)
+
         // Create indexes for better query performance
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_protocol_step_protocol ON protocol_step(protocol)")
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_protocol_section_protocol ON protocol_section(protocol)")
@@ -944,5 +1104,23 @@ object RoomMigrations {
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_backup_log_started_at ON backup_log(started_at)")
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_annotation_folder_owner ON annotation_folder(owner_id)")
         database.execSQL("CREATE INDEX IF NOT EXISTS idx_annotation_folder_shared ON annotation_folder(is_shared_document_folder)")
+        
+        // Indexes for new tables
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_storage_object_access_lab_group_storage ON storage_object_access_lab_group(storageObjectId)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_storage_object_access_lab_group_lab ON storage_object_access_lab_group(labGroupId)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_stored_reagent_access_user_reagent ON stored_reagent_access_user(storedReagentId)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_stored_reagent_access_user_user ON stored_reagent_access_user(userId)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_stored_reagent_access_lab_group_reagent ON stored_reagent_access_lab_group(storedReagentId)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_stored_reagent_access_lab_group_lab ON stored_reagent_access_lab_group(labGroupId)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_metadata_template_user_column_template ON metadata_table_template_user_column(templateId)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_metadata_template_user_column_column ON metadata_table_template_user_column(columnId)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_metadata_template_staff_column_template ON metadata_table_template_staff_column(templateId)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_metadata_template_staff_column_column ON metadata_table_template_staff_column(columnId)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_import_tracker_status ON import_tracker(import_status)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_import_tracker_created_by ON import_tracker(created_by)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_imported_object_tracker ON imported_object(import_tracker)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_imported_object_type_id ON imported_object(object_type, object_id)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_imported_file_tracker ON imported_file(import_tracker)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS idx_imported_relationship_tracker ON imported_relationship(import_tracker)")
     }
 }

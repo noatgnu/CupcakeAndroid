@@ -36,8 +36,14 @@ data class StoredReagent(
     @Json(name = "last_expiry_notification_sent") val lastExpiryNotificationSent: String?,
     @Json(name = "is_subscribed") val isSubscribed: Boolean,
     val subscription: ReagentSubscriptionInfo?,
-    @Json(name = "subscriber_count") val subscriberCount: Int
-
+    @Json(name = "subscriber_count") val subscriberCount: Int,
+    @Json(name = "access_users") val accessUsers: List<Int>?,
+    @Json(name = "access_lab_groups") val accessLabGroups: List<Int>?,
+    @Json(name = "access_all") val accessAll: Boolean,
+    @Json(name = "created_by_project") val createdByProject: Int?,
+    @Json(name = "created_by_protocol") val createdByProtocol: Int?,
+    @Json(name = "remote_id") val remoteId: Long?,
+    @Json(name = "remote_host") val remoteHost: Int?
 )
 fun StoredReagent.barcodeContent(): String {
     return barcode?: buildString {

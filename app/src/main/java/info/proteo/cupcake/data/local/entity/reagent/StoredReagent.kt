@@ -26,5 +26,29 @@ data class StoredReagentEntity(
     @ColumnInfo(name = "notify_days_before_expiry") val notifyDaysBeforeExpiry: Int?,
     @ColumnInfo(name = "notify_on_expiry") val notifyOnExpiry: Boolean,
     @ColumnInfo(name = "last_expiry_notification_sent") val lastExpiryNotificationSent: String?,
-    @ColumnInfo(name = "subscriber_count") val subscriberCount: Int
+    @ColumnInfo(name = "subscriber_count") val subscriberCount: Int,
+    @ColumnInfo(name = "access_all") val accessAll: Boolean,
+    @ColumnInfo(name = "created_by_project") val createdByProject: Int?,
+    @ColumnInfo(name = "created_by_protocol") val createdByProtocol: Int?,
+    @ColumnInfo(name = "created_by_step") val createdByStep: Int?,
+    @ColumnInfo(name = "remote_id") val remoteId: Long?,
+    @ColumnInfo(name = "remote_host") val remoteHost: Int?
+)
+
+@Entity(
+    tableName = "stored_reagent_access_user",
+    primaryKeys = ["storedReagentId", "userId"]
+)
+data class StoredReagentAccessUserCrossRef(
+    val storedReagentId: Int,
+    val userId: Int
+)
+
+@Entity(
+    tableName = "stored_reagent_access_lab_group",
+    primaryKeys = ["storedReagentId", "labGroupId"]
+)
+data class StoredReagentAccessLabGroupCrossRef(
+    val storedReagentId: Int,
+    val labGroupId: Int
 )

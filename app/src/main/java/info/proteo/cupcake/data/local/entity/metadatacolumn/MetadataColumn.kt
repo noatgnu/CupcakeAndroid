@@ -124,5 +124,24 @@ data class MetadataTableTemplateEntity(
     @ColumnInfo(name = "hidden_staff_columns") val hiddenStaffColumns: Int?,
     @ColumnInfo(name = "service_lab_group") val serviceLabGroup: Int?,
     @ColumnInfo(name = "lab_group") val labGroup: Int?,
-    @ColumnInfo(name = "field_mask_mapping") val fieldMaskMapping: String? // JSON string
+    @ColumnInfo(name = "field_mask_mapping") val fieldMaskMapping: String?, // JSON string
+    val enabled: Boolean
+)
+
+@Entity(
+    tableName = "metadata_table_template_user_column",
+    primaryKeys = ["templateId", "columnId"]
+)
+data class MetadataTableTemplateUserColumnCrossRef(
+    val templateId: Int,
+    val columnId: Int
+)
+
+@Entity(
+    tableName = "metadata_table_template_staff_column",
+    primaryKeys = ["templateId", "columnId"]
+)
+data class MetadataTableTemplateStaffColumnCrossRef(
+    val templateId: Int,
+    val columnId: Int
 )
