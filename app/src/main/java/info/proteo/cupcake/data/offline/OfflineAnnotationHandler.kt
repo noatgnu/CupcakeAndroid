@@ -354,7 +354,7 @@ class OfflineAnnotationHandler @Inject constructor(
             fixed = annotation.fixed,
             userId = annotation.user?.id,
             storedReagent = annotation.storedReagent,
-            folderId = annotation.folder.firstOrNull()?.id,
+            folderId = annotation.folder?.firstOrNull()?.id,
             isDeleted = false,
             isTempId = annotation.id < 0
         )

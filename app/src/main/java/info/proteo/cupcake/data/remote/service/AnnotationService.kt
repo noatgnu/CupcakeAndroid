@@ -440,7 +440,7 @@ class AnnotationServiceImpl @Inject constructor(
             fixed = fixed,
             userId = user?.id,
             storedReagent = storedReagent,
-            folderId = folder.firstOrNull()?.id
+            folderId = folder?.firstOrNull()?.id
         )
     }
 
@@ -507,7 +507,7 @@ class AnnotationServiceImpl @Inject constructor(
 
     private suspend fun cacheAnnotationWithRelations(annotation: Annotation) {
         annotation.user?.let { userDao.insert(it.toEntity()) }
-        annotation.folder.forEach { folderPath ->
+        annotation.folder?.forEach { folderPath ->
             annotationFolderPathDao.insert(folderPath.toEntity())
         }
         annotationDao.insert(annotation.toEntity())

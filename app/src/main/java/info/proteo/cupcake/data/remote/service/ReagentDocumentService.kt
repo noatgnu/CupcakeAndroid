@@ -184,7 +184,7 @@ class ReagentDocumentServiceImpl @Inject constructor(
             fixed = annotation.fixed,
             userId = annotation.user?.id,
             storedReagent = annotation.storedReagent,
-            folderId = annotation.folder.first().id
+            folderId = annotation.folder?.firstOrNull()?.id
         )
     }
 

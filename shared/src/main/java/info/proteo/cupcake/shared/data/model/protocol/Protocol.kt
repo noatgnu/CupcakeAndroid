@@ -17,14 +17,14 @@ data class ProtocolModel(
     @Json(name = "protocol_description") val protocolDescription: String?,
     @Json(name = "protocol_url") val protocolUrl: String?,
     @Json(name = "protocol_version_uri") val protocolVersionUri: String?,
-    val steps: List<ProtocolStep>? = emptyList<ProtocolStep>(),
-    val sections: List<ProtocolSection>? = emptyList<ProtocolSection>(),
+    val steps: List<ProtocolStep>? = emptyList(),
+    val sections: List<ProtocolSection>? = emptyList(),
     val enabled: Boolean,
     @Json(name = "complexity_rating") val complexityRating: Float = 0f,
     @Json(name = "duration_rating") val durationRating: Float = 0f,
-    val reagents: List<ProtocolReagent>? = emptyList<ProtocolReagent>(),
-    val tags: List<ProtocolTag>? = emptyList<ProtocolTag>(),
-    @Json(name = "metadata_columns") val metadataColumns: List<MetadataColumn>? = emptyList<MetadataColumn>(),
+    val reagents: List<ProtocolReagent>? = null,
+    val tags: List<ProtocolTag>? = null,
+    @Json(name = "metadata_columns") val metadataColumns: List<MetadataColumn>? = null,
 )
 
 @JsonClass(generateAdapter = true)
@@ -36,11 +36,11 @@ data class ProtocolStep(
     @Json(name = "step_section") val stepSection: Int?,
     @Json(name = "step_duration") val stepDuration: Int?,
     @Json(name = "next_step") val nextStep: List<Int>?,
-    val annotations: List<Annotation>? = emptyList<Annotation>(),
-    val variations: List<StepVariation>? = emptyList<StepVariation>(),
+    val annotations: List<Annotation>? = emptyList(),
+    val variations: List<StepVariation>? = null,
     @Json(name = "previous_step") val previousStep: Int?,
-    val reagents: List<StepReagent>? = emptyList<StepReagent>(),
-    val tags: List<StepTag>? = emptyList<StepTag>(),
+    val reagents: List<StepReagent>? = null,
+    val tags: List<StepTag>? = null,
     @Json(name = "created_at") val createdAt: String?,
     @Json(name = "updated_at") val updatedAt: String?
 )

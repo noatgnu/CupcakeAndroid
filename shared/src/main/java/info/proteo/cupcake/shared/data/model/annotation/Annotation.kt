@@ -22,7 +22,7 @@ data class Annotation(
     val translation: String?,
     val scratched: Boolean?,
     @Json(name = "annotation_name") val annotationName: String?,
-    val folder: List<AnnotationFolderPath>,
+    val folder: List<AnnotationFolderPath>?,
     val summary: String?,
     @Json(name = "instrument_usage") val instrumentUsage: List<InstrumentUsage>?,
     @Json(name = "metadata_columns") val metadataColumns: List<MetadataColumn>?,

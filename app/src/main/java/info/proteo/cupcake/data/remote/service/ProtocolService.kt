@@ -345,6 +345,7 @@ class ProtocolServiceImpl @Inject constructor(
         try {
             val response = apiService.getUserProtocols(offset, limit, search)
             response.results.forEach {
+                Log.d("ProtocolService", "$it")
                 cacheProtocolModel(it)
             }
             Result.success(response)
