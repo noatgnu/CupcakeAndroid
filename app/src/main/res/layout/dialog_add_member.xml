@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
         android:text="Add Member to Lab Group"
-        android:textColor="@color/text_primary"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="20sp"
         android:textStyle="bold" />
 
@@ -42,7 +42,7 @@
             android:layout_weight="1"
             android:hint="Search users by name, username, or email"
             android:textColorHint="@color/text_hint"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/colorOnSurface"
             android:background="@android:color/transparent"
             android:inputType="text"
             android:imeOptions="actionSearch"
@@ -101,7 +101,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="No users found"
-            android:textColor="@color/text_secondary"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp" />
 
     </LinearLayout>

@@ -61,7 +61,7 @@ class LabGroupManagementActivity : AppCompatActivity() {
     }
 
     private fun setupClickListeners() {
-        binding.btnCreateLabGroup.setOnClickListener {
+        binding.fabCreateLabGroup.setOnClickListener {
             showCreateLabGroupDialog()
         }
 
@@ -154,8 +154,8 @@ class LabGroupManagementActivity : AppCompatActivity() {
             adapter.submitList(state.filteredLabGroups)
         }
 
-        // Create button visibility (only for staff)
-        binding.btnCreateLabGroup.visibility = if (state.isStaff) View.VISIBLE else View.GONE
+        // Create FAB visibility (only for staff)
+        binding.fabCreateLabGroup.visibility = if (state.isStaff) View.VISIBLE else View.GONE
 
         // Error handling
         state.error?.let { error ->

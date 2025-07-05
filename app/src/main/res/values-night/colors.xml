@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark theme colors -->
+    <color name="primary">#24B4C6</color>
+    <color name="secondary">#9E9E9E</color>
+    <color name="success">#7AD800</color>
+    <color name="info">#8294C4</color>
+    <color name="warning">#FFD6A5</color>
+    <color name="danger">#FF9B9B</color>
+    <color name="light">#F8F9FA</color>
+    <color name="dark">#212529</color>
+    <color name="accent">#9ACAD5</color>
+
+    <!-- Standard Material naming for dark theme -->
+    <color name="colorPrimary">@color/primary</color>
+    <color name="colorPrimaryDark">#1A8A99</color>
+    <color name="colorAccent">@color/accent</color>
+    <color name="colorSecondary">@color/secondary</color>
+
+    <!-- Text colors for dark theme -->
+    <color name="text_primary">#F8F9FA</color>
+    <color name="text_secondary">#ADB5BD</color>
+    <color name="text_hint">#6C757D</color>
+    
+    <!-- Background colors for dark theme -->
+    <color name="background_primary">#1E1E1E</color>
+    <color name="background_secondary">#2C2C2C</color>
+    <color name="success_background">#1B2F1D</color>
+    <color name="accent_background">#2A3B42</color>
+    <color name="warning_background">#2E2A1C</color>
+    <color name="danger_background">#2E1F20</color>
+    
+    <!-- Border colors for dark theme -->
+    <color name="border_color">#495057</color>
+    <color name="divider_color">#3D4245</color>
+</resources>

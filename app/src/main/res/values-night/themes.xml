@@ -3,14 +3,22 @@
     <style name="Theme.Cupcake" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Primary brand color -->
         <item name="colorPrimary">@color/primary_dark_theme</item>
-        <item name="colorPrimaryVariant">@color/dark</item>
-        <item name="colorOnPrimary">@color/dark</item>
+        <item name="colorPrimaryVariant">@color/colorPrimaryDark</item>
+        <item name="colorOnPrimary">@color/white</item>
         <!-- Secondary brand color -->
         <item name="colorSecondary">@color/accent</item>
         <item name="colorSecondaryVariant">@color/accent</item>
         <item name="colorOnSecondary">@color/white</item>
+        <!-- Surface colors -->
+        <item name="colorSurface">@color/background_primary</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorOnSurfaceVariant">@color/text_secondary</item>
+        <!-- Container colors -->
+        <item name="colorSecondaryContainer">@color/accent_background</item>
+        <item name="colorOnSecondaryContainer">@color/white</item>
         <!-- Status bar color -->
-        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+        <item name="android:statusBarColor">?attr/colorPrimary</item>
+        <item name="android:windowLightStatusBar">false</item>
         <!-- Text colors -->
         <item name="android:textColorPrimary">@color/light</item>
         <item name="android:textColorSecondary">@color/secondary</item>
@@ -64,13 +72,13 @@
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowFullscreen">false</item>
         <item name="android:windowIsFloating">false</item>
-        <item name="android:windowBackground">@color/dark</item>
-        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+        <item name="android:windowBackground">@color/background_primary</item>
+        <item name="android:statusBarColor">?attr/colorPrimary</item>
         <item name="android:windowEnterAnimation">@android:anim/fade_in</item>
         <item name="android:windowExitAnimation">@android:anim/fade_out</item>
         <item name="android:windowSoftInputMode">adjustResize</item>
-        <item name="colorControlNormal">@color/dark</item>
-        <item name="colorOnPrimary">@color/dark</item>
+        <item name="colorControlNormal">@color/white</item>
+        <item name="colorOnPrimary">@color/white</item>
         <item name="colorPrimary">@color/primary_dark_theme</item>
     </style>
 </resources>

@@ -9,7 +9,8 @@
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground"
     app:cardCornerRadius="8dp"
-    app:cardElevation="2dp">
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="?attr/colorSurface">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -23,10 +24,10 @@
             android:layout_height="40dp"
             android:layout_marginEnd="16dp"
             android:background="@drawable/rounded_background"
-            android:backgroundTint="@color/accent_background"
+            android:backgroundTint="?attr/colorSecondaryContainer"
             android:padding="8dp"
             android:src="@drawable/ic_person"
-            app:tint="@color/primary" />
+            app:tint="?attr/colorPrimary" />
 
         <!-- User Info -->
         <LinearLayout
@@ -47,7 +48,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:textColor="@color/text_primary"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     tools:text="John Doe" />
@@ -60,10 +61,10 @@
                     android:text="Staff"
                     android:textSize="10sp"
                     android:visibility="gone"
-                    app:chipBackgroundColor="@color/accent_background"
+                    app:chipBackgroundColor="?attr/colorSecondaryContainer"
                     app:chipCornerRadius="10dp"
                     app:chipMinHeight="20dp"
-                    app:chipStrokeColor="@color/accent"
+                    app:chipStrokeColor="?attr/colorSecondary"
                     app:chipStrokeWidth="1dp"
                     tools:visibility="visible" />
 
@@ -75,7 +76,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:textColor="@color/text_secondary"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:textSize="12sp"
                 tools:text="@johndoe" />
 
@@ -85,7 +86,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:textColor="@color/text_secondary"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:textSize="12sp"
                 tools:text="john.doe@example.com" />
 
@@ -98,7 +99,7 @@
             android:layout_gravity="center_vertical"
             android:layout_marginStart="8dp"
             android:src="@drawable/ic_add_circle_outline"
-            app:tint="@color/primary" />
+            app:tint="?attr/colorPrimary" />
 
     </LinearLayout>
 

@@ -7,6 +7,7 @@
     android:layout_marginBottom="8dp"
     app:cardCornerRadius="8dp"
     app:cardElevation="2dp"
+    app:cardBackgroundColor="?attr/colorSurface"
     app:strokeColor="@color/border_color"
     app:strokeWidth="1dp">
 
@@ -21,7 +22,7 @@
             android:id="@+id/tvLabGroupName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/colorOnSurface"
             android:textSize="16sp"
             android:textStyle="bold"
             tools:text="Research Lab Alpha" />
@@ -32,7 +33,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:textColor="@color/text_secondary"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp"
             android:visibility="gone"
             tools:text="Advanced research laboratory for molecular biology experiments"
@@ -46,8 +47,8 @@
             android:layout_marginTop="8dp"
             android:text="Professional"
             android:visibility="gone"
-            app:chipBackgroundColor="@color/accent_background"
-            app:chipStrokeColor="@color/accent"
+            app:chipBackgroundColor="?attr/colorSecondaryContainer"
+            app:chipStrokeColor="?attr/colorSecondary"
             app:chipStrokeWidth="1dp"
             tools:visibility="visible" />
 
@@ -57,7 +58,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:textColor="@color/text_secondary"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="12sp"
             tools:text="Created: Jan 15, 2024 • Updated: Dec 20, 2024" />
 

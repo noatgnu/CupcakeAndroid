@@ -73,6 +73,8 @@ class StorageFragment : Fragment() {
         setupObservers()
         setupSwipeRefresh()
         setupReagentButton()
+        setupSearchFunctionality()
+        setupFAB()
         setupMenu()
         viewModel.loadStorageObjects()
     }
@@ -150,29 +152,29 @@ class StorageFragment : Fragment() {
             viewModel.storageState.collectLatest { state ->
                 when (state) {
                     is StorageUiState.Loading -> {
-                        binding.progressBar.visibility = View.VISIBLE
+                        binding.loadingState.visibility = View.VISIBLE
                         binding.recyclerViewStorage.visibility = View.GONE
-                        binding.textViewEmpty.visibility = View.GONE
-                        binding.textViewError.visibility = View.GONE
+                        binding.emptyState.visibility = View.GONE
+                        binding.errorState.visibility = View.GONE
                     }
                     is StorageUiState.Success -> {
-                        binding.progressBar.visibility = View.GONE
+                        binding.loadingState.visibility = View.GONE
                         binding.recyclerViewStorage.visibility = View.VISIBLE
-                        binding.textViewEmpty.visibility = View.GONE
-                        binding.textViewError.visibility = View.GONE
+                        binding.emptyState.visibility = View.GONE
+                        binding.errorState.visibility = View.GONE
                         storageAdapter.submitList(state.storageObjects)
                     }
                     is StorageUiState.Empty -> {
-                        binding.progressBar.visibility = View.GONE
+                        binding.loadingState.visibility = View.GONE
                         binding.recyclerViewStorage.visibility = View.GONE
-                        binding.textViewEmpty.visibility = View.VISIBLE
-                        binding.textViewError.visibility = View.GONE
+                        binding.emptyState.visibility = View.VISIBLE
+                        binding.errorState.visibility = View.GONE
                     }
                     is StorageUiState.Error -> {
-                        binding.progressBar.visibility = View.GONE
+                        binding.loadingState.visibility = View.GONE
                         binding.recyclerViewStorage.visibility = View.GONE
-                        binding.textViewEmpty.visibility = View.GONE
-                        binding.textViewError.visibility = View.VISIBLE
+                        binding.emptyState.visibility = View.GONE
+                        binding.errorState.visibility = View.VISIBLE
                         binding.textViewError.text = state.message
                     }
                 }
@@ -192,12 +194,10 @@ class StorageFragment : Fragment() {
     private fun setupReagentButton() {
         binding.buttonViewReagents.apply {
             visibility = View.GONE
-            setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.primary))
         }
 
         binding.buttonCreateReagent.apply {
             visibility = View.GONE
-            setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.primary))
             setOnClickListener {
                 val currentStorage = viewModel.currentPath.value.lastOrNull()
                 val storageName = currentStorage?.objectName ?: ""
@@ -212,12 +212,48 @@ class StorageFragment : Fragment() {
         }
     }
 
+    private fun setupSearchFunctionality() {
+        // Handle search input
+        binding.etSearchStorage.setOnEditorActionListener { _, _, _ ->
+            val query = binding.etSearchStorage.text.toString().trim()
+            if (query.isNotEmpty()) {
+                showSearchDialog()
+            }
+            true
+        }
+    }
+
+    private fun setupFAB() {
+        binding.fabStorageAction.setOnClickListener {
+            // Show storage actions menu or perform default action
+            if (currentStorageObjectId != null) {
+                // Inside a storage location - create reagent
+                val currentStorage = viewModel.currentPath.value.lastOrNull()
+                val storageName = currentStorage?.objectName ?: ""
+
+                val intent = Intent(requireContext(), StoredReagentActivity::class.java).apply {
+                    putExtra(StoredReagentActivity.EXTRA_STORAGE_OBJECT_ID, currentStorageObjectId)
+                    putExtra(StoredReagentActivity.EXTRA_STORAGE_NAME, storageName)
+                    putExtra(StoredReagentActivity.EXTRA_CREATE_REAGENT, true)
+                }
+                startActivity(intent)
+            } else {
+                // At root level - show barcode scanner
+                openBarcodeScanner()
+            }
+        }
+    }
+
     private fun checkForStoredReagents(storageObjectId: Int) {
         viewLifecycleOwner.lifecycleScope.launch {
             binding.buttonViewReagents.visibility = View.GONE
 
-            // Always show the create reagent button when inside a storage location
+            // Show the buttons card and create reagent button when inside a storage location
+            binding.buttonsCard.visibility = View.VISIBLE
             binding.buttonCreateReagent.visibility = View.VISIBLE
+            
+            // Show FAB for actions
+            binding.fabStorageAction.visibility = View.VISIBLE
 
             try {
                 val result = storedReagentService.getStoredReagents(0, 1, storageObjectId)
@@ -233,7 +269,8 @@ class StorageFragment : Fragment() {
                     }
                 }
             } catch (e: Exception) {
-                // Even in case of error, keep the create button visible
+                // Even in case of error, keep the create button and card visible
+                binding.buttonsCard.visibility = View.VISIBLE
                 binding.buttonCreateReagent.visibility = View.VISIBLE
             }
         }
@@ -251,7 +288,7 @@ class StorageFragment : Fragment() {
 
         val rootItem = TextView(requireContext()).apply {
             text = "home"
-            setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white))
+            setTextColor(ContextCompat.getColor(requireContext(), R.color.white))
             textSize = 16f
             setTypeface(typeface, Typeface.BOLD)
             setPadding(16, 0, 16, 0)
@@ -262,7 +299,7 @@ class StorageFragment : Fragment() {
         path.forEachIndexed { index, storageObject ->
             val separator = TextView(requireContext()).apply {
                 text = ">"
-                setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white))
+                setTextColor(ContextCompat.getColor(requireContext(), R.color.white))
                 textSize = 16f
                 setPadding(8, 0, 8, 0)
             }
@@ -270,7 +307,7 @@ class StorageFragment : Fragment() {
 
             val segmentView = TextView(requireContext()).apply {
                 text = storageObject.objectName
-                setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white))
+                setTextColor(ContextCompat.getColor(requireContext(), R.color.white))
                 textSize = 16f
                 setTypeface(typeface, Typeface.BOLD)
                 setPadding(16, 0, 16, 0)
@@ -290,9 +327,14 @@ class StorageFragment : Fragment() {
         }
 
         val currentLocation = path.lastOrNull()
-        currentLocation?.id?.let {
-            currentStorageObjectId = it
-            checkForStoredReagents(it)
+        if (currentLocation != null) {
+            currentStorageObjectId = currentLocation.id
+            checkForStoredReagents(currentLocation.id)
+        } else {
+            // At root level
+            currentStorageObjectId = null
+            binding.buttonsCard.visibility = View.GONE
+            binding.fabStorageAction.visibility = View.VISIBLE
         }
     }
 

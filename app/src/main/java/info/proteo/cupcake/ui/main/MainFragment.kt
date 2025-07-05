@@ -69,10 +69,10 @@ class MainFragment : Fragment() {
 
             if (sessions.isEmpty()) {
                 binding.recyclerViewRecentSessions.visibility = View.GONE
-                binding.textViewNoRecentSessions.visibility = View.VISIBLE
+                binding.emptySessionsState.visibility = View.VISIBLE
             } else {
                 binding.recyclerViewRecentSessions.visibility = View.VISIBLE
-                binding.textViewNoRecentSessions.visibility = View.GONE
+                binding.emptySessionsState.visibility = View.GONE
             }
         } else {
             binding.recentSessionsSection.visibility = View.GONE
@@ -137,7 +137,7 @@ class MainFragment : Fragment() {
         viewModel.userData.observe(viewLifecycleOwner) { user ->
             if (user != null) {
                 binding.textViewUsername.text = user.username
-                binding.buttonLogin.visibility = View.GONE
+                binding.loginCard.visibility = View.GONE
 
                 binding.activeTimekeepersSection.visibility = View.VISIBLE
                 binding.textViewRecentMessages.visibility = View.VISIBLE
@@ -147,7 +147,7 @@ class MainFragment : Fragment() {
 
             } else {
                 binding.textViewUsername.text = ""
-                binding.buttonLogin.visibility = View.VISIBLE
+                binding.loginCard.visibility = View.VISIBLE
 
                 binding.activeTimekeepersSection.visibility = View.GONE
                 binding.textViewRecentMessages.visibility = View.GONE
@@ -155,9 +155,8 @@ class MainFragment : Fragment() {
                 binding.recyclerViewThreads.visibility = View.GONE
                 threadAdapter.submitList(emptyList())
 
-                binding.textViewEmptyState.text = getString(R.string.please_log_in)
-                binding.textViewEmptyState.visibility = View.VISIBLE
-                binding.progressBar.visibility = View.GONE
+                binding.emptyMessagesState.visibility = View.VISIBLE
+                binding.loadingMessagesState.visibility = View.GONE
             }
         }
 
@@ -199,13 +198,13 @@ class MainFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.isLoading.collect { isLoading ->
                     if (viewModel.userData.value != null) {
-                        binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+                        binding.loadingMessagesState.visibility = if (isLoading) View.VISIBLE else View.GONE
 
                         if (!isLoading && viewModel.messageThreads.value.isEmpty()) {
                             updateMessageThreadsUI(viewModel.messageThreads.value)
                         }
                     } else {
-                        binding.progressBar.visibility = View.GONE
+                        binding.loadingMessagesState.visibility = View.GONE
                     }
                 }
             }
@@ -235,8 +234,7 @@ class MainFragment : Fragment() {
     private fun updateMessageThreadsUI(threads: List<MessageThread>) {
         threadAdapter.submitList(threads)
         if (viewModel.userData.value != null) {
-            binding.textViewEmptyState.text = getString(R.string.no_messages_yet)
-            binding.textViewEmptyState.visibility = if (threads.isEmpty() && !viewModel.isLoading.value) {
+            binding.emptyMessagesState.visibility = if (threads.isEmpty() && !viewModel.isLoading.value) {
                 View.VISIBLE
             } else {
                 View.GONE

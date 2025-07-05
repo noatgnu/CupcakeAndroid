@@ -38,6 +38,7 @@ class SettingsFragment : Fragment() {
         viewModel = ViewModelProvider(this)[SettingsViewModel::class.java]
 
         setupSettingsCategories()
+        setupDarkModeSettings()
 
         binding.logoutButton.setOnClickListener {
             viewModel.logout()
@@ -73,6 +74,29 @@ class SettingsFragment : Fragment() {
                     findNavController().navigate(category.id)
                 }
             }
+        }
+    }
+
+    private fun setupDarkModeSettings() {
+        viewModel.darkMode.observe(viewLifecycleOwner) { mode ->
+            when (mode) {
+                SettingsViewModel.DARK_MODE_FOLLOW_SYSTEM -> 
+                    binding.radioFollowSystem.isChecked = true
+                SettingsViewModel.DARK_MODE_LIGHT -> 
+                    binding.radioLight.isChecked = true
+                SettingsViewModel.DARK_MODE_DARK -> 
+                    binding.radioDark.isChecked = true
+            }
+        }
+
+        binding.darkModeRadioGroup.setOnCheckedChangeListener { _, checkedId ->
+            val mode = when (checkedId) {
+                R.id.radioFollowSystem -> SettingsViewModel.DARK_MODE_FOLLOW_SYSTEM
+                R.id.radioLight -> SettingsViewModel.DARK_MODE_LIGHT
+                R.id.radioDark -> SettingsViewModel.DARK_MODE_DARK
+                else -> SettingsViewModel.DARK_MODE_FOLLOW_SYSTEM
+            }
+            viewModel.setDarkMode(mode)
         }
     }
 

@@ -11,6 +11,7 @@
     android:foreground="?attr/selectableItemBackground"
     app:cardCornerRadius="8dp"
     app:cardElevation="2dp"
+    app:cardBackgroundColor="?attr/colorSurface"
     app:strokeColor="@color/border_color"
     app:strokeWidth="1dp">
 
@@ -33,7 +34,7 @@
                 android:layout_height="32dp"
                 android:layout_marginEnd="12dp"
                 android:src="@drawable/ic_outline_folder_shared_24"
-                app:tint="@color/primary" />
+                app:tint="?attr/colorPrimary" />
 
             <!-- Lab Group Info -->
             <LinearLayout
@@ -54,7 +55,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:textColor="@color/text_primary"
+                        android:textColor="?attr/colorOnSurface"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         tools:text="Research Lab Alpha" />
@@ -68,10 +69,10 @@
                         android:text="Professional"
                         android:textSize="10sp"
                         android:visibility="gone"
-                        app:chipBackgroundColor="@color/accent_background"
+                        app:chipBackgroundColor="?attr/colorSecondaryContainer"
                         app:chipCornerRadius="12dp"
                         app:chipMinHeight="24dp"
-                        app:chipStrokeColor="@color/accent"
+                        app:chipStrokeColor="?attr/colorSecondary"
                         app:chipStrokeWidth="1dp"
                         tools:visibility="visible" />
 
@@ -85,7 +86,7 @@
                     android:layout_marginTop="2dp"
                     android:maxLines="2"
                     android:ellipsize="end"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:textSize="14sp"
                     android:visibility="gone"
                     tools:text="Advanced research laboratory for molecular biology experiments and protein analysis"
@@ -110,14 +111,14 @@
                 android:layout_height="16dp"
                 android:layout_marginEnd="6dp"
                 android:src="@drawable/ic_person"
-                app:tint="@color/text_secondary" />
+                app:tint="?attr/colorOnSurfaceVariant" />
 
             <TextView
                 android:id="@+id/tvMembersCount"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textColor="@color/text_secondary"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:textSize="12sp"
                 tools:text="12 members • 3 managers" />
 
@@ -130,14 +131,14 @@
                 android:layout_marginEnd="6dp"
                 android:src="@drawable/ic_storage"
                 android:visibility="gone"
-                app:tint="@color/success"
+                app:tint="?attr/colorPrimary"
                 tools:visibility="visible" />
 
             <TextView
                 android:id="@+id/tvStorageInfo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="@color/text_secondary"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:textSize="12sp"
                 android:visibility="gone"
                 tools:text="Service Storage Set"

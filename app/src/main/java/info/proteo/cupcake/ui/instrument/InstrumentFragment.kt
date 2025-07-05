@@ -18,8 +18,11 @@ import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.InstrumentActivity
 import info.proteo.cupcake.databinding.FragmentInstrumentBinding
+import info.proteo.cupcake.data.repository.UserRepository
+import info.proteo.cupcake.data.repository.InstrumentRepository
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class InstrumentFragment : Fragment(), InstrumentActivity.SearchQueryListener {
@@ -29,6 +32,12 @@ class InstrumentFragment : Fragment(), InstrumentActivity.SearchQueryListener {
 
     private val viewModel: InstrumentViewModel by viewModels()
     private lateinit var instrumentAdapter: InstrumentAdapter
+    
+    @Inject
+    lateinit var userRepository: UserRepository
+    
+    @Inject
+    lateinit var instrumentRepository: InstrumentRepository
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -44,7 +53,10 @@ class InstrumentFragment : Fragment(), InstrumentActivity.SearchQueryListener {
         setupRecyclerView()
         setupSwipeRefresh()
         setupFilterControls()
+        setupSearchFunctionality()
+        setupFAB()
         observeInstruments()
+        checkUserPermissions()
     }
 
     private fun setupRecyclerView() {
@@ -99,17 +111,69 @@ class InstrumentFragment : Fragment(), InstrumentActivity.SearchQueryListener {
         }
     }
 
+    private fun setupSearchFunctionality() {
+        // Handle search input
+        binding.etSearchInstruments.setOnEditorActionListener { _, _, _ ->
+            val query = binding.etSearchInstruments.text.toString().trim()
+            viewModel.search(query.ifEmpty { null }, false)
+            true
+        }
+    }
+
+    private fun setupFAB() {
+        // Handle FAB click for adding instruments (if user has permissions)
+        binding.fabAddInstrument.setOnClickListener {
+            showCreateInstrumentDialog()
+        }
+    }
+
+    private fun showCreateInstrumentDialog() {
+        val dialog = CreateInstrumentDialog(
+            fragment = this,
+            instrumentRepository = instrumentRepository,
+            onInstrumentCreated = { instrument ->
+                Toast.makeText(requireContext(), "Instrument '${instrument.instrumentName}' created successfully!", Toast.LENGTH_SHORT).show()
+                // Refresh the instruments list
+                viewModel.loadInitialInstruments()
+            },
+            onError = { errorMessage ->
+                Toast.makeText(requireContext(), "Error: $errorMessage", Toast.LENGTH_LONG).show()
+            }
+        )
+        dialog.show()
+    }
+
+    private fun checkUserPermissions() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val user = userRepository.getUserFromActivePreference()
+                // Show FAB only if user is staff
+                binding.fabAddInstrument.visibility = if (user?.isStaff == true) {
+                    View.VISIBLE
+                } else {
+                    View.GONE
+                }
+            } catch (e: Exception) {
+                // Hide FAB on any exception
+                binding.fabAddInstrument.visibility = View.GONE
+            }
+        }
+    }
+
+
     private fun observeInstruments() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.instruments.collectLatest { result ->
                     binding.swipeRefreshLayout.isRefreshing = false
+                    binding.loadingState.visibility = View.GONE
 
                     result.onSuccess { response ->
                         instrumentAdapter.submitList(response.results)
                         binding.emptyView.visibility =
                             if (response.results.isEmpty()) View.VISIBLE else View.GONE
                     }.onFailure { error ->
+                        binding.emptyView.visibility = View.GONE
                         Toast.makeText(requireContext(),
                             "Error loading instruments: ${error.localizedMessage}",
                             Toast.LENGTH_SHORT).show()

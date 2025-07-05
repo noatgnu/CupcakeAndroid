@@ -39,6 +39,10 @@
     <string name="menu_main">Main menu</string>
     <string name="menu_user_profile">User Profile</string>
     <string name="settings_title">Settings</string>
+    <string name="dark_mode_title">Dark Mode</string>
+    <string name="dark_mode_follow_system">Follow System</string>
+    <string name="dark_mode_light">Light</string>
+    <string name="dark_mode_dark">Dark</string>
     <string name="category_icon">Category icon\n</string>
     <string name="profile_management">Profile Management</string>
     <string name="active_profile_indicator">Activated profile</string>
