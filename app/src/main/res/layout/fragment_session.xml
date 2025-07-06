@@ -315,16 +315,15 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/annotations_card"
+                <LinearLayout
+                    android:id="@+id/annotations_section"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:layout_marginTop="12dp"
-                    android:layout_marginEnd="12dp"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginEnd="16dp"
                     android:layout_marginBottom="16dp"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="4dp"
+                    android:orientation="vertical"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/step_content_card"
@@ -333,56 +332,49 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="20dp">
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:layout_marginBottom="16dp">
-
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:layout_marginEnd="12dp"
-                                android:src="@drawable/ic_message"
-                                app:tint="?attr/colorPrimary" />
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="@string/annotations"
-                                android:textAppearance="?attr/textAppearanceSubtitle1"
-                                android:textStyle="bold"
-                                android:textColor="?attr/colorOnSurface" />
-
-                        </LinearLayout>
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_marginEnd="12dp"
+                            android:src="@drawable/ic_message"
+                            app:tint="?attr/colorPrimary" />
 
                         <TextView
-                            android:id="@+id/annotationsEmptyState"
-                            android:layout_width="match_parent"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:padding="32dp"
-                            android:text="@string/no_annotations_available"
-                            android:textColor="?attr/colorOnSurfaceVariant"
-                            android:textSize="14sp"
-                            android:visibility="gone" />
+                            android:layout_weight="1"
+                            android:text="@string/annotations"
+                            android:textAppearance="?attr/textAppearanceSubtitle1"
+                            android:textStyle="bold"
+                            android:textColor="?attr/colorOnSurface" />
 
-                        <androidx.recyclerview.widget.RecyclerView
-                            android:id="@+id/annotationsRecyclerView"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:nestedScrollingEnabled="false"
-                            android:paddingBottom="80dp"
-                            android:clipToPadding="false"
-                            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                            tools:listitem="@layout/item_annotation" />
                     </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
+
+                    <TextView
+                        android:id="@+id/annotationsEmptyState"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:padding="24dp"
+                        android:text="@string/no_annotations_available"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textSize="14sp"
+                        android:visibility="gone" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/annotationsRecyclerView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:nestedScrollingEnabled="false"
+                        android:paddingBottom="80dp"
+                        android:clipToPadding="false"
+                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                        tools:listitem="@layout/item_annotation" />
+                </LinearLayout>
                 <View
                     android:id="@+id/loading_background"
                     android:layout_width="0dp"
