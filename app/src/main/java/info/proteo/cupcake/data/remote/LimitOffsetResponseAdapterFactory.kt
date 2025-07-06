@@ -95,7 +95,15 @@ class LimitOffsetResponseAdapterFactory : JsonAdapter.Factory {
                                         Log.e(TAG, "Exception type: ${e.javaClass.simpleName}")
                                         Log.e(TAG, "Exception message: ${e.message}")
                                         e.printStackTrace()
-                                        reader.skipValue()
+                                        
+                                        // Try to safely skip the value, but handle the case where reader is in inconsistent state
+                                        try {
+                                            reader.skipValue()
+                                        } catch (skipException: Exception) {
+                                            Log.e(TAG, "Failed to skip value after parsing error", skipException)
+                                            // If we can't skip, we need to abort the entire parsing
+                                            throw e
+                                        }
                                         results = emptyList()
                                     }
                                 }

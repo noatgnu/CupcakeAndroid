@@ -1,5 +1,6 @@
 package info.proteo.cupcake.ui.protocol
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -21,6 +22,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.R
+import info.proteo.cupcake.SessionActivity
 import info.proteo.cupcake.databinding.FragmentProtocolListBinding
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -111,7 +113,15 @@ class ProtocolListFragment : Fragment() {
                 }
             },
             onSessionClick = { session ->
-                // Handle session click
+                // Handle session click - navigate to session activity
+                try {
+                    val intent = Intent(requireContext(), SessionActivity::class.java)
+                    intent.putExtra("sessionId", session.uniqueId)
+                    intent.putExtra("isNewSession", false)
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    Log.e("ProtocolListFragment", "Session navigation error", e)
+                }
             }
         )
 

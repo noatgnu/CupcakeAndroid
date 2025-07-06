@@ -39,7 +39,7 @@ data class StoredReagent(
     @Json(name = "subscriber_count") val subscriberCount: Int,
     @Json(name = "access_users") val accessUsers: List<Int>?,
     @Json(name = "access_lab_groups") val accessLabGroups: List<Int>?,
-    @Json(name = "access_all") val accessAll: Boolean,
+    @Json(name = "access_all") val accessAll: Boolean = false,
     @Json(name = "created_by_project") val createdByProject: Int?,
     @Json(name = "created_by_protocol") val createdByProtocol: Int?,
     @Json(name = "remote_id") val remoteId: Long?,

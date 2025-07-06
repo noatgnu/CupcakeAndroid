@@ -223,7 +223,8 @@
                     android:text="@string/view_reagents"
                     android:visibility="gone"
                     app:icon="@drawable/ic_science"
-                    style="@style/Widget.Material3.Button.OutlinedButton" />
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:textColor="?attr/colorPrimary" />
 
             </LinearLayout>
 

@@ -3,9 +3,7 @@ package info.proteo.cupcake
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import dagger.hilt.android.AndroidEntryPoint
-import info.proteo.cupcake.R
 import info.proteo.cupcake.databinding.ActivityProtocolBinding
-import info.proteo.cupcake.ui.protocol.ProtocolListFragment
 
 @AndroidEntryPoint
 class ProtocolActivity : AppCompatActivity() {
@@ -15,7 +13,5 @@ class ProtocolActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityProtocolBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-
     }
 }

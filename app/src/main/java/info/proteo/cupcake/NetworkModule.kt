@@ -217,7 +217,8 @@ object NetworkModule {
     @Singleton
     fun provideMoshi(): Moshi {
         return Moshi.Builder()
-            .add(LimitOffsetResponseAdapterFactory()).addLast(KotlinJsonAdapterFactory())
+            .add(LimitOffsetResponseAdapterFactory())
+            .addLast(KotlinJsonAdapterFactory())
             .build()
     }
 
