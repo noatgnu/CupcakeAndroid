@@ -18,6 +18,11 @@ import info.proteo.cupcake.databinding.ActivityTimeKeeperBinding
 import info.proteo.cupcake.databinding.DialogAddTimeKeeperBinding
 import info.proteo.cupcake.ui.timekeeper.TimeKeeperAdapter
 import info.proteo.cupcake.ui.timekeeper.TimeKeeperViewModel
+import info.proteo.cupcake.ui.timekeeper.TimeKeeperDisplayItem
+import info.proteo.cupcake.data.repository.SessionRepository
+import info.proteo.cupcake.data.repository.ProtocolStepRepository
+import info.proteo.cupcake.data.local.dao.protocol.SessionDao
+import javax.inject.Inject
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -27,6 +32,17 @@ class TimeKeeperActivity : AppCompatActivity() {
     private lateinit var binding: ActivityTimeKeeperBinding
     private val viewModel: TimeKeeperViewModel by viewModels()
     private lateinit var adapter: TimeKeeperAdapter
+    
+    @Inject
+    lateinit var sessionRepository: SessionRepository
+    
+    @Inject
+    lateinit var protocolStepRepository: ProtocolStepRepository
+    
+    @Inject
+    lateinit var sessionDao: SessionDao
+    
+    private var cachedDisplayItems: List<TimeKeeperDisplayItem> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,7 +84,7 @@ class TimeKeeperActivity : AppCompatActivity() {
     private fun setupObservers() {
         lifecycleScope.launch {
             viewModel.timeKeepers.collectLatest { timeKeepers ->
-                adapter.submitList(timeKeepers)
+                loadDisplayItems(timeKeepers)
                 binding.textViewEmpty.visibility = if (timeKeepers.isEmpty() && !viewModel.isLoading.value) {
                     View.VISIBLE
                 } else {
@@ -81,10 +97,7 @@ class TimeKeeperActivity : AppCompatActivity() {
             viewModel.isLoading.collectLatest { isLoading ->
                 binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
             }
-
         }
-
-
 
         lifecycleScope.launch {
             viewModel.error.collectLatest { errorMessage ->
@@ -94,11 +107,102 @@ class TimeKeeperActivity : AppCompatActivity() {
             }
         }
 
+        // Observe activeTimers for real-time countdown updates
         lifecycleScope.launch {
-            viewModel.activeTimers.collectLatest { timers ->
-                adapter.updateActiveTimers(timers)
+            viewModel.activeTimers.collectLatest { activeTimers ->
+                // Update only timer states without refetching session/step data
+                updateTimerStates(activeTimers)
             }
         }
+    }
+
+    private suspend fun loadDisplayItems(timeKeepers: List<TimeKeeper>) {
+        val displayItems = timeKeepers.map { timeKeeper ->
+            val session = timeKeeper.session?.let { sessionId ->
+                try {
+                    // Always fetch fresh data from server first
+                    val sessionsResult = sessionRepository.getUserSessions(limit = 100)
+                    val freshSession = sessionsResult.getOrNull()?.results?.find { it.id == sessionId }
+                    
+                    if (freshSession != null) {
+                        freshSession
+                    } else {
+                        // Only fallback to cache if server fetch fails
+                        val cachedSession = sessionDao.getById(sessionId)
+                        cachedSession?.let { sessionEntity ->
+                            info.proteo.cupcake.shared.data.model.protocol.Session(
+                                id = sessionEntity.id,
+                                user = sessionEntity.user,
+                                uniqueId = sessionEntity.uniqueId,
+                                enabled = sessionEntity.enabled,
+                                name = sessionEntity.name,
+                                timeKeeper = emptyList(),
+                                startedAt = sessionEntity.startedAt,
+                                endedAt = sessionEntity.endedAt,
+                                protocols = emptyList(),
+                                projects = emptyList(),
+                                createdAt = sessionEntity.createdAt,
+                                updatedAt = sessionEntity.updatedAt
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    // If everything fails, try cache as last resort
+                    try {
+                        val cachedSession = sessionDao.getById(sessionId)
+                        cachedSession?.let { sessionEntity ->
+                            info.proteo.cupcake.shared.data.model.protocol.Session(
+                                id = sessionEntity.id,
+                                user = sessionEntity.user,
+                                uniqueId = sessionEntity.uniqueId,
+                                enabled = sessionEntity.enabled,
+                                name = sessionEntity.name,
+                                timeKeeper = emptyList(),
+                                startedAt = sessionEntity.startedAt,
+                                endedAt = sessionEntity.endedAt,
+                                protocols = emptyList(),
+                                projects = emptyList(),
+                                createdAt = sessionEntity.createdAt,
+                                updatedAt = sessionEntity.updatedAt
+                            )
+                        }
+                    } catch (cacheException: Exception) {
+                        null
+                    }
+                }
+            }
+            
+            val step = timeKeeper.step?.let { stepId ->
+                try {
+                    protocolStepRepository.getProtocolStepById(stepId).getOrNull()
+                } catch (e: Exception) {
+                    null
+                }
+            }
+            
+            val timerState = viewModel.activeTimers.value[timeKeeper.id]
+            
+            TimeKeeperDisplayItem(
+                timeKeeper = timeKeeper,
+                session = session,
+                step = step,
+                timerState = timerState
+            )
+        }
+        
+        cachedDisplayItems = displayItems
+        adapter.submitList(displayItems)
+    }
+
+    private fun updateTimerStates(activeTimers: Map<Int, TimeKeeperViewModel.TimerState>) {
+        // Update cached display items with new timer states
+        val updatedDisplayItems = cachedDisplayItems.map { displayItem ->
+            val updatedTimerState = activeTimers[displayItem.timeKeeper.id]
+            displayItem.copy(timerState = updatedTimerState)
+        }
+        
+        cachedDisplayItems = updatedDisplayItems
+        adapter.submitList(updatedDisplayItems)
     }
 
     private fun setupClickListeners() {

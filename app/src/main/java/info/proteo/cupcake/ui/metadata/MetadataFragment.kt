@@ -4,13 +4,18 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.text.Editable
+import android.text.TextWatcher
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import android.widget.SearchView
+import android.widget.AutoCompleteTextView
+import com.google.android.material.textfield.TextInputEditText
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import info.proteo.cupcake.R
 import info.proteo.cupcake.data.local.dao.metadatacolumn.SearchMode
 import info.proteo.cupcake.databinding.FragmentMetadataBinding
@@ -41,11 +46,11 @@ class MetadataFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setupRecyclerView()
         setupTypeSpinner()
+        setupSearchModeSpinner()
         setupTermTypeFilter()
         setupSearchView()
-        setupTermTypeFilter()
-        setupRecyclerView()
         observeViewModel()
     }
 
@@ -58,27 +63,57 @@ class MetadataFragment : Fragment() {
             "Organisms",        // Changed from "Species"
             "Modifications"     // Changed from "Unimod"
         )
-        ArrayAdapter(
+        
+        val adapter = ArrayAdapter(
             requireContext(),
-            android.R.layout.simple_spinner_item,
+            android.R.layout.simple_dropdown_item_1line,
             metadataTypes
-        ).also { adapter ->
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            binding.metadataTypeSpinner.adapter = adapter
-        }
+        )
+        binding.metadataTypeSpinner.setAdapter(adapter)
+        binding.metadataTypeSpinner.threshold = 0
+        
+        // Set default selection
+        binding.metadataTypeSpinner.setText(metadataTypes[0], false)
+        updateCurrentAdapter(0)
 
-        binding.metadataTypeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+        // Handle selection changes
+        fun handleMetadataTypeSelection(selectedType: String) {
+            val position = metadataTypes.indexOf(selectedType)
+            if (position >= 0) {
                 updateCurrentAdapter(position)
                 binding.termTypeFilterLayout.visibility =
                     if (position == 3) View.VISIBLE else View.GONE
-
-                performSearch(binding.searchView.query.toString())
+                performSearch(binding.searchView.text.toString())
             }
+        }
 
-            override fun onNothingSelected(parent: AdapterView<*>) {
-                // Do nothing
-            }
+        binding.metadataTypeSpinner.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+            val selectedType = metadataTypes[position]
+            handleMetadataTypeSelection(selectedType)
+        }
+
+        // Show dropdown when clicked
+        binding.metadataTypeSpinner.setOnClickListener { 
+            binding.metadataTypeSpinner.showDropDown() 
+        }
+    }
+
+    private fun setupSearchModeSpinner() {
+        val searchModes = arrayOf("Contains", "Starts With")
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, searchModes)
+        binding.searchModeSpinner.setAdapter(adapter)
+        binding.searchModeSpinner.threshold = 0
+        
+        // Set default selection
+        binding.searchModeSpinner.setText(searchModes[0], false)
+
+        binding.searchModeSpinner.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+            performSearch(binding.searchView.text.toString())
+        }
+
+        // Show dropdown when clicked
+        binding.searchModeSpinner.setOnClickListener { 
+            binding.searchModeSpinner.showDropDown() 
         }
     }
 
@@ -97,45 +132,45 @@ class MetadataFragment : Fragment() {
             "Alkylation reagent"
         )
 
-        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, termTypes)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        binding.termTypeSpinner.adapter = adapter
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, termTypes)
+        binding.termTypeSpinner.setAdapter(adapter)
+        binding.termTypeSpinner.threshold = 0
+        
+        // Set default selection
+        binding.termTypeSpinner.setText(termTypes[0], false)
 
-        // Show the term type filter only when MS_UNIQUE_VOCABULARIES is selected
-        binding.metadataTypeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                updateCurrentAdapter(position)
-                binding.termTypeFilterLayout.visibility = if (position == 3) View.VISIBLE else View.GONE
+        binding.termTypeSpinner.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+            performSearch(binding.searchView.text.toString())
+        }
 
-                // Reset search if the metadata type changes
-                if (binding.searchView.query.isNotEmpty()) {
-                    performSearch(binding.searchView.query.toString())
-                }
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-                // Do nothing
-            }
+        // Show dropdown when clicked
+        binding.termTypeSpinner.setOnClickListener { 
+            binding.termTypeSpinner.showDropDown() 
         }
     }
 
 
+    private var searchJob: kotlinx.coroutines.Job? = null
+    
     private fun setupSearchView() {
-        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String): Boolean {
-                performSearch(query)
-                return true
-            }
-
-            override fun onQueryTextChange(newText: String): Boolean {
-                performSearch(newText)
-                return true
+        binding.searchView.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            
+            override fun afterTextChanged(s: Editable?) {
+                // Cancel previous search
+                searchJob?.cancel()
+                
+                val query = s?.toString() ?: ""
+                
+                // Debounce search by 500ms to reduce database calls
+                searchJob = viewLifecycleOwner.lifecycleScope.launch {
+                    kotlinx.coroutines.delay(500)
+                    performSearch(query)
+                }
             }
         })
-
-        binding.searchModeRadioGroup.setOnCheckedChangeListener { _, _ ->
-            performSearch(binding.searchView.query.toString())
-        }
     }
 
     private fun setupRecyclerView() {
@@ -164,17 +199,19 @@ class MetadataFragment : Fragment() {
     }
 
     private fun performSearch(query: String) {
-        val metadataType = when (binding.metadataTypeSpinner.selectedItemPosition) {
-            0 -> MetadataType.HUMAN_DISEASE
-            1 -> MetadataType.SUBCELLULAR_LOCATION
-            2 -> MetadataType.TISSUE
-            3 -> MetadataType.MS_UNIQUE_VOCABULARIES
-            4 -> MetadataType.SPECIES
-            5 -> MetadataType.UNIMOD
+        val selectedMetadataType = binding.metadataTypeSpinner.text.toString()
+        val metadataType = when (selectedMetadataType) {
+            "Human Disease" -> MetadataType.HUMAN_DISEASE
+            "Subcellular Location" -> MetadataType.SUBCELLULAR_LOCATION
+            "Organism part" -> MetadataType.TISSUE
+            "MS Unique Vocabularies" -> MetadataType.MS_UNIQUE_VOCABULARIES
+            "Organisms" -> MetadataType.SPECIES
+            "Modifications" -> MetadataType.UNIMOD
             else -> MetadataType.HUMAN_DISEASE
         }
 
-        val searchMode = if (binding.startsWithRadioButton.isChecked) {
+        val selectedSearchMode = binding.searchModeSpinner.text.toString()
+        val searchMode = if (selectedSearchMode == "Starts With") {
             SearchMode.STARTS_WITH
         } else {
             SearchMode.CONTAINS
@@ -182,18 +219,19 @@ class MetadataFragment : Fragment() {
 
         var termType = ""
         if (metadataType == MetadataType.MS_UNIQUE_VOCABULARIES) {
-            termType = when (binding.termTypeSpinner.selectedItemPosition) {
-                0 -> "" // All Types
-                1 -> "sample attribute" // Label
-                2 -> "cleavage agent" // Cleavage agent details
-                3 -> "instrument" // Instrument
-                4 -> "dissociation method" // Dissociation method
-                5 -> "mass analyzer type" // Mass analyzer type
-                6 -> "enrichment process" // Enrichment process
-                7 -> "fractionation method" // Fractionation method
-                8 -> "proteomics data acquisition method" // Proteomics data acquisition method
-                9 -> "reduction reagent" // Reduction reagent
-                10 -> "alkylation reagent" // Alkylation reagent
+            val selectedTermType = binding.termTypeSpinner.text.toString()
+            termType = when (selectedTermType) {
+                "All Types" -> "" 
+                "Label" -> "sample attribute" 
+                "Cleavage agent details" -> "cleavage agent" 
+                "Instrument" -> "instrument" 
+                "Dissociation method" -> "dissociation method" 
+                "MS2 analyzer type" -> "mass analyzer type" 
+                "Enrichment process" -> "enrichment process" 
+                "Fractionation method" -> "fractionation method" 
+                "Proteomics data acquisition method" -> "proteomics data acquisition method" 
+                "Reduction reagent" -> "reduction reagent" 
+                "Alkylation reagent" -> "alkylation reagent" 
                 else -> ""
             }
         }
@@ -207,26 +245,45 @@ class MetadataFragment : Fragment() {
             when (state) {
                 is SearchState.Idle -> {
                     binding.progressBar.visibility = View.GONE
-                    binding.statusText.text = "Enter search terms"
+                    binding.statusIcon.visibility = View.VISIBLE
+                    binding.statusText.text = "Enter search terms to find metadata"
+                    binding.statusSubtext.text = "Select a metadata type and start typing to search"
                     binding.statusText.visibility = View.VISIBLE
+                    binding.statusSubtext.visibility = View.VISIBLE
+                    binding.statusContainer.visibility = View.VISIBLE
+                    binding.statusIcon.setImageResource(R.drawable.ic_search)
                 }
                 is SearchState.Loading -> {
                     binding.progressBar.visibility = View.VISIBLE
-                    binding.statusText.visibility = View.GONE
+                    binding.statusIcon.visibility = View.GONE
+                    binding.statusText.text = "Searching metadata..."
+                    binding.statusSubtext.visibility = View.GONE
+                    binding.statusText.visibility = View.VISIBLE
+                    binding.statusContainer.visibility = View.VISIBLE
                 }
                 is SearchState.Success -> {
                     binding.progressBar.visibility = View.GONE
                     if (state.count == 0) {
+                        binding.statusIcon.visibility = View.VISIBLE
+                        binding.statusIcon.setImageResource(R.drawable.ic_error_outline)
                         binding.statusText.text = "No results found"
+                        binding.statusSubtext.text = "Try adjusting your search terms or metadata type"
                         binding.statusText.visibility = View.VISIBLE
+                        binding.statusSubtext.visibility = View.VISIBLE
+                        binding.statusContainer.visibility = View.VISIBLE
                     } else {
-                        binding.statusText.visibility = View.GONE
+                        binding.statusContainer.visibility = View.GONE
                     }
                 }
                 is SearchState.Error -> {
                     binding.progressBar.visibility = View.GONE
-                    binding.statusText.text = "Error: ${state.message}"
+                    binding.statusIcon.visibility = View.VISIBLE
+                    binding.statusIcon.setImageResource(R.drawable.ic_error_outline)
+                    binding.statusText.text = "Search Error"
+                    binding.statusSubtext.text = state.message
                     binding.statusText.visibility = View.VISIBLE
+                    binding.statusSubtext.visibility = View.VISIBLE
+                    binding.statusContainer.visibility = View.VISIBLE
                 }
             }
         }
@@ -258,6 +315,7 @@ class MetadataFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        searchJob?.cancel()
         _binding = null
     }
 }

@@ -17,9 +17,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.ImageView
-import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
@@ -197,7 +197,7 @@ class CreateAnnotationDialogHandler(
 
         this.dialogView = dialogView
         // Initialize UI components
-        val spinnerAnnotationType = dialogView.findViewById<Spinner>(R.id.spinnerAnnotationType)
+        val spinnerAnnotationType = dialogView.findViewById<AutoCompleteTextView>(R.id.spinnerAnnotationType)
         val textAnnotationContainer = dialogView.findViewById<View>(R.id.textAnnotationContainer)
         val imageAnnotationContainer = dialogView.findViewById<View>(R.id.imageAnnotationContainer)
         val fileAnnotationContainer = dialogView.findViewById<View>(R.id.fileAnnotationContainer)
@@ -218,11 +218,43 @@ class CreateAnnotationDialogHandler(
         videoUri = null
         selectedInstrument = null
 
+        // Handle annotation type selection
+        fun handleAnnotationTypeSelection(selectedType: String) {
+            // Hide all containers first
+            textAnnotationContainer.visibility = View.GONE
+            imageAnnotationContainer.visibility = View.GONE
+            fileAnnotationContainer.visibility = View.GONE
+            audioAnnotationContainer.visibility = View.GONE
+            videoAnnotationContainer.visibility = View.GONE
+            calculatorAnnotationContainer.visibility = View.GONE
+            molarityCalculatorContainer.visibility = View.GONE
+            instrumentAnnotationContainer.visibility = View.GONE
+
+            // Show only relevant container
+            when (selectedType) {
+                "Text" -> textAnnotationContainer.visibility = View.VISIBLE
+                "Image" -> imageAnnotationContainer.visibility = View.VISIBLE
+                "File" -> {
+                    fileAnnotationContainer.visibility = View.VISIBLE
+                    textAnnotationContainer.visibility = View.VISIBLE // Show text for file annotations
+                }
+                "Audio" -> audioAnnotationContainer.visibility = View.VISIBLE
+                "Video" -> videoAnnotationContainer.visibility = View.VISIBLE
+                "Calculator" -> calculatorAnnotationContainer.visibility = View.VISIBLE
+                "Molarity Calculator" -> molarityCalculatorContainer.visibility = View.VISIBLE
+                "Instrument" -> instrumentAnnotationContainer.visibility = View.VISIBLE
+            }
+        }
+
         // Set up annotation types
         val annotationTypes = arrayOf("Text", "Image", "File", "Audio", "Video", "Calculator", "Molarity Calculator", "Instrument")
-        val adapter = ArrayAdapter(fragment.requireContext(), android.R.layout.simple_spinner_item, annotationTypes)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinnerAnnotationType.adapter = adapter
+        val adapter = ArrayAdapter(fragment.requireContext(), android.R.layout.simple_dropdown_item_1line, annotationTypes)
+        spinnerAnnotationType.setAdapter(adapter)
+        spinnerAnnotationType.threshold = 0
+        
+        // Set default selection
+        spinnerAnnotationType.setText(annotationTypes[0], false)
+        handleAnnotationTypeSelection(annotationTypes[0])
 
         // Set up the UI elements for each annotation type
         setupImageAnnotationContainer(dialogView)
@@ -231,38 +263,14 @@ class CreateAnnotationDialogHandler(
         setupVideoAnnotationContainer(dialogView)
         setupInstrumentAnnotationContainer(dialogView)
 
-        // Handle annotation type selection
-        spinnerAnnotationType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                // Hide all containers first
-                textAnnotationContainer.visibility = View.GONE
-                imageAnnotationContainer.visibility = View.GONE
-                fileAnnotationContainer.visibility = View.GONE
-                audioAnnotationContainer.visibility = View.GONE
-                videoAnnotationContainer.visibility = View.GONE
-                calculatorAnnotationContainer.visibility = View.GONE
-                molarityCalculatorContainer.visibility = View.GONE
-                instrumentAnnotationContainer.visibility = View.GONE
+        spinnerAnnotationType.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+            val selectedType = annotationTypes[position]
+            handleAnnotationTypeSelection(selectedType)
+        }
 
-                // Show only relevant container
-                when (annotationTypes[position]) {
-                    "Text" -> textAnnotationContainer.visibility = View.VISIBLE
-                    "Image" -> imageAnnotationContainer.visibility = View.VISIBLE
-                    "File" -> {
-                        fileAnnotationContainer.visibility = View.VISIBLE
-                        textAnnotationContainer.visibility = View.VISIBLE // Show text for file annotations
-                    }
-                    "Audio" -> audioAnnotationContainer.visibility = View.VISIBLE
-                    "Video" -> videoAnnotationContainer.visibility = View.VISIBLE
-                    "Calculator" -> calculatorAnnotationContainer.visibility = View.VISIBLE
-                    "Molarity Calculator" -> molarityCalculatorContainer.visibility = View.VISIBLE
-                    "Instrument" -> instrumentAnnotationContainer.visibility = View.VISIBLE
-                }
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>) {
-                // Do nothing
-            }
+        // Show dropdown when clicked
+        spinnerAnnotationType.setOnClickListener { 
+            spinnerAnnotationType.showDropDown() 
         }
 
         // Create and show the dialog
@@ -277,7 +285,13 @@ class CreateAnnotationDialogHandler(
 
         // Set up the positive button click listener
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-            val selectedType = annotationTypes[spinnerAnnotationType.selectedItemPosition]
+            val selectedType = spinnerAnnotationType.text.toString()
+            
+            // Validate that the selected type is valid
+            if (!annotationTypes.contains(selectedType)) {
+                Toast.makeText(fragment.requireContext(), "Please select a valid annotation type", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             val annotationText = editTextAnnotation.text.toString().trim()
 
             // Validate inputs based on type

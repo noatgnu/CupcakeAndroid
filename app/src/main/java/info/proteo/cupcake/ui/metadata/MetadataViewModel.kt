@@ -20,6 +20,9 @@ import info.proteo.cupcake.data.local.entity.metadatacolumn.TissueEntity
 import info.proteo.cupcake.data.local.entity.metadatacolumn.UnimodEntity
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 enum class MetadataType {
@@ -69,57 +72,107 @@ class MetadataViewModel @Inject constructor(
     private val _unimodResults = MutableLiveData<List<UnimodEntity>>(emptyList())
     val unimodResults: LiveData<List<UnimodEntity>> = _unimodResults
 
+    private var searchJob: Job? = null
+
+    companion object {
+        private const val MAX_RESULTS = 100 // Limit results to prevent UI overwhelm
+    }
+
     fun search(type: MetadataType, query: String, searchMode: SearchMode = SearchMode.CONTAINS, termType: String = "") {
+        // Cancel any ongoing search
+        searchJob?.cancel()
+        
         if (query.isBlank()) {
             _searchState.value = SearchState.Idle
+            clearResults()
             return
         }
 
-        viewModelScope.launch {
+        // Require minimum 2 characters to prevent expensive searches
+        if (query.trim().length < 2) {
+            _searchState.value = SearchState.Idle
+            clearResults()
+            return
+        }
+
+        searchJob = viewModelScope.launch {
             _searchState.value = SearchState.Loading
             try {
-                // Convert enum to int for database query
-                val modeValue = if (searchMode == SearchMode.CONTAINS) 0 else 1
+                // All database operations run on IO dispatcher to avoid blocking UI thread
+                val results = withContext(Dispatchers.IO) {
+                    // Convert enum to int for database query
+                    val modeValue = if (searchMode == SearchMode.CONTAINS) 0 else 1
+                    val queryLower = query.lowercase().trim()
 
-                when (type) {
-                    MetadataType.HUMAN_DISEASE -> {
-                        val results = humanDiseaseDao.searchDiseases(query.lowercase(), modeValue).first()
-                        _humanDiseaseResults.value = results
-                        _searchState.value = SearchState.Success(results.size)
-                    }
-                    MetadataType.SUBCELLULAR_LOCATION -> {
-                        val results = subcellularLocationDao.searchLocations(query.lowercase(), modeValue).first()
-                        _subcellularLocationResults.value = results
-                        _searchState.value = SearchState.Success(results.size)
-                    }
-                    MetadataType.TISSUE -> {
-                        val results = tissueDao.searchTissues(query.lowercase(), modeValue).first()
-                        _tissueResults.value = results
-                        _searchState.value = SearchState.Success(results.size)
-                    }
-                    MetadataType.MS_UNIQUE_VOCABULARIES -> {
-                        val results = msUniqueVocabulariesDao.searchVocabularies(
-                            query.lowercase(),
-                            modeValue,
-                            termType
-                        ).first()
-                        _msUniqueVocabulariesResults.value = results
-                        _searchState.value = SearchState.Success(results.size)
-                    }
-                    MetadataType.SPECIES -> {
-                        val results = speciesDao.searchSpecies(query.lowercase(), modeValue).first()
-                        _speciesResults.value = results
-                        _searchState.value = SearchState.Success(results.size)
-                    }
-                    MetadataType.UNIMOD -> {
-                        val results = unimodDao.searchUnimods(query.lowercase(), modeValue).first()
-                        _unimodResults.value = results
-                        _searchState.value = SearchState.Success(results.size)
+                    when (type) {
+                        MetadataType.HUMAN_DISEASE -> {
+                            humanDiseaseDao.searchDiseases(queryLower, modeValue).first()
+                        }
+                        MetadataType.SUBCELLULAR_LOCATION -> {
+                            subcellularLocationDao.searchLocations(queryLower, modeValue).first()
+                        }
+                        MetadataType.TISSUE -> {
+                            tissueDao.searchTissues(queryLower, modeValue).first()
+                        }
+                        MetadataType.MS_UNIQUE_VOCABULARIES -> {
+                            msUniqueVocabulariesDao.searchVocabularies(
+                                queryLower,
+                                modeValue,
+                                termType
+                            ).first()
+                        }
+                        MetadataType.SPECIES -> {
+                            speciesDao.searchSpecies(queryLower, modeValue).first()
+                        }
+                        MetadataType.UNIMOD -> {
+                            unimodDao.searchUnimods(queryLower, modeValue).first()
+                        }
                     }
                 }
+
+                // Limit results to prevent UI overwhelm and improve performance
+                val limitedResults = if (results.size > MAX_RESULTS) {
+                    results.take(MAX_RESULTS)
+                } else {
+                    results
+                }
+
+                // Update UI on main thread
+                when (type) {
+                    MetadataType.HUMAN_DISEASE -> {
+                        _humanDiseaseResults.value = limitedResults as List<HumanDiseaseEntity>
+                    }
+                    MetadataType.SUBCELLULAR_LOCATION -> {
+                        _subcellularLocationResults.value = limitedResults as List<SubcellularLocationEntity>
+                    }
+                    MetadataType.TISSUE -> {
+                        _tissueResults.value = limitedResults as List<TissueEntity>
+                    }
+                    MetadataType.MS_UNIQUE_VOCABULARIES -> {
+                        _msUniqueVocabulariesResults.value = limitedResults as List<MSUniqueVocabulariesEntity>
+                    }
+                    MetadataType.SPECIES -> {
+                        _speciesResults.value = limitedResults as List<SpeciesEntity>
+                    }
+                    MetadataType.UNIMOD -> {
+                        _unimodResults.value = limitedResults as List<UnimodEntity>
+                    }
+                }
+                
+                // Show the original count to inform user if results were truncated
+                _searchState.value = SearchState.Success(results.size)
             } catch (e: Exception) {
                 _searchState.value = SearchState.Error(e.message ?: "Unknown error")
             }
         }
+    }
+
+    private fun clearResults() {
+        _humanDiseaseResults.value = emptyList()
+        _subcellularLocationResults.value = emptyList()
+        _tissueResults.value = emptyList()
+        _msUniqueVocabulariesResults.value = emptyList()
+        _speciesResults.value = emptyList()
+        _unimodResults.value = emptyList()
     }
 }
