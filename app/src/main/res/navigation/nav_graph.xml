@@ -26,6 +26,9 @@
         <action
             android:id="@+id/action_settings_to_user_profile"
             app:destination="@id/userProfileFragment" />
+        <action
+            android:id="@+id/action_settings_to_cache_management"
+            app:destination="@id/cacheManagementFragment" />
 
     </fragment>
 
@@ -157,6 +160,12 @@
             app:argType="string"
             android:defaultValue="" />
     </fragment>
+
+    <fragment
+        android:id="@+id/cacheManagementFragment"
+        android:name="info.proteo.cupcake.ui.cache.CacheManagementFragment"
+        android:label="Cache Management"
+        tools:layout="@layout/fragment_cache_management" />
 
     <activity
         android:id="@+id/messageActivity"

@@ -59,6 +59,11 @@ class SettingsFragment : Fragment() {
                 R.drawable.outline_deployed_code_update_24
             ),
             SettingsCategoryAdapter.SettingsCategory(
+                R.id.action_settings_to_cache_management,
+                "Cache Management",
+                R.drawable.ic_storage
+            ),
+            SettingsCategoryAdapter.SettingsCategory(
                 -1,
                 "Open Source Licenses",
                 R.drawable.outline_info_24
