@@ -122,4 +122,24 @@ class LabGroupRepository @Inject constructor(
             Result.failure(e)
         }
     }
+
+    suspend fun addManager(labGroupId: Int, userId: Int): Result<LabGroup> {
+        return try {
+            val result = labGroupService.addManager(labGroupId, userId)
+            result
+        } catch (e: Exception) {
+            Log.e("LabGroupRepository", "Error adding manager to lab group: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    suspend fun removeManager(labGroupId: Int, userId: Int): Result<LabGroup> {
+        return try {
+            val result = labGroupService.removeManager(labGroupId, userId)
+            result
+        } catch (e: Exception) {
+            Log.e("LabGroupRepository", "Error removing manager from lab group: ${e.message}")
+            Result.failure(e)
+        }
+    }
 }

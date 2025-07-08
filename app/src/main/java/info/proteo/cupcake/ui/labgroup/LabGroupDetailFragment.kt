@@ -27,7 +27,7 @@ class LabGroupDetailFragment : Fragment() {
     private val binding get() = _binding!!
 
     private var labGroupId: Int = -1
-    private val viewModel: LabGroupDetailViewModel by viewModels()
+    private val viewModel: LabGroupDetailViewModel by viewModels({ requireActivity() })
     private lateinit var membersPagerAdapter: LabGroupMembersPagerAdapter
 
     override fun onCreateView(
@@ -71,6 +71,7 @@ class LabGroupDetailFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
+                    android.util.Log.d("LabGroupDetailFragment", "UI state collected: members=${state.allMembers.size}, managers=${state.managers.size}, loading=${state.isMembersLoading}")
                     updateUi(state)
                 }
             }
@@ -152,7 +153,9 @@ class LabGroupDetailFragment : Fragment() {
     }
 
     private fun updateMembersSection(state: LabGroupDetailUiState) {
-        android.util.Log.d("LabGroupDetail", "updateMembersSection - members: ${state.allMembers.size}, managers: ${state.managers.size}, loading: ${state.isMembersLoading}")
+        android.util.Log.d("LabGroupDetailFragment", "updateMembersSection - members: ${state.allMembers.size}, managers: ${state.managers.size}, loading: ${state.isMembersLoading}")
+        android.util.Log.d("LabGroupDetailFragment", "Manager IDs in state: ${state.managers.map { it.id }}")
+        android.util.Log.d("LabGroupDetailFragment", "All member IDs in state: ${state.allMembers.map { it.id }}")
         
         // Members loading state
         binding.loadingMembersState.visibility = if (state.isMembersLoading) View.VISIBLE else View.GONE
@@ -166,7 +169,9 @@ class LabGroupDetailFragment : Fragment() {
         binding.emptyMembersState.visibility = if (isEmpty) View.VISIBLE else View.GONE
 
         // Update pager adapter
+        android.util.Log.d("LabGroupDetailFragment", "About to call membersPagerAdapter.updateMembers")
         membersPagerAdapter.updateMembers(state.allMembers, state.managers)
+        android.util.Log.d("LabGroupDetailFragment", "Completed call to membersPagerAdapter.updateMembers")
     }
 
     private fun formatDate(prefix: String, dateString: String?): String {

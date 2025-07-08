@@ -17,8 +17,11 @@ class LabGroupMembersPagerAdapter(private val parentFragment: Fragment) : Fragme
         this.managers = managers
         
         // Update existing fragments if they exist
-        allMembersFragment?.updateMembers(allMembers)
-        managersFragment?.updateMembers(managers)
+        allMembersFragment?.updateMembers(allMembers, managers)
+        managersFragment?.updateMembers(managers, managers)
+        
+        // Force reload all fragments
+        notifyDataSetChanged()
     }
 
     override fun getItemCount(): Int = 2
@@ -26,11 +29,11 @@ class LabGroupMembersPagerAdapter(private val parentFragment: Fragment) : Fragme
     override fun createFragment(position: Int): Fragment {
         return when (position) {
             0 -> {
-                allMembersFragment = LabGroupMembersListFragment.newInstance(allMembers, "All Members")
+                allMembersFragment = LabGroupMembersListFragment.newInstance(allMembers, managers, "All Members")
                 allMembersFragment!!
             }
             1 -> {
-                managersFragment = LabGroupMembersListFragment.newInstance(managers, "Managers")
+                managersFragment = LabGroupMembersListFragment.newInstance(managers, managers, "Managers")
                 managersFragment!!
             }
             else -> throw IllegalStateException("Invalid position: $position")

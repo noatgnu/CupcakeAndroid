@@ -107,6 +107,52 @@ class LabGroupDetailActivity : AppCompatActivity() {
                         }
                     }
                 }
+                
+                // Observe add manager result
+                launch {
+                    managementViewModel.addManagerResult.collect { result ->
+                        result?.let {
+                            if (it.isSuccess) {
+                                android.util.Log.d("LabGroupDetailActivity", "Add manager success - calling refresh")
+                                // Simple approach: just refresh everything
+                                detailViewModel.refresh(labGroupId)
+                                managementViewModel.loadLabGroups() // Update the main list too
+                                Toast.makeText(this@LabGroupDetailActivity, 
+                                    "Manager added successfully", 
+                                    Toast.LENGTH_SHORT).show()
+                                managementViewModel.clearAddManagerResult()
+                            } else {
+                                Toast.makeText(this@LabGroupDetailActivity, 
+                                    "Failed to add manager: ${it.exceptionOrNull()?.message}", 
+                                    Toast.LENGTH_LONG).show()
+                                managementViewModel.clearAddManagerResult()
+                            }
+                        }
+                    }
+                }
+                
+                // Observe remove manager result
+                launch {
+                    managementViewModel.removeManagerResult.collect { result ->
+                        result?.let {
+                            if (it.isSuccess) {
+                                android.util.Log.d("LabGroupDetailActivity", "Remove manager success - calling refresh")
+                                // Simple approach: just refresh everything
+                                detailViewModel.refresh(labGroupId)
+                                managementViewModel.loadLabGroups() // Update the main list too
+                                Toast.makeText(this@LabGroupDetailActivity, 
+                                    "Manager removed successfully", 
+                                    Toast.LENGTH_SHORT).show()
+                                managementViewModel.clearRemoveManagerResult()
+                            } else {
+                                Toast.makeText(this@LabGroupDetailActivity, 
+                                    "Failed to remove manager: ${it.exceptionOrNull()?.message}", 
+                                    Toast.LENGTH_LONG).show()
+                                managementViewModel.clearRemoveManagerResult()
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -222,6 +268,34 @@ class LabGroupDetailActivity : AppCompatActivity() {
                 .setPositiveButton("Remove") { _, _ ->
                     managementViewModel.removeUserFromLabGroup(labGroup.id, user.id)
                     Toast.makeText(this, "Removing ${user.username} from lab group...", Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+    }
+
+    fun addManagerToGroup(user: User) {
+        currentLabGroup?.let { labGroup ->
+            AlertDialog.Builder(this)
+                .setTitle("Add Manager")
+                .setMessage("Are you sure you want to make ${user.firstName ?: user.username} a manager of \"${labGroup.name}\"?")
+                .setPositiveButton("Add as Manager") { _, _ ->
+                    managementViewModel.addManagerToLabGroup(labGroup.id, user.id)
+                    Toast.makeText(this, "Adding ${user.username} as manager...", Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+    }
+
+    fun removeManagerFromGroup(user: User) {
+        currentLabGroup?.let { labGroup ->
+            AlertDialog.Builder(this)
+                .setTitle("Remove Manager")
+                .setMessage("Are you sure you want to remove ${user.firstName ?: user.username} as manager of \"${labGroup.name}\"?\n\nThey will remain as a regular member.")
+                .setPositiveButton("Remove Manager") { _, _ ->
+                    managementViewModel.removeManagerFromLabGroup(labGroup.id, user.id)
+                    Toast.makeText(this, "Removing ${user.username} as manager...", Toast.LENGTH_SHORT).show()
                 }
                 .setNegativeButton("Cancel", null)
                 .show()

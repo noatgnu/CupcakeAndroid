@@ -19,5 +19,6 @@ data class LabGroup(
     val description: String?,
     @Json(name = "default_storage") val defaultStorage: StorageObjectBasic?,
     @Json(name = "is_professional") val isProfessional: Boolean,
-    @Json(name = "service_storage") val serviceStorage: StorageObjectBasic?
+    @Json(name = "service_storage") val serviceStorage: StorageObjectBasic?,
+    val managers: List<UserBasic>? = null
 )

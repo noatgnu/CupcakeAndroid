@@ -7,7 +7,9 @@ on:
   workflow_dispatch:  # Allow manual triggering
 
 jobs:
-  build:
+  # Main Android app build (phone app)
+  build-main-app:
+    name: Build Main Android App
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -24,9 +26,9 @@ jobs:
 
       - name: Install build tools
         run: |
-          ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install "build-tools;29.0.3"
+          ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install "build-tools;34.0.0"
+          ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install "platforms;android-35"
       
-
       - name: Cache Gradle packages
         uses: actions/cache@v3
         with:
@@ -40,10 +42,10 @@ jobs:
       - name: Make Gradle executable
         run: chmod +x ./gradlew
         
-      - name: Build Release APK and Bundle
-        run: ./gradlew assembleRelease bundleRelease
+      - name: Build Main App Release APK and Bundle
+        run: ./gradlew :app:assembleRelease :app:bundleRelease
         
-      - name: Sign APK
+      - name: Sign Main App APK
         uses: r0adkll/sign-android-release@v1
         id: sign_apk
         with:
@@ -53,7 +55,7 @@ jobs:
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
         
-      - name: Sign Bundle
+      - name: Sign Main App Bundle
         uses: r0adkll/sign-android-release@v1
         id: sign_bundle
         with:
@@ -64,37 +66,157 @@ jobs:
           keyPassword: ${{ secrets.KEY_PASSWORD }}
 
 
+      - name: Set version from tag
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            VERSION="dev-$(date +'%Y%m%d%H%M%S')"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
       - name: Rename signed APK
         run: |
           mkdir -p renamed
-          cp ${{ steps.sign_apk.outputs.signedReleaseFile }} renamed/cupcake.${{ env.VERSION }}.signed.apk
-          echo "RENAMED_APK=renamed/cupcake.${{ env.VERSION }}.signed.apk" >> $GITHUB_ENV
+          cp ${{ steps.sign_apk.outputs.signedReleaseFile }} renamed/cupcake-phone.${{ env.VERSION }}.signed.apk
+          echo "RENAMED_APK=renamed/cupcake-phone.${{ env.VERSION }}.signed.apk" >> $GITHUB_ENV
 
       - name: Rename signed Bundle
         run: |
-          cp ${{ steps.sign_bundle.outputs.signedReleaseFile }} renamed/cupcake.${{ env.VERSION }}.signed.aab
-          echo "RENAMED_BUNDLE=renamed/cupcake.${{ env.VERSION }}.signed.aab" >> $GITHUB_ENV
+          cp ${{ steps.sign_bundle.outputs.signedReleaseFile }} renamed/cupcake-phone.${{ env.VERSION }}.signed.aab
+          echo "RENAMED_BUNDLE=renamed/cupcake-phone.${{ env.VERSION }}.signed.aab" >> $GITHUB_ENV
       
 
-      - name: Upload APK Artifact
+      - name: Upload Main App APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: signed-apk
+          name: main-app-apk
           path: ${{ env.RENAMED_APK }}
           
-      - name: Upload Bundle Artifact
+      - name: Upload Main App Bundle Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: signed-bundle
+          name: main-app-bundle
           path: ${{ env.RENAMED_BUNDLE }}
+          
+  # WearOS app build (separate job that can fail independently)
+  build-wearos-app:
+    name: Build WearOS App
+    runs-on: ubuntu-latest
+    continue-on-error: true  # Allow this job to fail without affecting main app
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
 
+      - name: Install build tools and Wear OS SDK
+        run: |
+          ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install "build-tools;34.0.0"
+          ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install "platforms;android-35"
+          ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install "platforms;android-30"
+      
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-wearos-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+            
+      - name: Make Gradle executable
+        run: chmod +x ./gradlew
+        
+      - name: Build WearOS Release APK
+        run: ./gradlew :wearos:assembleRelease
+        continue-on-error: true
+        
+      - name: Set version from tag
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            VERSION="dev-$(date +'%Y%m%d%H%M%S')"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
+      - name: Sign WearOS APK
+        uses: r0adkll/sign-android-release@v1
+        id: sign_wearos_apk
+        continue-on-error: true
+        with:
+          releaseDirectory: wearos/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Rename signed WearOS APK
+        if: steps.sign_wearos_apk.outcome == 'success'
+        run: |
+          mkdir -p renamed
+          cp ${{ steps.sign_wearos_apk.outputs.signedReleaseFile }} renamed/cupcake-wearos.${{ env.VERSION }}.signed.apk
+          echo "RENAMED_WEAROS_APK=renamed/cupcake-wearos.${{ env.VERSION }}.signed.apk" >> $GITHUB_ENV
+
+      - name: Upload WearOS APK Artifact
+        if: steps.sign_wearos_apk.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: wearos-app-apk
+          path: ${{ env.RENAMED_WEAROS_APK }}
+          
+  # Release job that depends on main app but continues even if WearOS fails
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [build-main-app, build-wearos-app]
+    if: always() && needs.build-main-app.result == 'success' && startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download Main App Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: main-app-apk
+          path: ./artifacts/
+          
+      - name: Download Main App Bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: main-app-bundle
+          path: ./artifacts/
+          
+      - name: Download WearOS Artifact (if available)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: wearos-app-apk
+          path: ./artifacts/
+          
+      - name: List artifacts
+        run: ls -la ./artifacts/
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: |
-            ${{ env.RENAMED_APK }}
-            ${{ env.RENAMED_BUNDLE }}
+          files: ./artifacts/*
+          body: |
+            ## Cupcake Android Release
+            
+            This release includes:
+            - 📱 Main Android app (phone/tablet)
+            - ⌚ WearOS companion app (if build succeeded)
+            
+            ### Installation
+            - Install `cupcake-phone.*.apk` on your Android device
+            - Install `cupcake-wearos.*.apk` on your WearOS device (if available)
+            
+            **Note**: WearOS build status: ${{ needs.build-wearos-app.result }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

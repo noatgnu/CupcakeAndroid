@@ -51,6 +51,12 @@ interface LabGroupApiService {
 
     @GET("api/lab_groups/{id}/get_managers/")
     suspend fun getManagers(@Path("id") id: Int): List<User>
+    
+    @POST("api/lab_groups/{id}/add_manager/")
+    suspend fun addManager(@Path("id") id: Int, @Body user: Map<String, Int>): LabGroup
+    
+    @POST("api/lab_groups/{id}/remove_manager/")
+    suspend fun removeManager(@Path("id") id: Int, @Body user: Map<String, Int>): LabGroup
 }
 
 interface LabGroupService {
@@ -72,6 +78,8 @@ interface LabGroupService {
     suspend fun addUser(labGroupId: Int, userId: Int): Result<LabGroup>
     suspend fun getUsers(labGroupId: Int): Result<List<User>>
     suspend fun getManagers(labGroupId: Int): Result<List<User>>
+    suspend fun addManager(labGroupId: Int, userId: Int): Result<LabGroup>
+    suspend fun removeManager(labGroupId: Int, userId: Int): Result<LabGroup>
 }
 
 @Singleton
@@ -278,6 +286,34 @@ class LabGroupServiceImpl @Inject constructor(
         }
     }
 
+    override suspend fun addManager(labGroupId: Int, userId: Int): Result<LabGroup> = 
+        withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.addManager(labGroupId, mapOf("user" to userId))
+                
+                // Update cache
+                cacheLabGroupWithRelations(response)
+                
+                Result.success(response)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
+    override suspend fun removeManager(labGroupId: Int, userId: Int): Result<LabGroup> = 
+        withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.removeManager(labGroupId, mapOf("user" to userId))
+                
+                // Update cache
+                cacheLabGroupWithRelations(response)
+                
+                Result.success(response)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
     private suspend fun cacheLabGroupWithRelations(labGroup: LabGroup) {
         // Store the lab group entity
         labGroupDao.insert(
@@ -376,7 +412,8 @@ class LabGroupServiceImpl @Inject constructor(
             description = entity.description,
             defaultStorage = defaultStorage,
             isProfessional = entity.isProfessional,
-            serviceStorage = serviceStorage
+            serviceStorage = serviceStorage,
+            managers = null // Cached version won't have managers; they're loaded separately
         )
     }
 }

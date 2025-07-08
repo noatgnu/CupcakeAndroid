@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <item
+        android:id="@+id/action_make_manager"
+        android:title="Make Manager"
+        android:icon="@drawable/ic_person_add" />
+    
+    <item
+        android:id="@+id/action_remove_manager"
+        android:title="Remove as Manager"
+        android:icon="@drawable/ic_person_remove" />
+    
+    <item
+        android:id="@+id/action_remove_from_group"
+        android:title="Remove from Group"
+        android:icon="@drawable/ic_delete" />
+    
+</menu>

@@ -51,10 +51,25 @@
                     tools:text="John Doe" />
 
                 <com.google.android.material.chip.Chip
-                    android:id="@+id/chipStaff"
+                    android:id="@+id/chipManager"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
+                    android:text="Manager"
+                    android:textSize="10sp"
+                    android:visibility="gone"
+                    app:chipBackgroundColor="?attr/colorPrimaryContainer"
+                    app:chipCornerRadius="10dp"
+                    app:chipMinHeight="20dp"
+                    app:chipStrokeColor="?attr/colorPrimary"
+                    app:chipStrokeWidth="1dp"
+                    tools:visibility="visible" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipStaff"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
                     android:text="Staff"
                     android:textSize="10sp"
                     android:visibility="gone"
@@ -87,20 +102,30 @@
                 android:textSize="12sp"
                 tools:text="john.doe@example.com" />
 
-        </LinearLayout>
+            <!-- Management Actions (for staff/managers) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal"
+                android:gravity="end">
 
-        <!-- Remove Button (for staff/managers) -->
-        <ImageButton
-            android:id="@+id/btnRemoveMember"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:layout_gravity="center_vertical"
-            android:layout_marginStart="8dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Remove member"
-            android:src="@drawable/ic_remove_circle_outline"
-            android:visibility="gone"
-            app:tint="?attr/colorError" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnMemberActions"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:text="Actions"
+                    android:textSize="10sp"
+                    android:visibility="gone"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    app:cornerRadius="16dp"
+                    app:icon="@drawable/ic_arrow_drop_down"
+                    app:iconGravity="end"
+                    tools:visibility="visible" />
+
+            </LinearLayout>
+
+        </LinearLayout>
 
     </LinearLayout>
 

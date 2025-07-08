@@ -49,6 +49,12 @@ class LabGroupManagementViewModel @Inject constructor(
     private val _removeUserResult = MutableStateFlow<Result<Unit>?>(null)
     val removeUserResult: StateFlow<Result<Unit>?> = _removeUserResult.asStateFlow()
 
+    private val _addManagerResult = MutableStateFlow<Result<LabGroup>?>(null)
+    val addManagerResult: StateFlow<Result<LabGroup>?> = _addManagerResult.asStateFlow()
+
+    private val _removeManagerResult = MutableStateFlow<Result<LabGroup>?>(null)
+    val removeManagerResult: StateFlow<Result<LabGroup>?> = _removeManagerResult.asStateFlow()
+
     init {
         checkUserPermissions()
         loadLabGroups()
@@ -309,8 +315,72 @@ class LabGroupManagementViewModel @Inject constructor(
         _deleteLabGroupResult.value = null
     }
 
+    fun addManagerToLabGroup(labGroupId: Int, userId: Int) {
+        val currentUser = _uiState.value.currentUser
+        val isStaff = _uiState.value.isStaff
+        val isManager = currentUser?.managedLabGroups?.any { it.id == labGroupId } ?: false
+        
+        if (!isStaff && !isManager) {
+            _addManagerResult.value = Result.failure(Exception("Only staff or existing managers can add new managers"))
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val result = labGroupRepository.addManager(labGroupId, userId)
+                _addManagerResult.value = result
+                
+                if (result.isSuccess) {
+                    // Reload to get updated data
+                    loadLabGroups()
+                }
+            } catch (e: Exception) {
+                _addManagerResult.value = Result.failure(e)
+                _uiState.value = _uiState.value.copy(
+                    error = "Failed to add manager: ${e.message}"
+                )
+            }
+        }
+    }
+
+    fun removeManagerFromLabGroup(labGroupId: Int, userId: Int) {
+        val currentUser = _uiState.value.currentUser
+        val isStaff = _uiState.value.isStaff
+        val isManager = currentUser?.managedLabGroups?.any { it.id == labGroupId } ?: false
+        
+        if (!isStaff && !isManager) {
+            _removeManagerResult.value = Result.failure(Exception("Only staff or existing managers can remove managers"))
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val result = labGroupRepository.removeManager(labGroupId, userId)
+                _removeManagerResult.value = result
+                
+                if (result.isSuccess) {
+                    // Reload to get updated data
+                    loadLabGroups()
+                }
+            } catch (e: Exception) {
+                _removeManagerResult.value = Result.failure(e)
+                _uiState.value = _uiState.value.copy(
+                    error = "Failed to remove manager: ${e.message}"
+                )
+            }
+        }
+    }
+
     fun clearRemoveUserResult() {
         _removeUserResult.value = null
+    }
+
+    fun clearAddManagerResult() {
+        _addManagerResult.value = null
+    }
+
+    fun clearRemoveManagerResult() {
+        _removeManagerResult.value = null
     }
 
     fun clearError() {
