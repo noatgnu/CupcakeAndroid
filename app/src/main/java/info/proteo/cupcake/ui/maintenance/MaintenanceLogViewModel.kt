@@ -35,14 +35,14 @@ class MaintenanceLogViewModel @Inject constructor(
     private val _maintenanceStatuses = MutableLiveData<Result<List<MaintenanceStatus>>>()
     val maintenanceStatuses: LiveData<Result<List<MaintenanceStatus>>> = _maintenanceStatuses
 
-    private val _createResult = MutableLiveData<Result<MaintenanceLog>>()
-    val createResult: LiveData<Result<MaintenanceLog>> = _createResult
+    private val _createResult = MutableLiveData<Result<MaintenanceLog>?>()
+    val createResult: LiveData<Result<MaintenanceLog>?> = _createResult
 
-    private val _updateResult = MutableLiveData<Result<MaintenanceLog>>()
-    val updateResult: LiveData<Result<MaintenanceLog>> = _updateResult
+    private val _updateResult = MutableLiveData<Result<MaintenanceLog>?>()
+    val updateResult: LiveData<Result<MaintenanceLog>?> = _updateResult
 
-    private val _deleteResult = MutableLiveData<Result<Unit>>()
-    val deleteResult: LiveData<Result<Unit>> = _deleteResult
+    private val _deleteResult = MutableLiveData<Result<Unit>?>()
+    val deleteResult: LiveData<Result<Unit>?> = _deleteResult
 
     private var instrumentId: Long? = null
     private var currentOffset = 0

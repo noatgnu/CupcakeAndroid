@@ -6,4 +6,13 @@
     <dimen name="reflow_text_block_horizontal_gap">8dp</dimen>
     <dimen name="reflow_text_title_size">22sp</dimen>
     <dimen name="reflow_text_description_size">13sp</dimen>
+    
+    <!-- Default values for tablet-specific dimensions (overridden in w960dp) -->
+    <dimen name="master_pane_width">0dp</dimen>
+    <dimen name="detail_pane_min_width">0dp</dimen>
+    <dimen name="dual_pane_divider_width">0dp</dimen>
+    <dimen name="card_margin_horizontal">8dp</dimen>
+    <dimen name="card_margin_vertical">8dp</dimen>
+    <dimen name="list_item_padding">16dp</dimen>
+    <dimen name="section_spacing">24dp</dimen>
 </resources>

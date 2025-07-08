@@ -30,11 +30,11 @@ class MaintenanceLogDetailViewModel @Inject constructor(
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
-    private val _updateResult = MutableLiveData<Result<MaintenanceLog>>()
-    val updateResult: LiveData<Result<MaintenanceLog>> = _updateResult
+    private val _updateResult = MutableLiveData<Result<MaintenanceLog>?>()
+    val updateResult: LiveData<Result<MaintenanceLog>?> = _updateResult
 
-    private val _deleteResult = MutableLiveData<Result<Unit>>()
-    val deleteResult: LiveData<Result<Unit>> = _deleteResult
+    private val _deleteResult = MutableLiveData<Result<Unit>?>()
+    val deleteResult: LiveData<Result<Unit>?> = _deleteResult
 
     private var currentMaintenanceLogId: Long? = null
 
