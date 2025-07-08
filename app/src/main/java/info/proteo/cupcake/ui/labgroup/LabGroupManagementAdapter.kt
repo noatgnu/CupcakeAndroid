@@ -41,10 +41,10 @@ class LabGroupManagementAdapter(
 
                 // Description
                 if (labGroup.description.isNullOrBlank()) {
-                    tvLabGroupDescription.visibility = View.GONE
+                    tvLabGroupDescription?.visibility = View.GONE
                 } else {
-                    tvLabGroupDescription.visibility = View.VISIBLE
-                    tvLabGroupDescription.text = labGroup.description
+                    tvLabGroupDescription?.visibility = View.VISIBLE
+                    tvLabGroupDescription?.text = labGroup.description
                 }
 
                 // Professional badge
@@ -52,21 +52,21 @@ class LabGroupManagementAdapter(
 
                 // Storage info for professional groups
                 if (labGroup.isProfessional && labGroup.serviceStorage != null) {
-                    iconStorage.visibility = View.VISIBLE
-                    tvStorageInfo.visibility = View.VISIBLE
-                    tvStorageInfo.text = "Service Storage: ${labGroup.serviceStorage!!.objectName}"
+                    iconStorage?.visibility = View.VISIBLE
+                    tvStorageInfo?.visibility = View.VISIBLE
+                    tvStorageInfo?.text = "Service Storage: ${labGroup.serviceStorage!!.objectName}"
                 } else if (labGroup.isProfessional) {
-                    iconStorage.visibility = View.VISIBLE
-                    tvStorageInfo.visibility = View.VISIBLE
-                    tvStorageInfo.text = "Service Storage: Not Set"
-                    tvStorageInfo.setTextColor(itemView.context.getColor(R.color.danger))
+                    iconStorage?.visibility = View.VISIBLE
+                    tvStorageInfo?.visibility = View.VISIBLE
+                    tvStorageInfo?.text = "Service Storage: Not Set"
+                    tvStorageInfo?.setTextColor(itemView.context.getColor(R.color.danger))
                 } else {
-                    iconStorage.visibility = View.GONE
-                    tvStorageInfo.visibility = View.GONE
+                    iconStorage?.visibility = View.GONE
+                    tvStorageInfo?.visibility = View.GONE
                 }
 
                 // Members count - hide for now since we don't have the data
-                tvMembersCount.text = "Click to view members"
+                tvMembersCount?.text = "Click to view members"
 
                 // Dates
                 val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
@@ -107,7 +107,7 @@ class LabGroupManagementAdapter(
                     }
                 }
 
-                tvDates.text = datesText
+                tvDates?.text = datesText
 
                 // Click listeners
                 root.setOnClickListener {

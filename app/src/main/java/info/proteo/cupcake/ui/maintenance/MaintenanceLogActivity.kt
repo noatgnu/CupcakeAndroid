@@ -77,9 +77,11 @@ class MaintenanceLogActivity : AppCompatActivity() {
         // Set the nav graph first without arguments
         navController.setGraph(R.navigation.maintenance_nav_graph)
 
-        // Then navigate to the fragment with the proper arguments using Safe Args
-        val action = MaintenanceLogFragmentDirections.actionGlobalMaintenanceLogFragment(instrumentId)
-        navController.navigate(action)
+        // Navigate to the fragment with the proper arguments
+        val bundle = Bundle().apply {
+            putLong("instrumentId", instrumentId)
+        }
+        navController.navigate(R.id.maintenanceLogFragment, bundle)
 
         // Set up action bar with nav controller after graph is set
         val appBarConfiguration = AppBarConfiguration(navController.graph)

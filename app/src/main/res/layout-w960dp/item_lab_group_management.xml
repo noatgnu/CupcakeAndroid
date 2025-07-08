@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/card_margin_vertical"
+    android:checkable="true"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="?attr/colorSurface"
+    app:checkedIcon="@null"
+    app:rippleColor="?attr/colorPrimaryContainer"
+    app:strokeColor="?attr/colorOutlineVariant"
+    app:strokeWidth="1dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/list_item_padding">
+
+        <!-- Lab Group Icon -->
+        <ImageView
+            android:id="@+id/ivLabGroupIcon"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/rounded_background"
+            android:backgroundTint="?attr/colorSecondaryContainer"
+            android:padding="12dp"
+            android:src="@drawable/ic_outline_folder_shared_24"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="?attr/colorPrimary" />
+
+        <!-- Lab Group Name -->
+        <TextView
+            android:id="@+id/tvLabGroupName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:layout_constraintEnd_toStartOf="@+id/chipProfessional"
+            app:layout_constraintStart_toEndOf="@+id/ivLabGroupIcon"
+            app:layout_constraintTop_toTopOf="@+id/ivLabGroupIcon"
+            tools:text="Research Team Alpha" />
+
+        <!-- Professional Badge -->
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipProfessional"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Professional"
+            android:textSize="10sp"
+            android:visibility="gone"
+            app:chipBackgroundColor="?attr/colorTertiaryContainer"
+            app:chipCornerRadius="12dp"
+            app:chipMinHeight="24dp"
+            app:chipStrokeColor="?attr/colorTertiary"
+            app:chipStrokeWidth="1dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/ivLabGroupIcon"
+            tools:visibility="visible" />
+
+        <!-- Description -->
+        <TextView
+            android:id="@+id/tvDescription"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="8dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/ivLabGroupIcon"
+            app:layout_constraintTop_toBottomOf="@+id/tvLabGroupName"
+            tools:text="A dedicated team focused on advanced proteomics research and analysis"
+            tools:visibility="visible" />
+
+        <!-- Stats Row -->
+        <LinearLayout
+            android:id="@+id/statsLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/ivLabGroupIcon"
+            app:layout_constraintTop_toBottomOf="@+id/tvDescription">
+
+            <!-- Member Count -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginEnd="4dp"
+                    android:src="@drawable/ic_person"
+                    app:tint="?attr/colorOnSurfaceVariant" />
+
+                <TextView
+                    android:id="@+id/tvMemberCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="5 members" />
+
+            </LinearLayout>
+
+            <!-- Manager Count -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginEnd="4dp"
+                    android:src="@drawable/ic_settings_black_24dp"
+                    app:tint="?attr/colorOnSurfaceVariant" />
+
+                <TextView
+                    android:id="@+id/tvManagerCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="2 managers" />
+
+            </LinearLayout>
+
+            <!-- Last Updated -->
+            <TextView
+                android:id="@+id/tvLastUpdated"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="Updated 2 days ago" />
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

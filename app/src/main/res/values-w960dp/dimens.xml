@@ -1,0 +1,17 @@
+<resources>
+    <!-- Tablet landscape specific dimensions -->
+    <dimen name="fragment_horizontal_margin">24dp</dimen>
+    <dimen name="fab_margin">32dp</dimen>
+    <dimen name="item_transform_image_length">180dp</dimen>
+    
+    <!-- Master-detail layout dimensions -->
+    <dimen name="master_pane_width">400dp</dimen>
+    <dimen name="detail_pane_min_width">480dp</dimen>
+    <dimen name="dual_pane_divider_width">1dp</dimen>
+    
+    <!-- Enhanced spacing for tablets -->
+    <dimen name="card_margin_horizontal">16dp</dimen>
+    <dimen name="card_margin_vertical">12dp</dimen>
+    <dimen name="list_item_padding">20dp</dimen>
+    <dimen name="section_spacing">32dp</dimen>
+</resources>

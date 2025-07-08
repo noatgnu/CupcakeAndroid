@@ -32,6 +32,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var appBarConfiguration: AppBarConfiguration
     private val navigationHeaderViewModel: NavigationHeaderViewModel by viewModels()
     private var headerBinding: NavHeaderUserProfileBinding? = null
+    
+    // Dual-pane layout detection
+    private val isDualPane: Boolean by lazy {
+        findViewById<View>(R.id.detail_container) != null
+    }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,46 +73,14 @@ class MainActivity : AppCompatActivity() {
 
         binding.navView?.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
-                R.id.nav_storage -> {
-                    val intent = Intent(this, StorageActivity::class.java)
-                    startActivity(intent)
-                    binding.drawerLayout?.closeDrawers()
-                    true
-                }
-                R.id.nav_instruments -> {
-                    val intent = Intent(this, InstrumentActivity::class.java)
-                    startActivity(intent)
-                    binding.drawerLayout?.closeDrawers()
-                    true
-                }
-                R.id.nav_messages -> {
-                    val intent = Intent(this, MessageActivity::class.java)
-                    startActivity(intent)
-                    binding.drawerLayout?.closeDrawers()
-                    true
-                }
-                R.id.nav_timekeepers -> {
-                    val intent = Intent(this, TimeKeeperActivity::class.java)
-                    startActivity(intent)
-                    binding.drawerLayout?.closeDrawers()
-                    true
-                }
-                R.id.nav_metadata -> {
-                    val intent = Intent(this, MetadataActivity::class.java)
-                    startActivity(intent)
-                    binding.drawerLayout?.closeDrawers()
-                    true
-                }
-                R.id.nav_protocols -> {
-                    val intent = Intent(this, ProtocolActivity::class.java)
-                    startActivity(intent)
-                    binding.drawerLayout?.closeDrawers()
-                    true
-                }
+                R.id.nav_storage,
+                R.id.nav_instruments,
+                R.id.nav_messages,
+                R.id.nav_timekeepers,
+                R.id.nav_metadata,
+                R.id.nav_protocols,
                 R.id.nav_lab_groups -> {
-                    val intent = Intent(this, info.proteo.cupcake.ui.labgroup.LabGroupManagementActivity::class.java)
-                    startActivity(intent)
-                    binding.drawerLayout?.closeDrawers()
+                    navigateToSection(menuItem.itemId)
                     true
                 }
                 else -> {
@@ -203,5 +176,67 @@ class MainActivity : AppCompatActivity() {
         }
 
         return true
+    }
+    
+    /**
+     * Shows a fragment in the detail pane for dual-pane layouts
+     */
+    fun showDetailFragment(fragment: androidx.fragment.app.Fragment, title: String? = null) {
+        if (isDualPane) {
+            val detailContainer = findViewById<View>(R.id.detail_container)
+            detailContainer?.visibility = View.VISIBLE
+            
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.detail_container, fragment)
+                .commit()
+                
+            // Update breadcrumb if available
+            updateBreadcrumb(title)
+        }
+    }
+    
+    /**
+     * Hides the detail pane
+     */
+    fun hideDetailPane() {
+        if (isDualPane) {
+            val detailContainer = findViewById<View>(R.id.detail_container)
+            detailContainer?.visibility = View.GONE
+            updateBreadcrumb(null)
+        }
+    }
+    
+    /**
+     * Updates breadcrumb navigation for tablet layouts
+     */
+    private fun updateBreadcrumb(detailTitle: String?) {
+        val breadcrumbContainer = binding.appBarMain.toolbar.findViewById<View>(R.id.breadcrumb_container)
+        val breadcrumbDetail = binding.appBarMain.toolbar.findViewById<android.widget.TextView>(R.id.breadcrumb_detail)
+        
+        breadcrumbContainer?.visibility = if (detailTitle != null) View.VISIBLE else View.GONE
+        breadcrumbDetail?.text = detailTitle
+    }
+    
+    /**
+     * Checks if the current layout supports dual-pane
+     */
+    fun isDualPaneLayout(): Boolean = isDualPane
+    
+    /**
+     * Navigates to a section, using dual-pane if available, otherwise starting an activity
+     */
+    private fun navigateToSection(sectionId: Int) {
+        // For now, keep the existing activity-based navigation
+        // Later we can implement fragment-based navigation for dual-pane
+        when (sectionId) {
+            R.id.nav_storage -> startActivity(Intent(this, StorageActivity::class.java))
+            R.id.nav_instruments -> startActivity(Intent(this, InstrumentActivity::class.java))
+            R.id.nav_messages -> startActivity(Intent(this, MessageActivity::class.java))
+            R.id.nav_timekeepers -> startActivity(Intent(this, TimeKeeperActivity::class.java))
+            R.id.nav_metadata -> startActivity(Intent(this, MetadataActivity::class.java))
+            R.id.nav_protocols -> startActivity(Intent(this, ProtocolActivity::class.java))
+            R.id.nav_lab_groups -> startActivity(Intent(this, info.proteo.cupcake.ui.labgroup.LabGroupManagementActivity::class.java))
+        }
+        binding.drawerLayout?.closeDrawers()
     }
 }
