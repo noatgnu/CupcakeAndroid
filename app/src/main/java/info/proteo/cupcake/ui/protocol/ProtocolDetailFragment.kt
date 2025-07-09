@@ -58,6 +58,16 @@ class ProtocolDetailFragment : Fragment() {
     private val viewModel: ProtocolDetailViewModel by viewModels()
     private var protocolId: Int = 0
 
+    companion object {
+        fun newInstance(protocolId: Int): ProtocolDetailFragment {
+            return ProtocolDetailFragment().apply {
+                arguments = Bundle().apply {
+                    putInt("protocolId", protocolId)
+                }
+            }
+        }
+    }
+
     private lateinit var sessionAdapter: SessionAdapter
     private lateinit var sectionAdapter: ProtocolSectionAdapter
 
@@ -136,8 +146,10 @@ class ProtocolDetailFragment : Fragment() {
 
     private fun setupToolbar() {
         (activity as? AppCompatActivity)?.let {
-            it.setSupportActionBar(binding.toolbar)
-            it.supportActionBar?.setDisplayHomeAsUpEnabled(true)
+            binding.toolbar?.let { toolbar ->
+                it.setSupportActionBar(toolbar)
+                it.supportActionBar?.setDisplayHomeAsUpEnabled(true)
+            }
         }
     }
 
@@ -262,7 +274,7 @@ class ProtocolDetailFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.isLoading.collectLatest { isLoading ->
-                binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+                binding.progressBar?.visibility = if (isLoading) View.VISIBLE else View.GONE
             }
         }
 
@@ -391,7 +403,7 @@ class ProtocolDetailFragment : Fragment() {
         val protocol = viewModel.protocol.value ?: return
 
         viewLifecycleOwner.lifecycleScope.launch {
-            binding.progressBar.visibility = View.VISIBLE
+            binding.progressBar?.visibility = View.VISIBLE
             try {
                 val request = UpdateProtocolRequest(
                     protocolTitle = title,
@@ -410,7 +422,7 @@ class ProtocolDetailFragment : Fragment() {
                 Log.e("ProtocolDetailFragment", "Error updating protocol", e)
                 Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             } finally {
-                binding.progressBar.visibility = View.GONE
+                binding.progressBar?.visibility = View.GONE
             }
         }
     }
@@ -420,7 +432,7 @@ class ProtocolDetailFragment : Fragment() {
         val newEnabled = !protocol.enabled
 
         viewLifecycleOwner.lifecycleScope.launch {
-            binding.progressBar.visibility = View.VISIBLE
+            binding.progressBar?.visibility = View.VISIBLE
             try {
                 val request = UpdateProtocolRequest(protocolTitle = protocol.protocolTitle, protocolDescription = protocol.protocolDescription, enabled = newEnabled)
 
@@ -436,7 +448,7 @@ class ProtocolDetailFragment : Fragment() {
             } catch (e: Exception) {
                 Log.e("ProtocolDetailFragment", "Error toggling visibility", e)
             } finally {
-                binding.progressBar.visibility = View.GONE
+                binding.progressBar?.visibility = View.GONE
             }
         }
     }
@@ -497,7 +509,7 @@ class ProtocolDetailFragment : Fragment() {
     }
 
     private fun loadUsers(protocolId: Int, role: String, recyclerView: RecyclerView) {
-        binding.progressBar.visibility = View.VISIBLE
+        binding.progressBar?.visibility = View.VISIBLE
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val users = if (role == "viewer") {
@@ -515,13 +527,13 @@ class ProtocolDetailFragment : Fragment() {
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "Failed to load users", Toast.LENGTH_SHORT).show()
             } finally {
-                binding.progressBar.visibility = View.GONE
+                binding.progressBar?.visibility = View.GONE
             }
         }
     }
 
     private fun searchUsers(query: String, role: String, protocolId: Int, recyclerView: RecyclerView) {
-        binding.progressBar.visibility = View.VISIBLE
+        binding.progressBar?.visibility = View.VISIBLE
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val searchResult = userRepository.searchUsers(query).getOrNull()?.results ?: emptyList()
@@ -546,14 +558,14 @@ class ProtocolDetailFragment : Fragment() {
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "Failed to search users", Toast.LENGTH_SHORT).show()
             } finally {
-                binding.progressBar.visibility = View.GONE
+                binding.progressBar?.visibility = View.GONE
             }
         }
     }
 
     private fun addUserToRole(protocolId: Int, username: String, role: String) {
         viewLifecycleOwner.lifecycleScope.launch {
-            binding.progressBar.visibility = View.VISIBLE
+            binding.progressBar?.visibility = View.VISIBLE
             try {
                 protocolRepository.addUserRole(protocolId, username, role)
                     .onSuccess {
@@ -565,14 +577,14 @@ class ProtocolDetailFragment : Fragment() {
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             } finally {
-                binding.progressBar.visibility = View.GONE
+                binding.progressBar?.visibility = View.GONE
             }
         }
     }
 
     private fun removeUserFromRole(protocolId: Int, username: String, role: String) {
         viewLifecycleOwner.lifecycleScope.launch {
-            binding.progressBar.visibility = View.VISIBLE
+            binding.progressBar?.visibility = View.VISIBLE
             try {
                 protocolRepository.removeUserRole(protocolId, username, role)
                     .onSuccess {
@@ -584,7 +596,7 @@ class ProtocolDetailFragment : Fragment() {
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             } finally {
-                binding.progressBar.visibility = View.GONE
+                binding.progressBar?.visibility = View.GONE
             }
         }
     }
@@ -672,7 +684,7 @@ class ProtocolDetailFragment : Fragment() {
     }
 
     private fun searchTags(query: String, adapter: ProtocolTagSearchAdapter, recyclerView: RecyclerView, protocolId: Int) {
-        binding.progressBar.visibility = View.VISIBLE
+        binding.progressBar?.visibility = View.VISIBLE
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val currentTagIds = viewModel.protocol.value?.tags?.map { it.tag.id } ?: emptyList()
@@ -701,14 +713,14 @@ class ProtocolDetailFragment : Fragment() {
                 Log.e("ProtocolDetailFragment", "Error searching tags", e)
                 recyclerView.visibility = View.GONE
             } finally {
-                binding.progressBar.visibility = View.GONE
+                binding.progressBar?.visibility = View.GONE
             }
         }
     }
 
     private fun addExistingTag(protocolId: Int, tagId: Int) {
         viewLifecycleOwner.lifecycleScope.launch {
-            binding.progressBar.visibility = View.VISIBLE
+            binding.progressBar?.visibility = View.VISIBLE
             try {
                 // First get the tag name
                 val tagResult = viewModel.getTagById(tagId)
@@ -731,7 +743,7 @@ class ProtocolDetailFragment : Fragment() {
             } catch (e: Exception) {
                 Log.e("ProtocolDetailFragment", "Error adding existing tag", e)
             } finally {
-                binding.progressBar.visibility = View.GONE
+                binding.progressBar?.visibility = View.GONE
             }
         }
     }
@@ -739,7 +751,7 @@ class ProtocolDetailFragment : Fragment() {
 
     private fun addTag(protocolId: Int, tagName: String) {
         viewLifecycleOwner.lifecycleScope.launch {
-            binding.progressBar.visibility = View.VISIBLE
+            binding.progressBar?.visibility = View.VISIBLE
             try {
                 protocolRepository.addTagToProtocol(protocolId, tagName)
                     .onSuccess {
@@ -752,14 +764,14 @@ class ProtocolDetailFragment : Fragment() {
             } catch (e: Exception) {
                 Log.e("ProtocolDetailFragment", "Error adding tag", e)
             } finally {
-                binding.progressBar.visibility = View.GONE
+                binding.progressBar?.visibility = View.GONE
             }
         }
     }
 
     private fun removeTag(protocolId: Int, tagId: Int) {
         viewLifecycleOwner.lifecycleScope.launch {
-            binding.progressBar.visibility = View.VISIBLE
+            binding.progressBar?.visibility = View.VISIBLE
             try {
                 protocolRepository.removeTagFromProtocol(protocolId, tagId)
                     .onSuccess {
@@ -772,7 +784,7 @@ class ProtocolDetailFragment : Fragment() {
             } catch (e: Exception) {
                 Log.e("ProtocolDetailFragment", "Error removing tag", e)
             } finally {
-                binding.progressBar.visibility = View.GONE
+                binding.progressBar?.visibility = View.GONE
             }
         }
     }

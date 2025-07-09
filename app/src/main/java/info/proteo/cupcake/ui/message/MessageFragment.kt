@@ -29,6 +29,17 @@ class MessageFragment : Fragment() {
 
     private val viewModel: MessageViewModel by viewModels()
     private lateinit var threadAdapter: MessageThreadAdapter
+    
+    // Callback interface for tablet dual-pane mode
+    interface OnThreadSelectedListener {
+        fun onThreadSelected(threadId: Int)
+    }
+    
+    private var onThreadSelectedListener: OnThreadSelectedListener? = null
+    
+    fun setOnThreadSelectedListener(listener: OnThreadSelectedListener?) {
+        onThreadSelectedListener = listener
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -131,6 +142,13 @@ class MessageFragment : Fragment() {
     }
 
     private fun navigateToThreadDetail(thread: MessageThread) {
+        // Check if we're in tablet dual-pane mode
+        onThreadSelectedListener?.let { listener ->
+            listener.onThreadSelected(thread.id)
+            return
+        }
+        
+        // Default phone navigation
         val bundle = Bundle().apply {
             putInt("threadId", thread.id)
         }

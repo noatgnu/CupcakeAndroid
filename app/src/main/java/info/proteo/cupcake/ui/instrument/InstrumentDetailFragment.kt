@@ -75,6 +75,25 @@ class InstrumentDetailFragment : Fragment() {
 
     private val viewModel: InstrumentDetailViewModel by viewModels()
     private val args: InstrumentDetailFragmentArgs by navArgs()
+    
+    companion object {
+        fun newInstance(instrumentId: Int): InstrumentDetailFragment {
+            return InstrumentDetailFragment().apply {
+                arguments = Bundle().apply {
+                    putInt("instrumentId", instrumentId)
+                }
+            }
+        }
+    }
+    
+    // Override the args to handle both navArgs and manual bundle
+    private val instrumentId: Int by lazy {
+        try {
+            args.instrumentId
+        } catch (e: Exception) {
+            arguments?.getInt("instrumentId", -1) ?: -1
+        }
+    }
 
     private lateinit var annotationAdapter: InstrumentAnnotationAdapter
     private var currentSelectedFolderId: Int? = null
@@ -129,7 +148,7 @@ class InstrumentDetailFragment : Fragment() {
         setupMenu()
         setupBookingsView()
         observeViewModel()
-        viewModel.loadInstrumentDetailsAndPermissions(args.instrumentId)
+        viewModel.loadInstrumentDetailsAndPermissions(instrumentId)
 
 
         binding.tabLayoutAnnotationFolders.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
@@ -352,7 +371,7 @@ class InstrumentDetailFragment : Fragment() {
                     }
                     R.id.action_view_support_info -> {
                         val intent = Intent(requireContext(), SupportInformationActivity::class.java).apply {
-                            putExtra("INSTRUMENT_ID", args.instrumentId)
+                            putExtra("INSTRUMENT_ID", instrumentId)
                         }
                         startActivity(intent)
                         true
@@ -361,7 +380,7 @@ class InstrumentDetailFragment : Fragment() {
                         viewModel.instrument.value?.getOrNull()?.let { instrument ->
                             val intent = info.proteo.cupcake.ui.maintenance.MaintenanceLogActivity.createIntent(
                                 requireContext(),
-                                args.instrumentId.toLong(),
+                                instrumentId.toLong(),
                                 instrument.instrumentName
                             )
                             startActivity(intent)
@@ -913,7 +932,7 @@ class InstrumentDetailFragment : Fragment() {
                 viewLifecycleOwner.lifecycleScope.launch {
                     try {
                         val result = viewModel.assignInstrumentPermission(
-                            args.instrumentId,
+                            instrumentId,
                             username,
                             canManage,
                             canBook,
@@ -967,7 +986,7 @@ class InstrumentDetailFragment : Fragment() {
             .setTitle("Delete Instrument")
             .setMessage("Are you sure you want to delete ${instrument.instrumentName}? This action cannot be undone.")
             .setPositiveButton("Delete") { _, _ ->
-                viewModel.deleteInstrument(args.instrumentId)
+                viewModel.deleteInstrument(instrumentId)
                 Snackbar.make(binding.root, "Deleting instrument...", Snackbar.LENGTH_INDEFINITE).show()
             }
             .setNegativeButton("Cancel", null)
@@ -1267,7 +1286,6 @@ class InstrumentDetailFragment : Fragment() {
     }
 
     private fun delayBookingsInRange(startDate: Date, days: Int) {
-        val instrumentId = args.instrumentId
         val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
         val startString = dateFormat.format(startDate)
 

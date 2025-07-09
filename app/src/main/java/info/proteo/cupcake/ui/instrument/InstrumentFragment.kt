@@ -38,6 +38,17 @@ class InstrumentFragment : Fragment(), InstrumentActivity.SearchQueryListener {
     
     @Inject
     lateinit var instrumentRepository: InstrumentRepository
+    
+    // Callback interface for tablet dual-pane mode
+    interface OnInstrumentSelectedListener {
+        fun onInstrumentSelected(instrumentId: Int)
+    }
+    
+    private var onInstrumentSelectedListener: OnInstrumentSelectedListener? = null
+    
+    fun setOnInstrumentSelectedListener(listener: OnInstrumentSelectedListener?) {
+        onInstrumentSelectedListener = listener
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -61,6 +72,13 @@ class InstrumentFragment : Fragment(), InstrumentActivity.SearchQueryListener {
 
     private fun setupRecyclerView() {
         instrumentAdapter = InstrumentAdapter { instrumentId ->
+            // Check if we're in tablet dual-pane mode
+            onInstrumentSelectedListener?.let { listener ->
+                listener.onInstrumentSelected(instrumentId)
+                return@InstrumentAdapter
+            }
+            
+            // Default phone navigation
             findNavController().navigate(
                 InstrumentFragmentDirections.actionInstrumentFragmentToInstrumentDetailFragment(instrumentId)
             )

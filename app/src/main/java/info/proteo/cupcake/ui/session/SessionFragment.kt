@@ -43,13 +43,14 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.GravityCompat
 import androidx.core.view.MenuProvider
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.recyclerview.widget.RecyclerView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.R
 import info.proteo.cupcake.SessionManager
@@ -197,7 +198,10 @@ class SessionFragment : Fragment() {
                         true
                     }
                     R.id.action_toggle_sidebar -> {
-                        toggleSidebar()
+                        // Only toggle if drawer layout exists
+                        if (binding.drawerLayout is DrawerLayout) {
+                            toggleSidebar()
+                        }
                         true
                     }
                     else -> false
@@ -483,24 +487,45 @@ class SessionFragment : Fragment() {
 
     private fun toggleSidebar() {
         val drawerLayout = binding.drawerLayout
-        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
-            drawerLayout.closeDrawer(GravityCompat.START)
-        } else {
-            drawerLayout.openDrawer(GravityCompat.START)
+        if (drawerLayout is DrawerLayout) {
+            if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                drawerLayout.closeDrawer(GravityCompat.START)
+            } else {
+                drawerLayout.openDrawer(GravityCompat.START)
+            }
         }
+        // For tablet mode, drawer is handled by activity, so do nothing
     }
 
     private fun setupSidebar() {
         sidebarAdapter = SessionSidebarAdapter { step, section ->
             displayStepContent(step, section)
             sidebarAdapter.setSelectedStep(step.id, section.id)
-            binding.drawerLayout.closeDrawer(GravityCompat.START)
+            
+            // Only close drawer if it's actually a DrawerLayout
+            val drawerLayout = binding.drawerLayout
+            if (drawerLayout is DrawerLayout) {
+                drawerLayout.closeDrawer(GravityCompat.START)
+            }
         }
 
-        binding.sidebarRecyclerView.apply {
-            layoutManager = LinearLayoutManager(requireContext())
-            adapter = sidebarAdapter
+        // Check if sidebar recycler view exists before setting it up
+        val sidebarRecyclerView = binding.sidebarRecyclerView
+        if (sidebarRecyclerView is RecyclerView) {
+            sidebarRecyclerView.apply {
+                layoutManager = LinearLayoutManager(requireContext())
+                adapter = sidebarAdapter
+            }
         }
+    }
+
+    private fun isTabletMode(): Boolean {
+        return !(binding.drawerLayout is DrawerLayout)
+    }
+
+    // Public method to get sidebar adapter for tablet mode
+    fun getSidebarAdapter(): SessionSidebarAdapter? {
+        return if (::sidebarAdapter.isInitialized) sidebarAdapter else null
     }
 
 

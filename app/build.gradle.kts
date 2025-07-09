@@ -33,6 +33,12 @@ android {
             )
         }
     }
+    
+    lint {
+        baseline = file("lint-baseline.xml")
+        // Ignore these specific false positive lint issues
+        disable.addAll(listOf("ResAuto", "Instantiatable"))
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11

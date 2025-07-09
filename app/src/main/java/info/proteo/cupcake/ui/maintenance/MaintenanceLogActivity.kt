@@ -5,6 +5,9 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
@@ -34,8 +37,15 @@ class MaintenanceLogActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        // Set up edge-to-edge with transparent status bar
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        
         binding = ActivityMaintenanceLogBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Set up window insets and status bar background
+        setupStatusBarBackground()
 
         setupNavigation()
         setupToolbar()
@@ -89,6 +99,57 @@ class MaintenanceLogActivity : AppCompatActivity() {
     }
 
     override fun onSupportNavigateUp(): Boolean {
+        // Check if we're on the start destination (maintenance log list)
+        if (navController.currentDestination?.id == R.id.maintenanceLogFragment) {
+            // If we're on the main maintenance log screen, go back to instrument detail
+            finish()
+            return true
+        }
+        // Otherwise, use normal navigation (for going back from detail to list)
         return navController.navigateUp() || super.onSupportNavigateUp()
+    }
+    
+    /**
+     * Set up the toolbar to extend into the status bar area
+     */
+    private fun setupStatusBarBackground() {
+        // Get the actual resolved color from the theme
+        val typedArray = theme.obtainStyledAttributes(intArrayOf(
+            com.google.android.material.R.attr.colorPrimary
+        ))
+        val resolvedColor = typedArray.getColor(0, ContextCompat.getColor(this, R.color.primary))
+        typedArray.recycle()
+        
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
+            val systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            
+            // Extend the toolbar to cover the status bar area
+            binding.toolbar.let { toolbar ->
+                // Set the toolbar background color
+                toolbar.setBackgroundColor(resolvedColor)
+                toolbar.elevation = 0f
+                toolbar.alpha = 1.0f
+                
+                // Extend toolbar height to include status bar
+                val toolbarParams = toolbar.layoutParams
+                val actionBarHeight = resources.getDimensionPixelSize(androidx.appcompat.R.dimen.abc_action_bar_default_height_material)
+                toolbarParams.height = actionBarHeight + systemBars.top
+                toolbar.layoutParams = toolbarParams
+                
+                // Add top padding to toolbar content so it appears below status bar
+                toolbar.setPadding(
+                    toolbar.paddingLeft,
+                    systemBars.top,
+                    toolbar.paddingRight,
+                    toolbar.paddingBottom
+                )
+            }
+            
+            windowInsets
+        }
+        
+        // Set appropriate status bar appearance for both themes
+        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+        windowInsetsController.isAppearanceLightStatusBars = false
     }
 }

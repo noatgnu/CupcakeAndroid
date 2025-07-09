@@ -8,7 +8,6 @@ import android.view.MenuItem
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -17,14 +16,13 @@ import info.proteo.cupcake.R
 import info.proteo.cupcake.databinding.ActivityLabGroupDetailBinding
 import info.proteo.cupcake.shared.data.model.user.LabGroup
 import info.proteo.cupcake.shared.data.model.user.User
+import info.proteo.cupcake.ui.base.BaseActivity
 import info.proteo.cupcake.ui.labgroup.CreateEditLabGroupDialog
 import info.proteo.cupcake.ui.labgroup.dialog.AddMemberDialog
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class LabGroupDetailActivity : AppCompatActivity() {
-
-    private lateinit var binding: ActivityLabGroupDetailBinding
+class LabGroupDetailActivity : BaseActivity<ActivityLabGroupDetailBinding>() {
     private val detailViewModel: LabGroupDetailViewModel by viewModels()
     private val managementViewModel: LabGroupManagementViewModel by viewModels()
     
@@ -32,11 +30,11 @@ class LabGroupDetailActivity : AppCompatActivity() {
     private var canManageGroup = false
     private var labGroupId: Int = -1
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityLabGroupDetailBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    override fun createBinding(): ActivityLabGroupDetailBinding {
+        return ActivityLabGroupDetailBinding.inflate(layoutInflater)
+    }
 
+    override fun onCreateBinding(savedInstanceState: Bundle?) {
         labGroupId = intent.getIntExtra("labGroupId", -1)
         if (labGroupId == -1) {
             finish()
@@ -51,6 +49,11 @@ class LabGroupDetailActivity : AppCompatActivity() {
         detailViewModel.loadLabGroupDetail(labGroupId)
         // managementViewModel loads user permissions automatically in init
     }
+    
+    override fun setupWindowInsets() {
+        // This activity has a toolbar, so use AppBar inset handling
+        setupAppBarInsets(binding.toolbar)
+    }
 
     private fun setupToolbar() {
         setSupportActionBar(binding.toolbar)
@@ -58,6 +61,9 @@ class LabGroupDetailActivity : AppCompatActivity() {
         binding.toolbar.setNavigationOnClickListener {
             onBackPressed()
         }
+        
+        // Sync status bar color with toolbar
+        syncStatusBarWithToolbar(binding.toolbar)
     }
 
     private fun setupFragment() {

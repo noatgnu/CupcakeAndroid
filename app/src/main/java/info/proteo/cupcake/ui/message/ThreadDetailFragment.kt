@@ -33,6 +33,16 @@ class ThreadDetailFragment : Fragment() {
     private val threadId: Int by lazy {
         arguments?.getInt("threadId") ?: -1
     }
+    
+    companion object {
+        fun newInstance(threadId: Int): ThreadDetailFragment {
+            return ThreadDetailFragment().apply {
+                arguments = Bundle().apply {
+                    putInt("threadId", threadId)
+                }
+            }
+        }
+    }
 
     // Rich text editor
     private lateinit var richTextEditor: RichEditor

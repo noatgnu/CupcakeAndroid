@@ -43,6 +43,7 @@
         <item name="titleTextColor">@color/white</item>
         <item name="subtitleTextColor">@color/white</item>
         <item name="colorControlNormal">@color/white</item>
+        <item name="android:background">?attr/colorPrimary</item>
     </style>
 
     <!-- Popup menu theme for dark mode (white text) -->

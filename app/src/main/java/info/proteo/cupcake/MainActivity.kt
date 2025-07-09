@@ -5,8 +5,10 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.View
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -19,6 +21,7 @@ import androidx.navigation.ui.setupWithNavController
 import dagger.hilt.android.AndroidEntryPoint
 import info.proteo.cupcake.databinding.ActivityMainBinding
 import info.proteo.cupcake.databinding.NavHeaderUserProfileBinding
+import androidx.appcompat.app.AppCompatActivity
 import info.proteo.cupcake.ui.navigation.NavigationHeaderViewModel
 import kotlinx.coroutines.launch
 import androidx.core.view.get
@@ -27,7 +30,6 @@ import androidx.core.view.size
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
-
     private lateinit var binding: ActivityMainBinding
     private lateinit var appBarConfiguration: AppBarConfiguration
     private val navigationHeaderViewModel: NavigationHeaderViewModel by viewModels()
@@ -38,13 +40,31 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.detail_container) != null
     }
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Set up edge-to-edge with transparent status bar
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        
+        // Set up the binding
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        setSupportActionBar(binding.appBarMain.toolbar)
+        
+        // Set up window insets and status bar background
+        setupStatusBarBackground()
+        
+        setSupportActionBar(binding.toolbar)
+        
+        // Debug: Check if we're actually using the correct toolbar
+        android.util.Log.d("MainActivity", "Support action bar: ${supportActionBar}")
+        android.util.Log.d("MainActivity", "Toolbar: ${binding.toolbar}")
+        
+        // Make sure we're not using the default ActionBar
+        supportActionBar?.let {
+            android.util.Log.d("MainActivity", "ActionBar background: ${it.javaClass.name}")
+        }
+        
         val navHostFragment =
             supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment
         val navController = navHostFragment.navController
@@ -56,11 +76,9 @@ class MainActivity : AppCompatActivity() {
 
         setupActionBarWithNavController(navController, appBarConfiguration)
         binding.navView?.setupWithNavController(navController)
-        
-        setupNavigationHeader()
 
         // Make all toolbar elements white
-        binding.appBarMain.toolbar.apply {
+        binding.toolbar?.apply {
             // Set title text color to white
             setTitleTextColor(ContextCompat.getColor(context, R.color.white))
 
@@ -70,6 +88,7 @@ class MainActivity : AppCompatActivity() {
             // Set overflow menu icon (three dots) to white
             overflowIcon?.setTint(ContextCompat.getColor(context, R.color.white))
         }
+        
 
         binding.navView?.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
@@ -210,8 +229,8 @@ class MainActivity : AppCompatActivity() {
      * Updates breadcrumb navigation for tablet layouts
      */
     private fun updateBreadcrumb(detailTitle: String?) {
-        val breadcrumbContainer = binding.appBarMain.toolbar.findViewById<View>(R.id.breadcrumb_container)
-        val breadcrumbDetail = binding.appBarMain.toolbar.findViewById<android.widget.TextView>(R.id.breadcrumb_detail)
+        val breadcrumbContainer = binding.toolbar?.findViewById<View>(R.id.breadcrumb_container)
+        val breadcrumbDetail = binding.toolbar?.findViewById<android.widget.TextView>(R.id.breadcrumb_detail)
         
         breadcrumbContainer?.visibility = if (detailTitle != null) View.VISIBLE else View.GONE
         breadcrumbDetail?.text = detailTitle
@@ -238,5 +257,79 @@ class MainActivity : AppCompatActivity() {
             R.id.nav_lab_groups -> startActivity(Intent(this, info.proteo.cupcake.ui.labgroup.LabGroupManagementActivity::class.java))
         }
         binding.drawerLayout?.closeDrawers()
+    }
+    
+    /**
+     * Set up the toolbar to extend into the status bar area
+     */
+    private fun setupStatusBarBackground() {
+        // Get the actual resolved color from the theme
+        val typedArray = theme.obtainStyledAttributes(intArrayOf(
+            com.google.android.material.R.attr.colorPrimary
+        ))
+        val resolvedColor = typedArray.getColor(0, ContextCompat.getColor(this, R.color.primary))
+        typedArray.recycle()
+        
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
+            val systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            
+            // Extend the toolbar to cover the status bar area
+            binding.toolbar?.let { toolbar ->
+                // Set the toolbar background color
+                toolbar.setBackgroundColor(resolvedColor)
+                toolbar.elevation = 0f
+                toolbar.alpha = 1.0f
+                
+                // Extend toolbar height to include status bar
+                val toolbarParams = toolbar.layoutParams
+                val actionBarHeight = resources.getDimensionPixelSize(androidx.appcompat.R.dimen.abc_action_bar_default_height_material)
+                toolbarParams.height = actionBarHeight + systemBars.top
+                toolbar.layoutParams = toolbarParams
+                
+                // Add top padding to toolbar content so it appears below status bar
+                toolbar.setPadding(
+                    toolbar.paddingLeft,
+                    systemBars.top,
+                    toolbar.paddingRight,
+                    toolbar.paddingBottom
+                )
+                
+                android.util.Log.d("MainActivity", "Toolbar extended to cover status bar with color: ${Integer.toHexString(resolvedColor)}")
+            }
+            
+            // Don't apply padding to drawer layout since toolbar handles it
+            binding.drawerLayout?.setPadding(0, 0, 0, 0)
+            
+            // Set up navigation header now that we have window insets
+            setupNavigationHeader()
+            
+            // Extend the navigation drawer header to cover the status bar area
+            headerBinding?.navHeaderLayout?.let { navHeader ->
+                // Extend header height to include status bar (keeping original gradient background)
+                val headerParams = navHeader.layoutParams
+                val originalMinHeight = 180 // 180dp as defined in the layout
+                val minHeightPx = (originalMinHeight * resources.displayMetrics.density).toInt()
+                headerParams.height = minHeightPx + systemBars.top
+                navHeader.layoutParams = headerParams
+                
+                // Add top padding to header content so it appears below status bar
+                // Use the original padding from layout: left=20dp, right=20dp, bottom=20dp
+                val originalPaddingPx = (20 * resources.displayMetrics.density).toInt()
+                navHeader.setPadding(
+                    originalPaddingPx,
+                    systemBars.top,
+                    originalPaddingPx,
+                    originalPaddingPx
+                )
+                
+                android.util.Log.d("MainActivity", "Navigation header extended to cover status bar")
+            }
+            
+            windowInsets
+        }
+        
+        // Set appropriate status bar appearance for both themes
+        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+        windowInsetsController.isAppearanceLightStatusBars = false
     }
 }

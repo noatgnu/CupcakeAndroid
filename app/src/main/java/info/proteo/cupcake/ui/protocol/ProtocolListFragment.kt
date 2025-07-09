@@ -35,6 +35,17 @@ class ProtocolListFragment : Fragment() {
     private val viewModel: ProtocolListViewModel by viewModels()
     private lateinit var protocolAdapter: ProtocolAdapter
 
+    // Interface for protocol selection in dual-pane mode
+    interface OnProtocolSelectedListener {
+        fun onProtocolSelected(protocolId: Int)
+    }
+
+    private var protocolSelectedListener: OnProtocolSelectedListener? = null
+
+    fun setOnProtocolSelectedListener(listener: OnProtocolSelectedListener) {
+        protocolSelectedListener = listener
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
     }
@@ -101,13 +112,19 @@ class ProtocolListFragment : Fragment() {
         protocolAdapter = ProtocolAdapter(
             onProtocolClick = { protocol ->
                 try {
-                    val bundle = Bundle().apply {
-                        putInt("protocolId", protocol.id)
+                    // Check if we have a dual-pane listener (tablet mode)
+                    if (protocolSelectedListener != null) {
+                        protocolSelectedListener?.onProtocolSelected(protocol.id)
+                    } else {
+                        // Use navigation for single-pane mode (phone)
+                        val bundle = Bundle().apply {
+                            putInt("protocolId", protocol.id)
+                        }
+                        findNavController().navigate(
+                            R.id.action_protocolListFragment_to_protocolDetailFragment,
+                            bundle
+                        )
                     }
-                    findNavController().navigate(
-                        R.id.action_protocolListFragment_to_protocolDetailFragment,
-                        bundle
-                    )
                 } catch (e: Exception) {
                     Log.e("ProtocolListFragment", "Navigation error", e)
                 }
