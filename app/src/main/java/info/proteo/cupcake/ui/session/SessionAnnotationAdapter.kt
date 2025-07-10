@@ -235,7 +235,7 @@ class SessionAnnotationAdapter(
         private val progressBar: ProgressBar? = itemView.findViewById(R.id.mediaLoadingProgressBar)
 
         private val transcriptionContainer: View = itemView.findViewById(R.id.transcription_container)
-        private val transcriptionText: TextView = itemView.findViewById(R.id.transcription_text)
+        private val transcriptionText: TextView? = itemView.findViewById(R.id.transcription_text)
         private val instrumentContainer = itemView.findViewById<ViewGroup>(R.id.instrument_container)
         private val mcalculatorContainer = itemView.findViewById<ViewGroup>(R.id.molarityCalculatorContainer)
 
@@ -305,7 +305,7 @@ class SessionAnnotationAdapter(
                         .displaySketch(
                             annotation,
                             annotationImage,
-                            transcriptionText,
+                            transcriptionText ?: TextView(itemView.context),
                             imageContainer,
                             transcriptionContainer
                         )
@@ -364,7 +364,7 @@ class SessionAnnotationAdapter(
                         mediaTimerText,
                         progressBar,
                         transcriptionContainer,
-                        transcriptionText
+                        transcriptionText ?: TextView(itemView.context)
                     )
                 }
                 else -> {

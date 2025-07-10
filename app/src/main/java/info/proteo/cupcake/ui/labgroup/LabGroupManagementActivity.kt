@@ -270,7 +270,7 @@ class LabGroupManagementActivity : AppCompatActivity() {
         
         // Get the actual resolved color from the theme
         val typedArray = theme.obtainStyledAttributes(intArrayOf(
-            com.google.android.material.R.attr.colorPrimary
+            android.R.attr.colorPrimary
         ))
         val resolvedColor = typedArray.getColor(0, androidx.core.content.ContextCompat.getColor(this, info.proteo.cupcake.R.color.primary))
         typedArray.recycle()
@@ -287,7 +287,9 @@ class LabGroupManagementActivity : AppCompatActivity() {
                 
                 // Extend toolbar height to include status bar
                 val toolbarParams = toolbar.layoutParams
-                val actionBarHeight = resources.getDimensionPixelSize(androidx.appcompat.R.dimen.abc_action_bar_default_height_material)
+                val typedValue = android.util.TypedValue()
+                theme.resolveAttribute(android.R.attr.actionBarSize, typedValue, true)
+                val actionBarHeight = resources.getDimensionPixelSize(typedValue.resourceId)
                 toolbarParams.height = actionBarHeight + systemBars.top
                 toolbar.layoutParams = toolbarParams
                 

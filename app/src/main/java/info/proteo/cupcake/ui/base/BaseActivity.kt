@@ -76,7 +76,7 @@ abstract class BaseActivity<T : ViewBinding> : AppCompatActivity() {
             } else {
                 // Fallback to theme color
                 val typedArray = theme.obtainStyledAttributes(intArrayOf(
-                    com.google.android.material.R.attr.colorPrimary
+                    android.R.attr.colorPrimary
                 ))
                 val primaryColor = typedArray.getColor(0, ContextCompat.getColor(this, R.color.primary))
                 typedArray.recycle()

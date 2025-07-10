@@ -18,6 +18,7 @@ import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
+import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -197,7 +198,7 @@ class CreateAnnotationDialogHandler(
 
         this.dialogView = dialogView
         // Initialize UI components
-        val spinnerAnnotationType = dialogView.findViewById<AutoCompleteTextView>(R.id.spinnerAnnotationType)
+        val spinnerAnnotationType = dialogView.findViewById<MaterialAutoCompleteTextView>(R.id.spinnerAnnotationType)
         val textAnnotationContainer = dialogView.findViewById<View>(R.id.textAnnotationContainer)
         val imageAnnotationContainer = dialogView.findViewById<View>(R.id.imageAnnotationContainer)
         val fileAnnotationContainer = dialogView.findViewById<View>(R.id.fileAnnotationContainer)

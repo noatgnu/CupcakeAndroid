@@ -70,6 +70,7 @@ class ProtocolActivity : AppCompatActivity() {
     private fun setupSinglePaneLayout() {
         // For single-pane layout, fragments will handle their own toolbar setup
         // No need to set up action bar at activity level since there's no toolbar in the layout
+        // The NavHostFragment will handle navigation internally
     }
 
     private fun showProtocolDetail(protocolId: Int) {
@@ -98,39 +99,44 @@ class ProtocolActivity : AppCompatActivity() {
     }
 
     private fun setupStatusBarBackground() {
-        // Get the actual resolved color from the theme
-        val typedArray = theme.obtainStyledAttributes(intArrayOf(
-            com.google.android.material.R.attr.colorPrimary
-        ))
-        val resolvedColor = typedArray.getColor(0, ContextCompat.getColor(this, R.color.primary))
-        typedArray.recycle()
-        
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
-            val systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+        // Only set up toolbar background if we have a toolbar (dual-pane layout)
+        if (isDualPane) {
+            // Get the actual resolved color from the theme
+            val typedArray = theme.obtainStyledAttributes(intArrayOf(
+                android.R.attr.colorPrimary
+            ))
+            val resolvedColor = typedArray.getColor(0, ContextCompat.getColor(this, R.color.primary))
+            typedArray.recycle()
             
-            // Extend the toolbar to cover the status bar area
-            binding.toolbar?.let { toolbar ->
-                // Set the toolbar background color
-                toolbar.setBackgroundColor(resolvedColor)
-                toolbar.elevation = 0f
-                toolbar.alpha = 1.0f
+            ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
+                val systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
                 
-                // Extend toolbar height to include status bar
-                val toolbarParams = toolbar.layoutParams
-                val actionBarHeight = resources.getDimensionPixelSize(androidx.appcompat.R.dimen.abc_action_bar_default_height_material)
-                toolbarParams.height = actionBarHeight + systemBars.top
-                toolbar.layoutParams = toolbarParams
+                // Extend the toolbar to cover the status bar area
+                binding.toolbar?.let { toolbar ->
+                    // Set the toolbar background color
+                    toolbar.setBackgroundColor(resolvedColor)
+                    toolbar.elevation = 0f
+                    toolbar.alpha = 1.0f
+                    
+                    // Extend toolbar height to include status bar
+                    val toolbarParams = toolbar.layoutParams
+                    val typedValue = android.util.TypedValue()
+                    theme.resolveAttribute(android.R.attr.actionBarSize, typedValue, true)
+                    val actionBarHeight = resources.getDimensionPixelSize(typedValue.resourceId)
+                    toolbarParams.height = actionBarHeight + systemBars.top
+                    toolbar.layoutParams = toolbarParams
+                    
+                    // Add top padding to toolbar content so it appears below status bar
+                    toolbar.setPadding(
+                        toolbar.paddingLeft,
+                        systemBars.top,
+                        toolbar.paddingRight,
+                        toolbar.paddingBottom
+                    )
+                }
                 
-                // Add top padding to toolbar content so it appears below status bar
-                toolbar.setPadding(
-                    toolbar.paddingLeft,
-                    systemBars.top,
-                    toolbar.paddingRight,
-                    toolbar.paddingBottom
-                )
+                windowInsets
             }
-            
-            windowInsets
         }
         
         // Set appropriate status bar appearance for both themes

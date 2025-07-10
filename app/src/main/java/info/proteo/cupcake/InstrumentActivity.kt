@@ -16,6 +16,7 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import dagger.hilt.android.AndroidEntryPoint
+import info.proteo.cupcake.R
 import info.proteo.cupcake.databinding.ActivityInstrumentBinding
 import info.proteo.cupcake.ui.barcode.BarcodeScannerFragment
 import info.proteo.cupcake.ui.instrument.InstrumentViewModel
@@ -117,38 +118,8 @@ class InstrumentActivity : AppCompatActivity() {
         val searchView = searchItem.actionView as SearchView
         searchView.queryHint = "Search by name or serial number"
 
-        // Update to use custom search icon
-        try {
-            val searchIcon = searchView.findViewById<androidx.appcompat.widget.AppCompatImageView>(
-                androidx.appcompat.R.id.search_mag_icon
-            )
-            searchIcon?.setImageResource(R.drawable.outline_feature_search_24)
-            searchIcon?.setColorFilter(
-                ContextCompat.getColor(this, R.color.white),
-                android.graphics.PorterDuff.Mode.SRC_IN
-            )
-
-            // For the search button (when collapsed)
-            val searchButton = searchView.findViewById<androidx.appcompat.widget.AppCompatImageView>(
-                androidx.appcompat.R.id.search_button
-            )
-            searchButton?.setImageResource(R.drawable.outline_feature_search_24)
-            searchButton?.setColorFilter(
-                ContextCompat.getColor(this, R.color.white),
-                android.graphics.PorterDuff.Mode.SRC_IN
-            )
-
-            // Make the clear (X) button white
-            val closeIcon = searchView.findViewById<androidx.appcompat.widget.AppCompatImageView>(
-                androidx.appcompat.R.id.search_close_btn
-            )
-            closeIcon?.setColorFilter(
-                ContextCompat.getColor(this, R.color.white),
-                android.graphics.PorterDuff.Mode.SRC_IN
-            )
-        } catch (e: Exception) {
-            Log.e("InstrumentActivity", "Error customizing search view: ${e.message}")
-        }
+        // Note: SearchView internal styling is handled through the menu item icon
+        // The search icon in the menu uses R.drawable.ic_search and will be tinted automatically
 
         // Setup search functionality
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
@@ -252,7 +223,7 @@ class InstrumentActivity : AppCompatActivity() {
     private fun setupStatusBarBackground() {
         // Get the actual resolved color from the theme
         val typedArray = theme.obtainStyledAttributes(intArrayOf(
-            com.google.android.material.R.attr.colorPrimary
+            android.R.attr.colorPrimary
         ))
         val resolvedColor = typedArray.getColor(0, ContextCompat.getColor(this, R.color.primary))
         typedArray.recycle()
@@ -269,7 +240,9 @@ class InstrumentActivity : AppCompatActivity() {
                 
                 // Extend toolbar height to include status bar
                 val toolbarParams = toolbar.layoutParams
-                val actionBarHeight = resources.getDimensionPixelSize(androidx.appcompat.R.dimen.abc_action_bar_default_height_material)
+                val typedValue = android.util.TypedValue()
+                theme.resolveAttribute(android.R.attr.actionBarSize, typedValue, true)
+                val actionBarHeight = resources.getDimensionPixelSize(typedValue.resourceId)
                 toolbarParams.height = actionBarHeight + systemBars.top
                 toolbar.layoutParams = toolbarParams
                 

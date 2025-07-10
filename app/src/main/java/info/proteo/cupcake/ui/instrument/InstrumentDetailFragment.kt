@@ -310,7 +310,7 @@ class InstrumentDetailFragment : Fragment() {
                 // Make the toolbar title and other elements white
                 (requireActivity() as? AppCompatActivity)?.supportActionBar?.let { actionBar ->
                     val titleTextColor = ContextCompat.getColor(requireContext(), R.color.white)
-                    val titleId = androidx.appcompat.R.id.action_bar_title
+                    val titleId = android.R.id.title
                     val titleView = requireActivity().findViewById<TextView>(titleId)
                     titleView?.setTextColor(titleTextColor)
                 }
